@@ -125,7 +125,13 @@ authorizedAxiosInstance.interceptors.response.use(
       // Khi bị 401 (phiên hết hạn hoặc user bị xóa/khóa trong DB), chỉ hiển thị duy nhất 1 toast thông báo bằng toastId cố định
       toast.error(errorMessage, { toastId: 'auth-unauthorized-error' })
     } else if (error.response?.status !== 410) {
-      toast.error(errorMessage)
+      let displayMessage = errorMessage
+      // Thân thiện hóa thông báo nếu gặp lỗi xung đột ghi đồng thời từ DB
+      if (typeof errorMessage === 'string' && errorMessage.includes('Write conflict')) {
+        displayMessage = 'Hệ thống đang xử lý nhiều thao tác đồng thời. Vui lòng thử lại!'
+      }
+      // Dùng toastId để chống spam nhiều toast đỏ xếp chồng khi nhiều API lỗi cùng lúc
+      toast.error(displayMessage, { toastId: `err-${displayMessage}` })
     }
     return Promise.reject(error)
   }

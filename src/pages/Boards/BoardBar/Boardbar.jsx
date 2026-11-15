@@ -17,6 +17,7 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import FolderOffOutlinedIcon from '@mui/icons-material/FolderOffOutlined'
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import Tooltip from '@mui/material/Tooltip'
 import { selectCardFilter, setCardFilter, updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { updateBoardDetailsAPI, closeBoardAPI, removeBoardMemberAPI } from '~/apis'
@@ -258,7 +259,7 @@ function BoardBar({ board, onlineUsers = [] }) {
   }
 
   return (
-    <Box sx={{
+    <Box data-tour="board-bar" sx={{
       width: '100%',
       // PWA standalone (iPhone): chừa chỗ cho thanh trạng thái/notch
       height: (theme) => `calc(${theme.trello.boardBarHeight} + env(safe-area-inset-top, 0px))`,
@@ -447,6 +448,24 @@ function BoardBar({ board, onlineUsers = [] }) {
           label={t('boardBar.exportBoard')}
           clickable
           onClick={handleExportBoard}
+        />
+
+        {/* Nút Mở Hướng dẫn / Gợi ý (Guided Tour) */}
+        <Chip
+          sx={{
+            ...MENU_STYLES,
+            display: { xs: 'none', sm: 'inline-flex' },
+            bgcolor: 'rgba(45, 212, 191, 0.2)',
+            border: '1px solid rgba(45, 212, 191, 0.45)',
+            color: '#5eead4',
+            fontWeight: 600,
+            '& .MuiSvgIcon-root': { color: '#5eead4' },
+            '&:hover': { bgcolor: 'rgba(45, 212, 191, 0.35)' }
+          }}
+          icon={<HelpOutlineIcon />}
+          label={t('boardBar.guide')}
+          clickable
+          onClick={() => window.dispatchEvent(new CustomEvent('OPEN_GUIDED_TOUR'))}
         />
 
         <ArchivedItemsDrawer

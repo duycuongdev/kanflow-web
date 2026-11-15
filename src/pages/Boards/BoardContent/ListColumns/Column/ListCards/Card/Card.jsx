@@ -58,6 +58,7 @@ function Card({ card }) {
 
   return (
     <MuiCard
+      data-tour="board-card"
       onClick={() => setActiveCard(card)}
       ref={setNodeRef} style={dndKitCardStyles} {...attributes} {...listeners}
       sx={{

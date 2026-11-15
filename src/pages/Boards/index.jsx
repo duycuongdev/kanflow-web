@@ -55,6 +55,7 @@ function CreateBoardTile({ onClick }) {
   const { t } = useTranslation()
   return (
     <Card
+      data-tour="create-board-tile"
       onClick={onClick}
       sx={{
         cursor: 'pointer',
@@ -184,7 +185,7 @@ function Boards() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
           {/* Sidebar - ẩn trên mobile: bottom nav đã có tab Danh sách bảng,
               "Bảng đã đóng" nằm ở icon trên AppBar (mobile) */}
-          <Box sx={{ width: { xs: '100%', md: '260px' }, flexShrink: 0, mr: { xs: 0, md: 4 }, display: { xs: 'none', md: 'block' } }}>
+          <Box data-tour="boards-sidebar" sx={{ width: { xs: '100%', md: '260px' }, flexShrink: 0, mr: { xs: 0, md: 4 }, display: { xs: 'none', md: 'block' } }}>
             <Stack direction="column" spacing={1}>
               <SidebarItem
                 component={Link}
@@ -248,7 +249,7 @@ function Boards() {
 
             {/* Render danh sách boards theo CSS Grid 5 cột trên hàng */}
             {boards?.length > 0 && (
-              <Box sx={{
+              <Box data-tour="boards-grid" sx={{
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: 'repeat(1, 1fr)',

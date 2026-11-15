@@ -16,7 +16,7 @@ import AutoCompleteSearchBoard from './SearchBoards/AutoCompleteSearchBoard'
 import { useSelector } from 'react-redux'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
-import UserOnboardingModal from '~/components/Modal/UserOnboardingModal/UserOnboardingModal'
+import GuidedTour from '~/components/Modal/GuidedTour/GuidedTour'
 import KeyboardShortcutsModal from '~/components/Modal/KeyboardShortcutsModal/KeyboardShortcutsModal'
 
 function AppBar() {
@@ -34,15 +34,22 @@ function AppBar() {
   // (tránh kéo style của board cũ sang trang danh sách bảng)
   const hasImageBg = isBoardDetail && Boolean(activeBoard?.background)
 
-  // Tự động bật Tour giới thiệu tính năng khi người dùng đăng nhập lần đầu
+  // Tự động bật Tour gợi ý / hướng dẫn tính năng (Spotlight Tour)
   useEffect(() => {
     if (currentUser?._id) {
-      const tourCompleted = localStorage.getItem(`trello_tour_completed_${currentUser._id}`)
+      const tourCompleted = localStorage.getItem(`trello_spotlight_tour_${currentUser._id}`)
       if (!tourCompleted) {
         setOpenTour(true)
       }
     }
   }, [currentUser?._id])
+
+  // Lắng nghe sự kiện tùy chỉnh để mở Tour từ bất kỳ đâu (như nút Hướng dẫn ở BoardBar)
+  useEffect(() => {
+    const handleOpenTourEvent = () => setOpenTour(true)
+    window.addEventListener('OPEN_GUIDED_TOUR', handleOpenTourEvent)
+    return () => window.removeEventListener('OPEN_GUIDED_TOUR', handleOpenTourEvent)
+  }, [])
 
   // Lắng nghe phím tắt '?' (Shift + /) để mở hướng dẫn phím tắt
   useEffect(() => {
@@ -64,7 +71,7 @@ function AppBar() {
   const handleCloseTour = () => {
     setOpenTour(false)
     if (currentUser?._id) {
-      localStorage.setItem(`trello_tour_completed_${currentUser._id}`, 'true')
+      localStorage.setItem(`trello_spotlight_tour_${currentUser._id}`, 'true')
     }
   }
 
@@ -117,7 +124,9 @@ function AppBar() {
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
           {/* search board */}
-          <AutoCompleteSearchBoard />
+          <Box data-tour="appbar-search">
+            <AutoCompleteSearchBoard />
+          </Box>
 
           {/* dark mode + language: chỉ desktop/tablet - trên mobile truy cập qua menu Profile ở BottomNav */}
           <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 0.5 }}>
@@ -147,8 +156,8 @@ function AppBar() {
         onOpenShortcuts={() => setOpenShortcuts(true)}
       />
 
-      {/* Modal giới thiệu toàn bộ tính năng website cho người dùng */}
-      <UserOnboardingModal open={openTour} onClose={handleCloseTour} />
+      {/* Hướng dẫn tính năng theo phong cách Spotlight tương tác trực tiếp trên giao diện */}
+      <GuidedTour open={openTour} onClose={handleCloseTour} />
 
       {/* Modal hướng dẫn phím tắt bàn phím */}
       <KeyboardShortcutsModal open={openShortcuts} onClose={() => setOpenShortcuts(false)} />

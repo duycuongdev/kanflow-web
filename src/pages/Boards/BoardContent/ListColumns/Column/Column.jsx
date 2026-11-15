@@ -198,6 +198,7 @@ function Column({ column }) {
     // phải bọc div ở đây vì chiều cao của column khi kéo thả sẽ có bug Flickering
     <div ref={setNodeRef} style={dndKitColumnStyles} {...attributes} >
       < Box
+        data-tour="board-column"
         {...listeners}
         sx={{
           minWidth: '300px',

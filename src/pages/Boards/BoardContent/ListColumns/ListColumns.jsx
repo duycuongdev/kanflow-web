@@ -143,7 +143,7 @@ function ListColumns({ columns = [] }) {
 
         {/* add new column */}
         {!openNewColumnForm
-          ? <Box onClick={toggleOpenNewColumnForm} sx={{
+          ? <Box data-tour="add-column-btn" onClick={toggleOpenNewColumnForm} sx={{
             minWidth: '250px',
             maxWidth: '250px',
             mx: 2,
