@@ -362,7 +362,7 @@ function BoardContent({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <Box data-tour="board-content" sx={{
+      <Box sx={{
         bgcolor: board?.background ? 'transparent' : ((theme) => (theme.palette.mode === 'dark' ? '#0f172a' : '#0052cc')),
         width: '100%',
         height: (theme) => theme.trello.boardContentHeight,

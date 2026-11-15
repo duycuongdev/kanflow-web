@@ -17,7 +17,6 @@ import FileDownloadOutlinedIcon from '@mui/icons-material/FileDownloadOutlined'
 import FolderOffOutlinedIcon from '@mui/icons-material/FolderOffOutlined'
 import ExitToAppIcon from '@mui/icons-material/ExitToApp'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline'
 import Tooltip from '@mui/material/Tooltip'
 import { selectCardFilter, setCardFilter, updateCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import { updateBoardDetailsAPI, closeBoardAPI, removeBoardMemberAPI } from '~/apis'
@@ -259,7 +258,7 @@ function BoardBar({ board, onlineUsers = [] }) {
   }
 
   return (
-    <Box data-tour="board-bar" sx={{
+    <Box sx={{
       width: '100%',
       // PWA standalone (iPhone): chừa chỗ cho thanh trạng thái/notch
       height: (theme) => `calc(${theme.trello.boardBarHeight} + env(safe-area-inset-top, 0px))`,
@@ -383,90 +382,74 @@ function BoardBar({ board, onlineUsers = [] }) {
           </Box>
         )}
 
-        <Chip
-          sx={{
-            ...MENU_STYLES,
-            display: { xs: 'none', sm: 'inline-flex' },
-            ...(hasActiveFilter && {
-              bgcolor: 'rgba(255, 255, 255, 0.25)',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-              fontWeight: 600
-            })
-          }}
-          icon={<FilterIcon />}
-          label={hasActiveFilter ? `${t('boardBar.filters')} (${activeFilterCount})` : t('boardBar.filters')}
-          clickable
-          onClick={handleOpenFilter}
-        />
+        <Box data-tour="board-tools" sx={{ display: { xs: 'none', sm: 'inline-flex' }, alignItems: 'center', gap: 0.5 }}>
+          <Chip
+            sx={{
+              ...MENU_STYLES,
+              display: 'inline-flex',
+              ...(hasActiveFilter && {
+                bgcolor: 'rgba(255, 255, 255, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                fontWeight: 600
+              })
+            }}
+            icon={<FilterIcon />}
+            label={hasActiveFilter ? `${t('boardBar.filters')} (${activeFilterCount})` : t('boardBar.filters')}
+            clickable
+            onClick={handleOpenFilter}
+          />
 
-        <BoardCardFilterPopover
-          anchorEl={filterAnchorEl}
-          isOpen={isFilterOpen}
-          onClose={handleCloseFilter}
-          board={board}
-        />
+          <BoardCardFilterPopover
+            anchorEl={filterAnchorEl}
+            isOpen={isFilterOpen}
+            onClose={handleCloseFilter}
+            board={board}
+          />
 
-        {/* Nút Thay đổi Hình nền / Màu nền cho Bảng */}
-        <Chip
-          sx={{
-            ...MENU_STYLES,
-            display: { xs: 'none', sm: 'inline-flex' },
-            ...(board?.background && {
-              bgcolor: 'rgba(255, 255, 255, 0.25)',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-              fontWeight: 600
-            })
-          }}
-          icon={<WallpaperOutlinedIcon />}
-          label={t('boardBar.background')}
-          clickable
-          onClick={handleOpenBgPopover}
-        />
+          {/* Nút Thay đổi Hình nền / Màu nền cho Bảng */}
+          <Chip
+            sx={{
+              ...MENU_STYLES,
+              display: 'inline-flex',
+              ...(board?.background && {
+                bgcolor: 'rgba(255, 255, 255, 0.25)',
+                border: '1px solid rgba(255, 255, 255, 0.6)',
+                fontWeight: 600
+              })
+            }}
+            icon={<WallpaperOutlinedIcon />}
+            label={t('boardBar.background')}
+            clickable
+            onClick={handleOpenBgPopover}
+          />
 
-        <ChangeBoardBackgroundPopover
-          anchorEl={bgAnchorEl}
-          isOpen={isBgOpen}
-          onClose={handleCloseBgPopover}
-          currentBackground={board?.background}
-          onSelectBackground={handleSelectBackground}
-          onUploadBackgroundFile={handleUploadBackgroundFile}
-        />
+          <ChangeBoardBackgroundPopover
+            anchorEl={bgAnchorEl}
+            isOpen={isBgOpen}
+            onClose={handleCloseBgPopover}
+            currentBackground={board?.background}
+            onSelectBackground={handleSelectBackground}
+            onUploadBackgroundFile={handleUploadBackgroundFile}
+          />
 
-        {/* Nút Mở Danh sách Lưu trữ (Archived Items) */}
-        <Chip
-          sx={{ ...MENU_STYLES, display: { xs: 'none', sm: 'inline-flex' } }}
-          icon={<ArchiveOutlinedIcon />}
-          label={t('boardBar.archived')}
-          clickable
-          onClick={() => setIsArchivedOpen(true)}
-        />
+          {/* Nút Mở Danh sách Lưu trữ (Archived Items) */}
+          <Chip
+            sx={{ ...MENU_STYLES, display: 'inline-flex' }}
+            icon={<ArchiveOutlinedIcon />}
+            label={t('boardBar.archived')}
+            clickable
+            onClick={() => setIsArchivedOpen(true)}
+          />
 
-        {/* Nút Xuất dữ liệu Bảng (Export Board JSON) */}
-        <Chip
-          sx={{ ...MENU_STYLES, display: { xs: 'none', sm: 'inline-flex' } }}
-          icon={<FileDownloadOutlinedIcon />}
-          label={t('boardBar.exportBoard')}
-          clickable
-          onClick={handleExportBoard}
-        />
-
-        {/* Nút Mở Hướng dẫn / Gợi ý (Guided Tour) */}
-        <Chip
-          sx={{
-            ...MENU_STYLES,
-            display: { xs: 'none', sm: 'inline-flex' },
-            bgcolor: 'rgba(45, 212, 191, 0.2)',
-            border: '1px solid rgba(45, 212, 191, 0.45)',
-            color: '#5eead4',
-            fontWeight: 600,
-            '& .MuiSvgIcon-root': { color: '#5eead4' },
-            '&:hover': { bgcolor: 'rgba(45, 212, 191, 0.35)' }
-          }}
-          icon={<HelpOutlineIcon />}
-          label={t('boardBar.guide')}
-          clickable
-          onClick={() => window.dispatchEvent(new CustomEvent('OPEN_GUIDED_TOUR'))}
-        />
+          {/* Nút Xuất dữ liệu Bảng (Export Board JSON) */}
+          <Chip
+            sx={{ ...MENU_STYLES, display: 'inline-flex' }}
+            icon={<FileDownloadOutlinedIcon />}
+            label={t('boardBar.exportBoard')}
+            clickable
+            onClick={handleExportBoard}
+          />
+        </Box>
 
         <ArchivedItemsDrawer
           isOpen={isArchivedOpen}

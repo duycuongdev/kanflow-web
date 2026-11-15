@@ -7,7 +7,23 @@ import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Portal from '@mui/material/Portal'
 
-const PADDING = 8
+const PADDING = 6
+
+/**
+ * Tìm phần tử DOM THỰC SỰ đang hiển thị trên giao diện (bỏ qua các placeholder ẩn display: none)
+ */
+const findVisibleElement = (selector) => {
+  if (!selector) return null
+  const elements = document.querySelectorAll(selector)
+  for (const el of elements) {
+    if (el.offsetParent === null) continue
+    const rect = el.getBoundingClientRect()
+    if (rect.width > 24 && rect.height > 24) {
+      return el
+    }
+  }
+  return null
+}
 
 function GuidedTour({ open, onClose }) {
   const { t } = useTranslation()
@@ -24,12 +40,6 @@ function GuidedTour({ open, onClose }) {
     if (isBoardDetail) {
       return [
         {
-          target: '[data-tour="board-bar"]',
-          title: t('guidedTour.boardBarTitle'),
-          description: t('guidedTour.boardBarDesc'),
-          preferredPlacement: 'bottom'
-        },
-        {
           target: '[data-tour="board-column"]',
           title: t('guidedTour.columnTitle'),
           description: t('guidedTour.columnDesc'),
@@ -43,16 +53,23 @@ function GuidedTour({ open, onClose }) {
           preferredPlacement: 'right'
         },
         {
-          target: '[data-tour="board-content"]',
+          target: '[data-tour="board-card"]',
+          fallbackTarget: '[data-tour="board-column"]',
           title: t('guidedTour.dndTitle'),
           description: t('guidedTour.dndDesc'),
-          preferredPlacement: 'top'
+          preferredPlacement: 'bottom'
         },
         {
           target: '[data-tour="add-column-btn"]',
           title: t('guidedTour.addColumnTitle'),
           description: t('guidedTour.addColumnDesc'),
           preferredPlacement: 'left'
+        },
+        {
+          target: '[data-tour="board-tools"]',
+          title: t('guidedTour.boardToolsTitle'),
+          description: t('guidedTour.boardToolsDesc'),
+          preferredPlacement: 'bottom'
         }
       ]
     }
@@ -94,49 +111,65 @@ function GuidedTour({ open, onClose }) {
   const updatePosition = useCallback(() => {
     if (!open || !currentStepData) return
 
-    let element = document.querySelector(currentStepData.target)
+    let element = findVisibleElement(currentStepData.target)
     if (!element && currentStepData.fallbackTarget) {
-      element = document.querySelector(currentStepData.fallbackTarget)
+      element = findVisibleElement(currentStepData.fallbackTarget)
     }
 
     const vw = window.innerWidth
     const vh = window.innerHeight
     const cardWidth = Math.min(380, vw - 32)
-    const cardHeight = 240
+    const cardHeight = 220
 
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
       const rect = element.getBoundingClientRect()
 
-      const top = Math.max(0, rect.top - PADDING)
-      const left = Math.max(0, rect.left - PADDING)
-      const width = Math.min(vw - left, rect.width + PADDING * 2)
-      const height = Math.min(vh - top, rect.height + PADDING * 2)
+      if (rect.width > 24 && rect.height > 24) {
+        const top = Math.max(0, rect.top - PADDING)
+        const left = Math.max(0, rect.left - PADDING)
+        const width = Math.min(vw - left, rect.width + PADDING * 2)
+        const height = Math.min(vh - top, rect.height + PADDING * 2)
 
-      setTargetRect({ top, left, width, height })
+        setTargetRect({ top, left, width, height })
 
-      let posTop = top + height + 16
-      let posLeft = left
+        let posTop = top + height + 16
+        let posLeft = left
+        const placement = currentStepData.preferredPlacement || 'bottom'
 
-      if (posTop + cardHeight > vh - 20) {
-        if (top - cardHeight - 16 > 20) {
-          posTop = top - cardHeight - 16
-        } else {
-          posTop = Math.max(20, (vh - cardHeight) / 2)
+        // Ưu tiên hiển thị bên phải nếu có đủ chỗ
+        if (placement === 'right' && left + width + 16 + cardWidth <= vw - 16) {
+          posLeft = left + width + 16
+          posTop = Math.max(20, top + (height - cardHeight) / 3)
         }
+        // Ưu tiên hiển thị bên trái nếu có đủ chỗ
+        else if (placement === 'left' && left - 16 - cardWidth >= 16) {
+          posLeft = left - 16 - cardWidth
+          posTop = Math.max(20, top + (height - cardHeight) / 3)
+        }
+        // Hiển thị phía trên nếu ở dưới không đủ chỗ
+        else if (posTop + cardHeight > vh - 20) {
+          if (top - cardHeight - 16 >= 20) {
+            posTop = top - cardHeight - 16
+          } else {
+            posTop = Math.max(20, (vh - cardHeight) / 2)
+          }
+        }
+
+        posLeft = Math.max(16, Math.min(posLeft, vw - cardWidth - 16))
+        posTop = Math.max(20, Math.min(posTop, vh - cardHeight - 20))
+
+        setTooltipPos({ top: posTop, left: posLeft })
+        return
       }
-
-      posLeft = Math.max(16, Math.min(posLeft, vw - cardWidth - 16))
-      posTop = Math.max(16, Math.min(posTop, vh - cardHeight - 16))
-
-      setTooltipPos({ top: posTop, left: posLeft })
-    } else {
-      setTargetRect(null)
-      setTooltipPos({
-        top: Math.max(20, (vh - cardHeight) / 2),
-        left: Math.max(16, (vw - cardWidth) / 2)
-      })
     }
+
+    // Nếu không tìm thấy phần tử hợp lệ -> ẩn viền spotlight, căn thẻ gợi ý ở giữa
+    setTargetRect(null)
+    setTooltipPos({
+      top: Math.max(20, (vh - cardHeight) / 2),
+      left: Math.max(16, (vw - cardWidth) / 2)
+    })
   }, [open, currentStepData])
 
   useEffect(() => {
@@ -219,8 +252,8 @@ function GuidedTour({ open, onClose }) {
                 y={targetRect.top}
                 width={targetRect.width}
                 height={targetRect.height}
-                rx="18"
-                ry="18"
+                rx="14"
+                ry="14"
                 fill="black"
               />
             )}
@@ -236,7 +269,7 @@ function GuidedTour({ open, onClose }) {
         />
       </svg>
 
-      {/* Viền sáng dạ quang (Glowing Neon Border) quanh đối tượng được gợi ý */}
+      {/* Viền sáng dạ quang (Glowing Neon Border) ôm sát phần tử đang được gợi ý */}
       {targetRect && (
         <Box
           sx={{
@@ -245,9 +278,9 @@ function GuidedTour({ open, onClose }) {
             left: targetRect.left,
             width: targetRect.width,
             height: targetRect.height,
-            borderRadius: '18px',
+            borderRadius: '14px',
             border: '2px solid #2dd4bf',
-            boxShadow: '0 0 18px rgba(45, 212, 191, 0.6), inset 0 0 12px rgba(45, 212, 191, 0.2)',
+            boxShadow: '0 0 16px rgba(45, 212, 191, 0.6), inset 0 0 10px rgba(45, 212, 191, 0.2)',
             pointerEvents: 'none',
             zIndex: 99995,
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'

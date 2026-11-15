@@ -513,6 +513,8 @@
     "dndDesc": "The core of Trello: Drag and drop cards between columns to update status instantly with automatic real-time sync.",
     "addColumnTitle": "Add New Column",
     "addColumnDesc": "Click here to add new workflow stages tailored to your project needs (e.g. In Review, Testing, Done).",
+    "boardToolsTitle": "Board Tools & Filters",
+    "boardToolsDesc": "Quickly filter cards, customize board backgrounds, access archived items, and export board data as JSON.",
     "sidebarTitle": "Workspace Navigation",
     "sidebarDesc": "Easily switch between active boards and archived/closed boards.",
     "createBoardTitle": "Create New Board",

@@ -513,6 +513,8 @@
     "dndDesc": "Cốt lõi của Trello: Kéo và thả các thẻ giữa các cột để cập nhật tiến độ công việc tức thì. Mọi thay đổi đều được lưu tự động.",
     "addColumnTitle": "Tạo thêm cột mới",
     "addColumnDesc": "Nhấp vào đây để tạo thêm các cột quy trình mới theo nhu cầu của dự án (ví dụ: Đang review, Chờ kiểm thử, Hoàn thành).",
+    "boardToolsTitle": "Công cụ & Bộ lọc bảng",
+    "boardToolsDesc": "Lọc thẻ nhanh theo từ khóa hoặc nhãn, đổi hình nền sinh động, mở mục lưu trữ và xuất dữ liệu bảng ra file JSON.",
     "sidebarTitle": "Thanh điều hướng Workspace",
     "sidebarDesc": "Dễ dàng chuyển đổi giữa các bảng đang hoạt động và các bảng đã đóng hoặc lưu trữ.",
     "createBoardTitle": "Tạo bảng mới",
