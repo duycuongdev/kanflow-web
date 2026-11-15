@@ -505,6 +505,7 @@
   },
   "guidedTour": {
     "stepCount": "Step {{current}}/{{total}}",
+    "dragToMove": "Drag to move",
     "skip": "Skip",
     "back": "Back",
     "next": "Next",

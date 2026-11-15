@@ -505,6 +505,7 @@
   },
   "guidedTour": {
     "stepCount": "Bước {{current}}/{{total}}",
+    "dragToMove": "Kéo để di chuyển",
     "skip": "Bỏ qua",
     "back": "Quay lại",
     "next": "Tiếp",

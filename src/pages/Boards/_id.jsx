@@ -91,6 +91,21 @@ function Board() {
     }
   }, [board?._id, board?.slug, board?.title, boardId, slug, location.search, navigate])
 
+  // Tự động kích hoạt Guided Tour nếu vừa tạo board mới xong
+  useEffect(() => {
+    if (board?._id && board._id === boardId) {
+      const shouldTrigger = sessionStorage.getItem('trigger_board_tour')
+      if (shouldTrigger === 'true') {
+        sessionStorage.removeItem('trigger_board_tour')
+        // Đợi 400ms để DOM cột và thẻ render ổn định
+        const timer = setTimeout(() => {
+          window.dispatchEvent(new CustomEvent('OPEN_GUIDED_TOUR'))
+        }, 400)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [board?._id, boardId])
+
   const [searchParams, setSearchParams] = useSearchParams()
   const targetCardId = searchParams.get('cardId')
 

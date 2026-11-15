@@ -10,7 +10,6 @@ import TextField from '@mui/material/TextField'
 import InputAdornment from '@mui/material/InputAdornment'
 import FieldErrorAlert from '~/components/Form/FieldErrorAlert'
 import AbcIcon from '@mui/icons-material/Abc'
-import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined'
 import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import ViewKanbanIcon from '@mui/icons-material/ViewKanban'
@@ -19,13 +18,15 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked'
 import { createNewBoardAPI } from '~/apis'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 
 /**
- * CreateBoardModal: Modal tạo Board mới hỗ trợ chọn mẫu (Kanban mẫu vs Bảng trống),
- * tối ưu hiển thị mượt mà trên cả Mobile lẫn Desktop.
+ * CreateBoardModal: Modal tạo Board mới siêu tinh gọn (chỉ Tiêu đề + Mẫu Kanban / Bảng trống),
+ * tự động điều hướng vào Board mới tạo và kích hoạt Tour hướng dẫn.
  */
 export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { register, handleSubmit, reset, formState: { errors } } = useForm()
   const [selectedTemplate, setSelectedTemplate] = useState('kanban')
 
@@ -37,11 +38,18 @@ export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
 
   const submitCreateNewBoard = (data) => {
     createNewBoardAPI({
-      ...data,
+      title: data.title.trim(),
       template: selectedTemplate
-    }).then(() => {
+    }).then((createdBoard) => {
       handleCloseModal()
-      afterCreateNewBoard()
+      if (createdBoard?._id) {
+        // Gắn cờ kích hoạt Tour khi vào board mới
+        sessionStorage.setItem('trigger_board_tour', 'true')
+        const targetSlug = createdBoard.slug || 'board'
+        navigate(`/boards/${createdBoard._id}/${targetSlug}`)
+      } else if (afterCreateNewBoard) {
+        afterCreateNewBoard()
+      }
     })
   }
 
@@ -57,7 +65,7 @@ export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
-        width: { xs: '94%', sm: 540, md: 580 },
+        width: { xs: '94%', sm: 540, md: 560 },
         maxHeight: { xs: '92vh', sm: '88vh' },
         overflowY: 'auto',
         bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
@@ -67,7 +75,7 @@ export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
         border: '1px solid',
         borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
         outline: 0,
-        padding: { xs: '18px 16px', sm: '24px 30px' }
+        padding: { xs: '18px 16px', sm: '24px 28px' }
       }}>
         {/* Nút đóng modal góc trên bên phải */}
         <Box sx={{
@@ -237,6 +245,7 @@ export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
               <Box>
                 <TextField
                   fullWidth
+                  autoFocus
                   label={t('common.title')}
                   type="text"
                   variant="outlined"
@@ -256,33 +265,6 @@ export function CreateBoardModal({ open, onClose, afterCreateNewBoard }) {
                   error={!!errors['title']}
                 />
                 <FieldErrorAlert errors={errors} fieldName={'title'} />
-              </Box>
-
-              {/* Input Mô tả bảng */}
-              <Box>
-                <TextField
-                  fullWidth
-                  label={t('common.description')}
-                  type="text"
-                  variant="outlined"
-                  multiline
-                  rows={2.5}
-                  placeholder={t('boards.boardDescriptionPlaceholder')}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <DescriptionOutlinedIcon fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }}
-                  {...register('description', {
-                    required: t('validation.required'),
-                    minLength: { value: 3, message: t('validation.minLength3') },
-                    maxLength: { value: 255, message: t('validation.maxLength255') }
-                  })}
-                  error={!!errors['description']}
-                />
-                <FieldErrorAlert errors={errors} fieldName={'description'} />
               </Box>
 
               {/* Nút hành động */}

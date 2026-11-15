@@ -6,6 +6,8 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Portal from '@mui/material/Portal'
+import { motion, useDragControls } from 'framer-motion'
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 
 const PADDING = 6
 
@@ -31,6 +33,7 @@ function GuidedTour({ open, onClose }) {
   const [activeStep, setActiveStep] = useState(0)
   const [targetRect, setTargetRect] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
+  const dragControls = useDragControls()
 
   const isBoardDetail = useMemo(() => {
     return /^\/boards\/[^/]+/.test(location.pathname)
@@ -288,38 +291,87 @@ function GuidedTour({ open, onClose }) {
         />
       )}
 
-      {/* Khung gợi ý phong cách Dark Teal với Step, Title, Desc và nút điều hướng */}
-      <Box
-        sx={{
+      {/* Khung gợi ý phong cách Dark Teal, hỗ trợ kéo thả (Draggable) linh hoạt */}
+      <motion.div
+        key={activeStep}
+        drag
+        dragListener={false}
+        dragControls={dragControls}
+        dragMomentum={false}
+        dragElastic={0.08}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.22, ease: 'easeOut' }}
+        style={{
           position: 'fixed',
           top: tooltipPos.top,
           left: tooltipPos.left,
-          width: { xs: 'calc(100vw - 32px)', sm: 380 },
-          maxWidth: '92vw',
-          bgcolor: '#042727',
-          backgroundImage: 'linear-gradient(145deg, #072e2d 0%, #031b1a 100%)',
-          color: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid rgba(45, 212, 191, 0.3)',
-          boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6), 0 0 30px rgba(45, 212, 191, 0.18)',
-          p: { xs: 2.2, sm: 2.5 },
+          width: 'calc(100vw - 32px)',
+          maxWidth: 380,
           zIndex: 99999,
-          pointerEvents: 'auto',
-          transition: 'top 0.3s cubic-bezier(0.16, 1, 0.3, 1), left 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          pointerEvents: 'auto'
         }}
       >
-        {/* Số thứ tự bước: Bước x/y */}
-        <Typography
+        <Box
           sx={{
-            color: '#2dd4bf',
-            fontSize: '0.82rem',
-            fontWeight: 700,
-            letterSpacing: '0.5px',
-            mb: 0.8
+            bgcolor: '#042727',
+            backgroundImage: 'linear-gradient(145deg, #072e2d 0%, #031b1a 100%)',
+            color: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid rgba(45, 212, 191, 0.3)',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.6), 0 0 30px rgba(45, 212, 191, 0.18)',
+            p: { xs: 2.2, sm: 2.5 }
           }}
         >
-          {t('guidedTour.stepCount', { current: activeStep + 1, total: totalSteps })}
-        </Typography>
+          {/* Header với Drag Handle: kéo thả cả hộp thoại bằng chuột hoặc chạm */}
+          <Box
+            onPointerDown={(e) => dragControls.start(e)}
+            style={{ touchAction: 'none' }}
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'grab',
+              '&:active': { cursor: 'grabbing' },
+              mb: 1.2,
+              userSelect: 'none',
+              pb: 0.5
+            }}
+          >
+            {/* Số thứ tự bước: Bước x/y */}
+            <Typography
+              sx={{
+                color: '#2dd4bf',
+                fontSize: '0.82rem',
+                fontWeight: 700,
+                letterSpacing: '0.5px'
+              }}
+            >
+              {t('guidedTour.stepCount', { current: activeStep + 1, total: totalSteps })}
+            </Typography>
+
+            {/* Pill kéo thả trực quan */}
+            <Box
+              sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 0.5,
+                px: 1,
+                py: 0.3,
+                borderRadius: '12px',
+                bgcolor: 'rgba(45, 212, 191, 0.12)',
+                color: '#2dd4bf',
+                fontSize: '0.72rem',
+                fontWeight: 600,
+                transition: 'background-color 0.2s',
+                '&:hover': { bgcolor: 'rgba(45, 212, 191, 0.22)' }
+              }}
+            >
+              <DragIndicatorIcon sx={{ fontSize: '15px' }} />
+              <span>{t('guidedTour.dragToMove')}</span>
+            </Box>
+          </Box>
 
         {/* Tiêu đề hướng dẫn */}
         <Typography
@@ -430,7 +482,8 @@ function GuidedTour({ open, onClose }) {
           </Stack>
         </Box>
       </Box>
-    </Portal>
+    </motion.div>
+  </Portal>
   )
 }
 
