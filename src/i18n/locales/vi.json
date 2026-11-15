@@ -154,6 +154,12 @@
     "loadError": "Không thể tải danh sách bảng. Vui lòng thử lại.",
     "refreshError": "Không thể làm mới danh sách bảng. Vui lòng thử lại.",
     "createBoardTitle": "Tạo bảng mới",
+    "templateLabel": "Chọn kiểu bảng",
+    "templateKanbanTitle": "Bảng mẫu Kanban",
+    "templateKanbanRecommended": "Khuyên dùng",
+    "templateKanbanDesc": "Có sẵn 3 cột (To do, Doing, Done) và các thẻ mẫu thực tế để trải nghiệm kéo thả ngay.",
+    "templateBlankTitle": "Bảng trống",
+    "templateBlankDesc": "Bắt đầu với một bảng trống hoàn toàn, tự do xây dựng quy trình riêng của bạn.",
     "boardTitlePlaceholder": "VD: Lộ trình dự án, Chiến dịch marketing...",
     "boardDescriptionPlaceholder": "Mô tả ngắn về mục đích của bảng này...",
     "boardCreated": "Tạo bảng thành công"

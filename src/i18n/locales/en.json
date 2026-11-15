@@ -154,6 +154,12 @@
     "loadError": "Unable to load boards. Please try again.",
     "refreshError": "Unable to refresh boards. Please try again.",
     "createBoardTitle": "Create a new board",
+    "templateLabel": "Board template",
+    "templateKanbanTitle": "Kanban Template",
+    "templateKanbanRecommended": "Recommended",
+    "templateKanbanDesc": "Pre-filled with 3 columns (To do, Doing, Done) and interactive sample cards.",
+    "templateBlankTitle": "Blank Board",
+    "templateBlankDesc": "Start with a clean slate, build your own custom workflow from scratch.",
     "boardTitlePlaceholder": "e.g. Project Roadmap, Marketing Campaign...",
     "boardDescriptionPlaceholder": "Brief description about the purpose of this board...",
     "boardCreated": "Board created successfully"
