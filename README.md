@@ -1,4 +1,4 @@
-# 📋 Trello Clone - Full-Stack Real-Time Task & Project Management Platform
+# 📋 Trello - Full-Stack Real-Time Task & Project Management Platform
 
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)

@@ -22,7 +22,7 @@ import { CreateBoardModal } from './create'
 import ImportBoardModal from './ImportBoardModal'
 import AiCreateBoardModal from './AiCreateBoardModal'
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { styled } from '@mui/material/styles'
 import { fetchBoardsAPI, reopenBoardAPI, deleteBoardDetailsAPI } from '~/apis/index.js'
 import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants.js'
@@ -252,7 +252,7 @@ function Boards() {
 
               <Button
                 variant="contained"
-                startIcon={<AutoAwesomeIcon />}
+                startIcon={<AutoFixHighIcon />}
                 onClick={() => setOpenAiCreateBoardModal(true)}
                 sx={{
                   justifyContent: 'flex-start',

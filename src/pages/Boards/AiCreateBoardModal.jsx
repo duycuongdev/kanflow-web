@@ -9,9 +9,7 @@ import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import Stack from '@mui/material/Stack'
 import CircularProgress from '@mui/material/CircularProgress'
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
-import VpnKeyOutlinedIcon from '@mui/icons-material/VpnKeyOutlined'
-import Collapse from '@mui/material/Collapse'
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { aiGenerateBoardAPI } from '~/apis'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -29,23 +27,12 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
   const navigate = useNavigate()
 
   const [prompt, setPrompt] = useState('')
-  const [customApiKey, setCustomApiKey] = useState(() => localStorage.getItem('trello_gemini_api_key') || '')
-  const [showKeyInput, setShowKeyInput] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleClose = () => {
     if (isSubmitting) return
     setPrompt('')
     onClose()
-  }
-
-  const handleSaveApiKey = (key) => {
-    setCustomApiKey(key)
-    if (key.trim()) {
-      localStorage.setItem('trello_gemini_api_key', key.trim())
-    } else {
-      localStorage.removeItem('trello_gemini_api_key')
-    }
   }
 
   const handleGenerate = async () => {
@@ -63,8 +50,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
     setIsSubmitting(true)
     try {
       const createdBoard = await aiGenerateBoardAPI({
-        prompt: trimmedPrompt,
-        customApiKey: customApiKey.trim() || undefined
+        prompt: trimmedPrompt
       })
 
       handleClose()
@@ -86,7 +72,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
     <Modal
       open={open}
       onClose={handleClose}
-      aria-labelledby="ai-create-board-modal-title"
+      aria-labelledby="smart-create-board-modal-title"
     >
       <Box sx={{
         position: 'absolute',
@@ -112,7 +98,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
           </IconButton>
         </Box>
 
-        {/* Tiêu đề modal kèm icon AI Gradient */}
+        {/* Tiêu đề modal kèm icon Magic Wand Gradient */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, pr: 4 }}>
           <Box sx={{
             width: 38,
@@ -125,15 +111,15 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
             color: '#ffffff',
             boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)'
           }}>
-            <AutoAwesomeIcon sx={{ fontSize: 22 }} />
+            <AutoFixHighIcon sx={{ fontSize: 22 }} />
           </Box>
-          <Typography id="ai-create-board-modal-title" variant="h6" fontWeight={700}>
-            {t('boards.aiCreateBoardTitle', 'Tạo bảng bằng AI')}
+          <Typography id="smart-create-board-modal-title" variant="h6" fontWeight={700}>
+            {t('boards.aiCreateBoardTitle', 'Khởi tạo bảng thông minh')}
           </Typography>
         </Box>
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.5 }}>
-          {t('boards.aiCreateBoardSubtitle', 'Mô tả dự án hoặc mục tiêu của bạn bằng ngôn ngữ tự nhiên. AI sẽ tự động phân tích và sinh toàn bộ cột workflow, thẻ công việc, nhãn và checklist chi tiết.')}
+          {t('boards.aiCreateBoardSubtitle', 'Mô tả ý tưởng hoặc quy trình công việc của bạn. Hệ thống sẽ tự động phân tích và thiết lập toàn bộ danh sách cột, thẻ công việc và checklist chi tiết.')}
         </Typography>
 
         {/* Form nhập Prompt */}
@@ -144,7 +130,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
             rows={3}
             autoFocus
             disabled={isSubmitting}
-            label={t('boards.aiPromptLabel', 'Ý tưởng hoặc yêu cầu của bạn')}
+            label={t('boards.aiPromptLabel', 'Ý tưởng hoặc mô tả quy trình')}
             placeholder={t('boards.aiPromptPlaceholder', 'VD: Lập kế hoạch học AI Engineer trong 2 tháng với lộ trình từng tuần kèm bài tập thực hành...')}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
@@ -184,35 +170,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
             </Stack>
           </Box>
 
-          {/* Cấu hình Custom Gemini API Key (Tùy chọn) */}
-          <Box sx={{ mt: 0.5 }}>
-            <Button
-              size="small"
-              variant="text"
-              startIcon={<VpnKeyOutlinedIcon fontSize="small" />}
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              sx={{ textTransform: 'none', fontSize: '0.8rem', color: 'text.secondary', p: 0 }}
-            >
-              {showKeyInput ? t('boards.aiHideApiKey', 'Ẩn cấu hình API Key') : t('boards.aiCustomApiKey', 'Cung cấp Gemini API Key cá nhân (Tùy chọn)')}
-            </Button>
-
-            <Collapse in={showKeyInput}>
-              <Box sx={{ mt: 1, p: 1.5, borderRadius: '8px', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#f8fafc', border: '1px solid', borderColor: 'divider' }}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  type="password"
-                  label={t('boards.aiApiKeyLabel', 'Gemini API Key (Tùy chọn)')}
-                  placeholder="AIzaSy..."
-                  value={customApiKey}
-                  onChange={(e) => handleSaveApiKey(e.target.value)}
-                  helperText={t('boards.aiApiKeyHelper', 'Nếu server chưa cấu hình biến GEMINI_API_KEY, bạn có thể nhập key cá nhân từ Google AI Studio (miễn phí). Key được lưu trong trình duyệt của bạn.')}
-                />
-              </Box>
-            </Collapse>
-          </Box>
-
-          {/* Loading indicator khi AI đang generate */}
+          {/* Loading indicator khi đang khởi tạo */}
           {isSubmitting && (
             <Box sx={{
               p: 2,
@@ -225,7 +183,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
             }}>
               <CircularProgress size={22} sx={{ color: '#a855f7' }} />
               <Typography variant="body2" sx={{ fontWeight: 600, color: '#a855f7' }}>
-                {t('boards.aiGeneratingStatus', 'AI đang suy luận cấu trúc các cột, phân rã công việc và sinh checklist...')}
+                {t('boards.aiGeneratingStatus', 'Đang tự động thiết lập cấu trúc quy trình, phân rã công việc và checklist...')}
               </Typography>
             </Box>
           )}
@@ -244,7 +202,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
               variant="contained"
               onClick={handleGenerate}
               disabled={isSubmitting || !prompt.trim()}
-              startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+              startIcon={isSubmitting ? <CircularProgress size={16} color="inherit" /> : <AutoFixHighIcon />}
               sx={{
                 textTransform: 'none',
                 fontWeight: 700,
@@ -258,7 +216,7 @@ export function AiCreateBoardModal({ open, onClose, afterCreateBoard }) {
                 }
               }}
             >
-              {isSubmitting ? t('boards.aiGenerating', 'Đang tạo bảng...') : t('boards.aiGenerateSubmit', 'Tạo bảng với AI')}
+              {isSubmitting ? t('boards.aiGenerating', 'Đang khởi tạo...') : t('boards.aiGenerateSubmit', 'Khởi tạo thông minh')}
             </Button>
           </Box>
         </Box>
