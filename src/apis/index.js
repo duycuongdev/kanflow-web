@@ -89,6 +89,12 @@ export const importBoardAPI = async (data) => {
   return response.data
 }
 
+export const aiGenerateBoardAPI = async (data) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/boards/ai-generate`, data)
+  toast.success(i18n.t('boards.aiBoardCreatedSuccess'))
+  return response.data
+}
+
 export const deleteCardAPI = async (cardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}`)
   return response.data
