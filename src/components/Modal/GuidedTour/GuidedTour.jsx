@@ -15,7 +15,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
 import ReplayIcon from '@mui/icons-material/Replay'
 
-const PADDING = 2
+const PADDING = 0
 
 /**
  * Tìm phần tử DOM THỰC SỰ đang hiển thị trên giao diện (bỏ qua các placeholder ẩn display: none)
@@ -151,46 +151,78 @@ function GuidedTour({ open, onClose }) {
   const updatePosition = useCallback(() => {
     if (!open || !currentStepData) return
 
-    let element = findVisibleElement(currentStepData.target)
-    if (!element && currentStepData.fallbackTarget) {
-      element = findVisibleElement(currentStepData.fallbackTarget)
-    }
-
     const vw = window.innerWidth
     const vh = window.innerHeight
     const cardWidth = Math.min(380, vw - 32)
     const cardHeight = 220
+
+    // Nếu ở bước kéo thả DnD
+    if (currentStepData.isDndStep) {
+      // Chỉ khi thẻ đã hạ cánh thành công tại cột Doing mới hiển thị viền neon ôm khít thẻ ở Doing
+      if (hasMovedCardRef.current) {
+        const allCols = document.querySelectorAll('[data-tour="board-column"]')
+        const cardInDoing = allCols[1]?.querySelector('[data-tour="board-card"]')
+        if (cardInDoing) {
+          const r = cardInDoing.getBoundingClientRect()
+          const bRadius = window.getComputedStyle(cardInDoing).borderRadius || '4px'
+          setTargetRect({
+            top: r.top,
+            left: r.left,
+            width: r.width,
+            height: r.height,
+            borderRadius: bRadius,
+            rx: parseFloat(bRadius) || 4
+          })
+        }
+      } else {
+        // Trong lúc chưa di chuyển hoặc đang bay: tuyệt đối không vẽ viền tĩnh ở cột 0
+        setTargetRect(null)
+      }
+
+      // Đặt tooltip an toàn dưới cột To do để không che khuất các thẻ
+      const colEl = document.querySelector('[data-tour="board-column"]')
+      if (colEl) {
+        const colRect = colEl.getBoundingClientRect()
+        let posTop = colRect.bottom + 16
+        let posLeft = Math.max(16, Math.min(colRect.left, vw - cardWidth - 16))
+        if (posTop + cardHeight > vh - 20) {
+          posTop = Math.max(20, vh - cardHeight - 20)
+        }
+        setTooltipPos({ top: posTop, left: posLeft })
+      }
+      return
+    }
+
+    let element = findVisibleElement(currentStepData.target)
+    if (!element && currentStepData.fallbackTarget) {
+      element = findVisibleElement(currentStepData.fallbackTarget)
+    }
 
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
       const rect = element.getBoundingClientRect()
 
       if (rect.width > 24 && rect.height > 24) {
-        const top = Math.max(0, rect.top - PADDING)
-        const left = Math.max(0, rect.left - PADDING)
-        const width = Math.min(vw - left, rect.width + PADDING * 2)
-        const height = Math.min(vh - top, rect.height + PADDING * 2)
+        const top = Math.max(0, rect.top)
+        const left = Math.max(0, rect.left)
+        const width = Math.min(vw - left, rect.width)
+        const height = Math.min(vh - top, rect.height)
+        const computedStyle = window.getComputedStyle(element)
+        const bRadius = computedStyle.borderRadius || '6px'
+        const numRadius = parseFloat(bRadius) || 6
 
-        setTargetRect({ top, left, width, height })
+        setTargetRect({
+          top,
+          left,
+          width,
+          height,
+          borderRadius: bRadius,
+          rx: numRadius
+        })
 
         let posTop = top + height + 16
         let posLeft = left
         const placement = currentStepData.preferredPlacement || 'bottom'
-
-        // Nếu ở bước kéo thả DnD: tính vị trí tooltip nằm an toàn DƯỚI TOÀN BỘ CỘT để không che khuất Thẻ 2
-        if (currentStepData.isDndStep) {
-          const colEl = element.closest('[data-tour="board-column"]') || document.querySelector('[data-tour="board-column"]')
-          if (colEl) {
-            const colRect = colEl.getBoundingClientRect()
-            posTop = colRect.bottom + 16
-            posLeft = Math.max(16, Math.min(colRect.left, vw - cardWidth - 16))
-            if (posTop + cardHeight > vh - 20) {
-              posTop = Math.max(20, vh - cardHeight - 20)
-            }
-            setTooltipPos({ top: posTop, left: posLeft })
-            return
-          }
-        }
 
         // Ưu tiên hiển thị bên phải nếu có đủ chỗ
         if (placement === 'right' && left + width + 16 + cardWidth <= vw - 16) {
@@ -240,6 +272,44 @@ function GuidedTour({ open, onClose }) {
     }
   }, [open, activeStep, updatePosition])
 
+  // Kích hoạt đường bay ảo kéo thả thẻ từ cột To do sang Doing
+  const launchGhostFlight = useCallback((sourceCard, destCol, col0) => {
+    const sRect = sourceCard.getBoundingClientRect()
+    const dRect = destCol.getBoundingClientRect()
+    const col0Rect = col0.getBoundingClientRect()
+
+    const destX = dRect.left + (sRect.left - col0Rect.left)
+    const destY = dRect.top + (sRect.top - col0Rect.top)
+    const deltaX = destX - sRect.left
+    const deltaY = destY - sRect.top
+
+    const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+
+    // Trong suốt thời gian thẻ đang bay: ẩn hoàn toàn targetRect để không để lại viền tĩnh ở cột 0
+    setTargetRect(null)
+
+    // Làm mờ nhẹ thẻ gốc trong lúc hoạt ảnh kéo thả đang diễn ra
+    sourceCard.style.opacity = '0.35'
+
+    setGhostFlight({
+      top: sRect.top,
+      left: sRect.left,
+      width: sRect.width,
+      height: sRect.height,
+      destTop: destY,
+      destLeft: destX,
+      deltaX,
+      deltaY,
+      title: cardTitle,
+      col0Rect: {
+        top: col0Rect.top,
+        left: col0Rect.left,
+        width: col0Rect.width,
+        height: col0Rect.height
+      }
+    })
+  }, [])
+
   // Tự động tính toán đường bay của thẻ thật trên bảng từ cột To do sang Doing khi ở bước DnD
   useEffect(() => {
     if (!open || !currentStepData?.isDndStep) {
@@ -254,52 +324,19 @@ function GuidedTour({ open, onClose }) {
     let sourceCardEl = null
 
     const computeFlight = () => {
-      const sourceCard = findVisibleElement('[data-tour="board-card"]')
+      if (hasMovedCardRef.current) return
       const allCols = document.querySelectorAll('[data-tour="board-column"]')
+      const col0 = allCols[0]
       const destCol = allCols.length > 1 ? allCols[1] : null
 
-      // Chỉ bay nếu thẻ đang nằm ở cột 0 và chưa từng di chuyển
-      if (sourceCard && destCol && allCols[0] && allCols[0].contains(sourceCard) && !hasMovedCardRef.current) {
-        sourceCardEl = sourceCard
-        const sRect = sourceCard.getBoundingClientRect()
-        const dRect = destCol.getBoundingClientRect()
-        const col0Rect = allCols[0].getBoundingClientRect()
+      if (col0 && destCol) {
+        const cardsInCol0 = Array.from(col0.querySelectorAll('[data-tour="board-card"]'))
+        const card1 = cardsInCol0.find(el => el.textContent.includes('Doing') || el.textContent.includes('Chào mừng')) || cardsInCol0[0]
 
-        const destX = dRect.left + (sRect.left - col0Rect.left)
-        const destY = dRect.top + (sRect.top - col0Rect.top)
-        const deltaX = destX - sRect.left
-        const deltaY = destY - sRect.top
-
-        const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
-
-        // Đảm bảo viền neon ôm khít chính xác Thẻ 1, không tràn sang Thẻ 2
-        setTargetRect({
-          top: Math.max(0, sRect.top - PADDING),
-          left: Math.max(0, sRect.left - PADDING),
-          width: sRect.width + PADDING * 2,
-          height: sRect.height + PADDING * 2
-        })
-
-        // Làm mờ nhẹ thẻ gốc trong lúc hoạt ảnh kéo thả đang diễn ra
-        sourceCard.style.opacity = '0.35'
-
-        setGhostFlight({
-          top: sRect.top,
-          left: sRect.left,
-          width: sRect.width,
-          height: sRect.height,
-          destTop: destY,
-          destLeft: destX,
-          deltaX,
-          deltaY,
-          title: cardTitle,
-          col0Rect: {
-            top: col0Rect.top,
-            left: col0Rect.left,
-            width: col0Rect.width,
-            height: col0Rect.height
-          }
-        })
+        if (card1 && !hasMovedCardRef.current) {
+          sourceCardEl = card1
+          launchGhostFlight(card1, destCol, col0)
+        }
       }
     }
 
@@ -315,7 +352,7 @@ function GuidedTour({ open, onClose }) {
         sourceCardEl.style.opacity = ''
       }
     }
-  }, [open, activeStep, currentStepData])
+  }, [open, activeStep, currentStepData, launchGhostFlight])
 
   useEffect(() => {
     if (!open) {
@@ -355,6 +392,7 @@ function GuidedTour({ open, onClose }) {
       if (hasMovedCardRef.current) {
         hasMovedCardRef.current = false
         setGhostFlight(null)
+        setTargetRect(null)
         window.dispatchEvent(new CustomEvent('AUTO_REVERT_DEMO_CARD_TO_TODO'))
       }
       setActiveStep(prev => prev - 1)
@@ -363,51 +401,40 @@ function GuidedTour({ open, onClose }) {
 
   const handleReplayDnd = () => {
     setGhostFlight(null)
+    setTargetRect(null)
     hasMovedCardRef.current = false
     window.dispatchEvent(new CustomEvent('AUTO_REVERT_DEMO_CARD_TO_TODO'))
-    setTimeout(() => {
-      const sourceCard = findVisibleElement('[data-tour="board-card"]')
+
+    // Polling nhẹ đợi card 1 render hoàn tất tại To do rồi mới phóng hoạt ảnh bay
+    let attempts = 0
+    const maxAttempts = 20
+    const checkAndFly = () => {
+      attempts++
       const allCols = document.querySelectorAll('[data-tour="board-column"]')
+      const col0 = allCols[0]
       const destCol = allCols.length > 1 ? allCols[1] : null
 
-      if (sourceCard && destCol && allCols[0] && allCols[0].contains(sourceCard)) {
-        const sRect = sourceCard.getBoundingClientRect()
-        const dRect = destCol.getBoundingClientRect()
-        const col0Rect = allCols[0].getBoundingClientRect()
-        const destX = dRect.left + (sRect.left - col0Rect.left)
-        const destY = dRect.top + (sRect.top - col0Rect.top)
-        const deltaX = destX - sRect.left
-        const deltaY = destY - sRect.top
-        const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+      if (col0 && destCol) {
+        const cardsInCol0 = Array.from(col0.querySelectorAll('[data-tour="board-card"]'))
+        // Xác định chính xác card 1 trong To do (tránh lấy nhầm card 2)
+        const card1 = cardsInCol0.find(el => el.textContent.includes('Doing') || el.textContent.includes('Chào mừng'))
 
-        // Đảm bảo viền neon ôm khít chính xác Thẻ 1 khi Replay
-        setTargetRect({
-          top: Math.max(0, sRect.top - PADDING),
-          left: Math.max(0, sRect.left - PADDING),
-          width: sRect.width + PADDING * 2,
-          height: sRect.height + PADDING * 2
-        })
-
-        sourceCard.style.opacity = '0.35'
-        setGhostFlight({
-          top: sRect.top,
-          left: sRect.left,
-          width: sRect.width,
-          height: sRect.height,
-          destTop: destY,
-          destLeft: destX,
-          deltaX,
-          deltaY,
-          title: cardTitle,
-          col0Rect: {
-            top: col0Rect.top,
-            left: col0Rect.left,
-            width: col0Rect.width,
-            height: col0Rect.height
+        if (card1) {
+          const sRect = card1.getBoundingClientRect()
+          // Đảm bảo card1 đã hiển thị ổn định với chiều cao chuẩn (không phải chiều cao của card 2 hay toàn list)
+          if (sRect.width > 50 && sRect.height > 30 && sRect.height < 105) {
+            launchGhostFlight(card1, destCol, col0)
+            return
           }
-        })
+        }
       }
-    }, 260)
+
+      if (attempts < maxAttempts) {
+        setTimeout(checkAndFly, 50)
+      }
+    }
+
+    setTimeout(checkAndFly, 120)
   }
 
   const handleClose = () => {
@@ -435,14 +462,14 @@ function GuidedTour({ open, onClose }) {
         <defs>
           <mask id="tour-spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
-            {targetRect && (
+            {targetRect && (!currentStepData?.isDndStep || (!ghostFlight && hasMovedCardRef.current)) && (
               <rect
                 x={targetRect.left}
                 y={targetRect.top}
                 width={targetRect.width}
                 height={targetRect.height}
-                rx="8"
-                ry="8"
+                rx={targetRect.rx || 6}
+                ry={targetRect.rx || 6}
                 fill="black"
               />
             )}
@@ -482,7 +509,7 @@ function GuidedTour({ open, onClose }) {
       </svg>
 
       {/* Viền sáng dạ quang (Glowing Neon Border) ôm sát phần tử đang được gợi ý */}
-      {targetRect && (
+      {targetRect && (!currentStepData?.isDndStep || (!ghostFlight && hasMovedCardRef.current)) && (
         <Box
           sx={{
             position: 'fixed',
@@ -490,12 +517,13 @@ function GuidedTour({ open, onClose }) {
             left: targetRect.left,
             width: targetRect.width,
             height: targetRect.height,
-            borderRadius: '8px',
+            boxSizing: 'border-box',
+            borderRadius: targetRect.borderRadius || '6px',
             border: '2px solid #2dd4bf',
-            boxShadow: '0 0 8px rgba(45, 212, 191, 0.6), inset 0 0 4px rgba(45, 212, 191, 0.2)',
+            boxShadow: '0 0 4px #2dd4bf, inset 0 0 2px rgba(45, 212, 191, 0.4)',
             pointerEvents: 'none',
             zIndex: 99995,
-            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         />
       )}
@@ -549,19 +577,22 @@ function GuidedTour({ open, onClose }) {
               window.dispatchEvent(new CustomEvent('AUTO_MOVE_DEMO_CARD_TO_DOING'))
               setTimeout(() => {
                 setGhostFlight(null)
-                // Cập nhật targetRect chính xác cho thẻ đã chuyển sang cột Doing, không nhảy sang Thẻ 2
+                // Cập nhật targetRect chính xác ôm khít thẻ đã chuyển sang cột Doing
                 const allCols = document.querySelectorAll('[data-tour="board-column"]')
                 const cardInDoing = allCols[1]?.querySelector('[data-tour="board-card"]')
                 if (cardInDoing) {
                   const r = cardInDoing.getBoundingClientRect()
+                  const bRadius = window.getComputedStyle(cardInDoing).borderRadius || '4px'
                   setTargetRect({
-                    top: Math.max(0, r.top - PADDING),
-                    left: Math.max(0, r.left - PADDING),
-                    width: r.width + PADDING * 2,
-                    height: r.height + PADDING * 2
+                    top: r.top,
+                    left: r.left,
+                    width: r.width,
+                    height: r.height,
+                    borderRadius: bRadius,
+                    rx: parseFloat(bRadius) || 4
                   })
                 }
-              }, 350)
+              }, 300)
             }
           }}
           style={{
