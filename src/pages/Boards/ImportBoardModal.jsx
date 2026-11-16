@@ -27,7 +27,6 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
   const [file, setFile] = useState(null)
   const [boardData, setBoardData] = useState(null)
   const [editedTitle, setEditedTitle] = useState('')
-  const [editedDescription, setEditedDescription] = useState('')
   const [parseError, setParseError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -36,7 +35,6 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
     setFile(null)
     setBoardData(null)
     setEditedTitle('')
-    setEditedDescription('')
     setParseError('')
     setIsSubmitting(false)
     setIsDragging(false)
@@ -72,7 +70,6 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
         }
         setBoardData(json)
         setEditedTitle(json.title || '')
-        setEditedDescription(json.description || '')
       } catch (err) {
         setParseError(t('boards.importJsonParseError'))
         setBoardData(null)
@@ -103,17 +100,27 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
   }
 
   const handleImport = async () => {
-    if (!boardData || !editedTitle.trim()) {
+    const trimmedTitle = editedTitle.trim()
+    if (!boardData || !trimmedTitle) {
       toast.error(t('boards.importTitleRequired'))
+      return
+    }
+
+    if (trimmedTitle.length < 3) {
+      toast.error(t('validation.minLength3'))
+      return
+    }
+
+    if (trimmedTitle.length > 50) {
+      toast.error(t('validation.minLength50'))
       return
     }
 
     setIsSubmitting(true)
     try {
       const payload = {
-        ...boardData,
-        title: editedTitle.trim(),
-        description: editedDescription.trim()
+        title: trimmedTitle,
+        columns: boardData.columns || []
       }
 
       const createdBoard = await importBoardAPI(payload)
@@ -125,8 +132,9 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
       } else if (afterImportBoard) {
         afterImportBoard()
       }
-    } catch (error) {
-      toast.error(error?.response?.data?.message || t('boards.importFailed'))
+    } catch (_error) {
+      // Thông báo lỗi API đã được interceptor authorizedAxios hiển thị tự động,
+      // không gọi toast.error ở đây để tránh bị thông báo trùng lặp 2 lần cùng lúc
     } finally {
       setIsSubmitting(false)
     }
@@ -287,23 +295,12 @@ export function ImportBoardModal({ open, onClose, afterImportBoard }) {
             <TextField
               fullWidth
               size="small"
-              label={t('boards.titleLabel')}
+              label={t('common.title')}
               value={editedTitle}
               onChange={(e) => setEditedTitle(e.target.value)}
-              placeholder={t('boards.titlePlaceholder')}
+              placeholder={t('boards.boardTitlePlaceholder')}
               required
-            />
-
-            {/* Mô tả bảng */}
-            <TextField
-              fullWidth
-              size="small"
-              multiline
-              rows={2}
-              label={t('boards.descriptionLabel')}
-              value={editedDescription}
-              onChange={(e) => setEditedDescription(e.target.value)}
-              placeholder={t('boards.descriptionPlaceholder')}
+              inputProps={{ minLength: 3, maxLength: 50 }}
             />
 
             {/* Nút hành động */}
