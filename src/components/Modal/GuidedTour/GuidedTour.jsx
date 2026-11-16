@@ -15,7 +15,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
 import ReplayIcon from '@mui/icons-material/Replay'
 
-const PADDING = 6
+const PADDING = 2
 
 /**
  * Tìm phần tử DOM THỰC SỰ đang hiển thị trên giao diện (bỏ qua các placeholder ẩn display: none)
@@ -272,6 +272,14 @@ function GuidedTour({ open, onClose }) {
 
         const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
 
+        // Đảm bảo viền neon ôm khít chính xác Thẻ 1, không tràn sang Thẻ 2
+        setTargetRect({
+          top: Math.max(0, sRect.top - PADDING),
+          left: Math.max(0, sRect.left - PADDING),
+          width: sRect.width + PADDING * 2,
+          height: sRect.height + PADDING * 2
+        })
+
         // Làm mờ nhẹ thẻ gốc trong lúc hoạt ảnh kéo thả đang diễn ra
         sourceCard.style.opacity = '0.35'
 
@@ -371,6 +379,15 @@ function GuidedTour({ open, onClose }) {
         const deltaX = destX - sRect.left
         const deltaY = destY - sRect.top
         const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+
+        // Đảm bảo viền neon ôm khít chính xác Thẻ 1 khi Replay
+        setTargetRect({
+          top: Math.max(0, sRect.top - PADDING),
+          left: Math.max(0, sRect.left - PADDING),
+          width: sRect.width + PADDING * 2,
+          height: sRect.height + PADDING * 2
+        })
+
         sourceCard.style.opacity = '0.35'
         setGhostFlight({
           top: sRect.top,
@@ -424,8 +441,8 @@ function GuidedTour({ open, onClose }) {
                 y={targetRect.top}
                 width={targetRect.width}
                 height={targetRect.height}
-                rx="14"
-                ry="14"
+                rx="8"
+                ry="8"
                 fill="black"
               />
             )}
@@ -436,8 +453,8 @@ function GuidedTour({ open, onClose }) {
                 y={ghostFlight.col0Rect.top - 4}
                 width={ghostFlight.col0Rect.width + 8}
                 height={ghostFlight.col0Rect.height + 8}
-                rx="14"
-                ry="14"
+                rx="8"
+                ry="8"
                 fill="black"
               />
             )}
@@ -447,8 +464,8 @@ function GuidedTour({ open, onClose }) {
                 y={ghostFlight.destTop - 4}
                 width={ghostFlight.width + 8}
                 height={ghostFlight.height + 8}
-                rx="14"
-                ry="14"
+                rx="8"
+                ry="8"
                 fill="black"
               />
             )}
@@ -473,12 +490,12 @@ function GuidedTour({ open, onClose }) {
             left: targetRect.left,
             width: targetRect.width,
             height: targetRect.height,
-            borderRadius: '14px',
+            borderRadius: '8px',
             border: '2px solid #2dd4bf',
-            boxShadow: '0 0 16px rgba(45, 212, 191, 0.6), inset 0 0 10px rgba(45, 212, 191, 0.2)',
+            boxShadow: '0 0 8px rgba(45, 212, 191, 0.6), inset 0 0 4px rgba(45, 212, 191, 0.2)',
             pointerEvents: 'none',
             zIndex: 99995,
-            transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+            transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         />
       )}
@@ -532,7 +549,18 @@ function GuidedTour({ open, onClose }) {
               window.dispatchEvent(new CustomEvent('AUTO_MOVE_DEMO_CARD_TO_DOING'))
               setTimeout(() => {
                 setGhostFlight(null)
-                updatePosition()
+                // Cập nhật targetRect chính xác cho thẻ đã chuyển sang cột Doing, không nhảy sang Thẻ 2
+                const allCols = document.querySelectorAll('[data-tour="board-column"]')
+                const cardInDoing = allCols[1]?.querySelector('[data-tour="board-card"]')
+                if (cardInDoing) {
+                  const r = cardInDoing.getBoundingClientRect()
+                  setTargetRect({
+                    top: Math.max(0, r.top - PADDING),
+                    left: Math.max(0, r.left - PADDING),
+                    width: r.width + PADDING * 2,
+                    height: r.height + PADDING * 2
+                  })
+                }
               }, 350)
             }
           }}
