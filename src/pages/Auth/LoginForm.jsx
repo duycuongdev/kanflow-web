@@ -5,7 +5,7 @@ import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import MuiCard from '@mui/material/Card'
-import TrelloIcon from '~/components/Icons/TrelloIcon'
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 import CardActions from '@mui/material/CardActions'
 import TextField from '@mui/material/TextField'
 import IconButton from '@mui/material/IconButton'
@@ -98,7 +98,7 @@ function LoginForm() {
               color: 'white',
               boxShadow: '0 4px 12px rgba(12, 102, 228, 0.3)'
             }}>
-              <TrelloIcon fontSize="medium" sx={{ color: 'white' }} />
+              <KanflowIcon fontSize="medium" sx={{ color: 'white' }} />
             </Box>
             <Typography component="h1" variant="h5" fontWeight={800} sx={{ letterSpacing: '-0.5px' }}>
               {t('auth.loginTitle')}

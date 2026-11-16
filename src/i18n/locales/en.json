@@ -93,9 +93,9 @@
     "footerBoards": "Boards",
     "footerPrivacy": "Privacy Policy",
     "footerTerms": "Terms of Service",
-    "footerCopyright": "© 2026 Trello — All rights reserved.",
+    "footerCopyright": "© 2026 Kanflow — All rights reserved.",
     "registerHeader": "Sign up for your account",
-    "registerHeaderSub": "Get started with your free Trello workspace."
+    "registerHeaderSub": "Get started with your free Kanflow workspace."
   },
   "forgotPassword": {
     "title": "Forgot your password?",
@@ -169,7 +169,7 @@
     "importBoardTitle": "Create Board from JSON",
     "importBoardSubtitle": "Upload a previously exported JSON file to create a new workspace board.",
     "importDropzoneTitle": "Drag and drop .json file here, or click to browse",
-    "importDropzoneHint": "Supports .json format exported from Trello",
+    "importDropzoneHint": "Supports .json format exported from Kanflow or Trello",
     "importInvalidFileType": "Only .json files are accepted",
     "importMissingTitleError": "Invalid JSON file or missing board title.",
     "importJsonParseError": "Could not parse JSON file. Please check the file.",
@@ -495,12 +495,12 @@
     "architecture": "Architecture"
   },
   "home": {
-    "getTrelloFree": "Get Trello for free",
+    "getTrelloFree": "Get Kanflow for free",
     "goToBoards": "Go to boards",
     "boardsShort": "Boards",
     "logIn": "Log in",
     "badge": "⚡ Productivity reimagined for modern teams",
-    "heroTitle": "Trello brings all your tasks, teammates, and tools together",
+    "heroTitle": "Kanflow brings all your tasks, teammates, and tools together",
     "heroSubtitle": "Keep everything in the same place — even if your team isn’t. Organize work, streamline workflows, and collaborate seamlessly with intuitive Kanban boards.",
     "exploreFeatures": "Explore features",
     "mockupTitle": "Product Roadmap Q4",
@@ -555,7 +555,7 @@
     "cardTitle": "Task Cards & Details",
     "cardDesc": "Each card is a specific task. Click any card to open full details: Markdown description, checklists, color labels, attachments, and due dates.",
     "dndTitle": "Smooth Drag & Drop",
-    "dndDesc": "The core of Trello: Drag and drop cards between columns to update status instantly. The sample card has been moved directly to Doing!",
+    "dndDesc": "The core of Kanflow: Drag and drop cards between columns to update status instantly. The sample card has been moved directly to Doing!",
     "replayAnimation": "Replay animation",
     "emptyBoardAddColumnTitle": "Create Your First Column",
     "emptyBoardAddColumnDesc": "Your board is currently empty. Click here and name your first column (e.g., To do, In Progress, Done) to kickstart your workflow.",

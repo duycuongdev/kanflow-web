@@ -1,4 +1,4 @@
-# 📋 Trello - Full-Stack Real-Time Task & Project Management Platform
+# 📋 Kanflow - Full-Stack Real-Time Task & Project Management Platform
 
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -9,7 +9,7 @@
 [![Brevo](https://img.shields.io/badge/Brevo-Transactional%20Email-0092FF?logo=sendinblue&logoColor=white)](https://www.brevo.com/)
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel&logoColor=white)](https://trello-web-tawny.vercel.app)
 
-> A modern, full-stack **Kanban-style** project and task management application inspired by Trello. Built on the **MERN** stack, featuring a polished user interface, deep URL linking, and instant **Real-Time Collaboration**.
+> A modern, full-stack **Kanban-style** project and task management application (Kanflow). Built on the **MERN** stack, featuring a polished user interface, deep URL linking, and instant **Real-Time Collaboration**.
 
 ---
 

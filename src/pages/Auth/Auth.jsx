@@ -11,7 +11,7 @@ import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '~/redux/user/userSlice'
-import TrelloIcon from '~/components/Icons/TrelloIcon'
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 import ModeSelect from '~/components/ModeSelect/ModeSelect'
 import LanguageSelect from '~/components/LanguageSelect/LanguageSelect'
 import { useTranslation } from 'react-i18next'
@@ -160,10 +160,10 @@ function Auth() {
             justifyContent: 'center',
             border: '1px solid rgba(255, 255, 255, 0.3)'
           }}>
-            <TrelloIcon fontSize="small" sx={{ color: 'white' }} />
+            <KanflowIcon fontSize="small" sx={{ color: 'white' }} />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
-            Trello
+            Kanflow
           </Typography>
         </Link>
 

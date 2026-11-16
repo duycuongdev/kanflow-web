@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import AppsIcon from '@mui/icons-material/Apps'
-import TrelloIcon from '~/components/Icons/TrelloIcon'
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
 import Profile from './Menus/Profile'
@@ -115,9 +115,9 @@ function AppBar() {
             </Link>
           </Box>
           <Link to='/boards' style={{ textDecoration: 'none' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <TrelloIcon fontSize='small' sx={{ color: 'white' }} />
-              <Typography variant='span' sx={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white' }}>Trello</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <KanflowIcon fontSize='small' sx={{ color: 'white' }} />
+              <Typography variant='span' sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', letterSpacing: '0.5px' }}>Kanflow</Typography>
             </Box>
           </Link>
         </Box>

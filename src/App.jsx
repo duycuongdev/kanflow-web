@@ -5,7 +5,7 @@ import Box from '@mui/material/Box'
 import CircularProgress from '@mui/material/CircularProgress'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, fetchCurrentUserAPI } from '~/redux/user/userSlice'
-import TrelloIcon from '~/components/Icons/TrelloIcon'
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 
 // Chỉ tải mã của route đang truy cập.
 const Board = lazy(() => import('~/pages/Boards/_id'))
@@ -39,7 +39,7 @@ const PageLoading = () => (
       justifyContent: 'center',
       boxShadow: '0 8px 24px rgba(0, 82, 204, 0.35)'
     }}>
-      <TrelloIcon sx={{ color: 'white', fontSize: 30 }} />
+      <KanflowIcon sx={{ color: 'white', fontSize: 30 }} />
     </Box>
     <CircularProgress size={22} thickness={5} sx={{ color: '#0052cc' }} />
   </Box>

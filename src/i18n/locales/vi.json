@@ -93,9 +93,9 @@
     "footerBoards": "Bảng",
     "footerPrivacy": "Chính sách bảo mật",
     "footerTerms": "Điều khoản dịch vụ",
-    "footerCopyright": "© 2026 Trello — Mọi quyền được bảo lưu.",
+    "footerCopyright": "© 2026 Kanflow — Mọi quyền được bảo lưu.",
     "registerHeader": "Tạo tài khoản của bạn",
-    "registerHeaderSub": "Bắt đầu với không gian làm việc Trello miễn phí."
+    "registerHeaderSub": "Bắt đầu với không gian làm việc Kanflow miễn phí."
   },
   "forgotPassword": {
     "title": "Quên mật khẩu?",
@@ -169,7 +169,7 @@
     "importBoardTitle": "Tạo bảng mới từ file JSON",
     "importBoardSubtitle": "Tải lên file JSON đã xuất trước đó để khởi tạo bảng làm việc mới.",
     "importDropzoneTitle": "Kéo thả file .json vào đây hoặc bấm để chọn",
-    "importDropzoneHint": "Hỗ trợ định dạng .json xuất từ Trello",
+    "importDropzoneHint": "Hỗ trợ định dạng .json xuất từ Kanflow hoặc Trello",
     "importInvalidFileType": "Chỉ chấp nhận file có định dạng .json",
     "importMissingTitleError": "File JSON không hợp lệ hoặc thiếu thông tin tiêu đề bảng.",
     "importJsonParseError": "Không thể đọc nội dung file JSON. Vui lòng kiểm tra lại file.",
@@ -495,12 +495,12 @@
     "architecture": "Kiến trúc"
   },
   "home": {
-    "getTrelloFree": "Dùng Trello miễn phí",
+    "getTrelloFree": "Dùng Kanflow miễn phí",
     "goToBoards": "Vào bảng",
     "boardsShort": "Bảng",
-    "logIn": "Đăng nhập",
+    "logIn": "Đang nhập",
     "badge": "⚡ Tái định nghĩa năng suất cho đội nhóm hiện đại",
-    "heroTitle": "Trello gom tất cả công việc, đồng đội và công cụ của bạn vào một nơi",
+    "heroTitle": "Kanflow gom tất cả công việc, đồng đội và quy trình vào một nơi",
     "heroSubtitle": "Giữ mọi thứ cùng một nơi — ngay cả khi đội nhóm của bạn chưa vậy. Tổ chức công việc, tinh gọn quy trình và cộng tác mượt mà với các bảng Kanban trực quan.",
     "exploreFeatures": "Khám phá tính năng",
     "mockupTitle": "Lộ trình sản phẩm Q4",
@@ -555,7 +555,7 @@
     "cardTitle": "Thẻ nhiệm vụ & Chi tiết",
     "cardDesc": "Mỗi thẻ là một đầu việc cụ thể. Nhấp vào thẻ để mở cửa sổ chi tiết: thêm mô tả Markdown, checklist công việc, nhãn màu và hạn chót.",
     "dndTitle": "Kéo thả linh hoạt (Drag & Drop)",
-    "dndDesc": "Cốt lõi của Trello: Kéo và thả các thẻ giữa các cột để cập nhật tiến độ công việc tức thì. Thẻ mẫu đã được chuyển trực tiếp sang cột Doing!",
+    "dndDesc": "Cốt lõi của Kanflow: Kéo và thả các thẻ giữa các cột để cập nhật tiến độ công việc tức thì. Thẻ mẫu đã được chuyển trực tiếp sang cột Doing!",
     "replayAnimation": "Xem lại kéo thả",
     "emptyBoardAddColumnTitle": "Tạo cột đầu tiên",
     "emptyBoardAddColumnDesc": "Bảng của bạn hiện đang trống. Hãy nhấp vào đây và đặt tên cho cột đầu tiên (ví dụ: Việc cần làm, Đang làm, Hoàn thành) để bắt đầu quy trình làm việc.",

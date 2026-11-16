@@ -12,7 +12,7 @@ import CardContent from '@mui/material/CardContent'
 import Avatar from '@mui/material/Avatar'
 import AvatarGroup from '@mui/material/AvatarGroup'
 import Divider from '@mui/material/Divider'
-import TrelloIcon from '~/components/Icons/TrelloIcon'
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 import ModeSelect from '~/components/ModeSelect/ModeSelect'
 import LanguageSelect from '~/components/LanguageSelect/LanguageSelect'
 import { useTranslation } from 'react-i18next'
@@ -62,7 +62,7 @@ function Home() {
       }}>
         <Container maxWidth="lg" sx={{ pt: 'calc(12px + env(safe-area-inset-top, 0px))', pb: 1.5, px: { xs: 1.5, sm: 3 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Logo */}
-          <Link to="/" aria-label="Trello" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <Link to="/" aria-label="Kanflow" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <Box sx={{
               width: 34,
               height: 34,
@@ -73,11 +73,11 @@ function Home() {
               justifyContent: 'center',
               color: 'white'
             }}>
-              <TrelloIcon fontSize="small" sx={{ color: 'white' }} />
+              <KanflowIcon fontSize="small" sx={{ color: 'white' }} />
             </Box>
             {/* Mobile hẹp: ẩn chữ để đủ chỗ cho Mode + Language + Log in + Sign up, chỉ giữ icon */}
             <Typography component="span" variant="h5" sx={{ display: { xs: 'none', sm: 'inline' }, fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
-              Trello
+              Kanflow
             </Typography>
           </Link>
 
@@ -683,9 +683,9 @@ function Home() {
         <Container maxWidth="lg">
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <TrelloIcon fontSize="small" sx={{ color: 'primary.light' }} />
+              <KanflowIcon fontSize="small" sx={{ color: 'primary.light' }} />
               <Typography variant="subtitle1" fontWeight={700} color="white">
-                Trello
+                Kanflow
               </Typography>
               <Typography variant="body2" sx={{ ml: 1 }}>
                 {t('auth.footerCopyright')}
