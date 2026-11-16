@@ -6,8 +6,12 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import Portal from '@mui/material/Portal'
+import IconButton from '@mui/material/IconButton'
+import CloseIcon from '@mui/icons-material/Close'
 import { motion, useDragControls } from 'framer-motion'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
+import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 const PADDING = 6
 
@@ -25,6 +29,233 @@ const findVisibleElement = (selector) => {
     }
   }
   return null
+}
+
+/**
+ * DndAnimationPreview: Hoạt họa mô phỏng kéo thả thẻ tự động siêu mượt
+ * (Auto-playing Drag & Drop Animation) chạy vòng lặp, minh họa thẻ từ "To do" lướt sang "Doing".
+ */
+function DndAnimationPreview() {
+  const { t } = useTranslation()
+
+  return (
+    <Box
+      sx={{
+        width: '100%',
+        p: 1.5,
+        my: 1.5,
+        borderRadius: '12px',
+        bgcolor: 'rgba(0, 0, 0, 0.4)',
+        border: '1px solid rgba(45, 212, 191, 0.25)',
+        boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.35)',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Tiêu đề thanh mô phỏng */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+        <Typography
+          sx={{
+            color: '#2dd4bf',
+            fontSize: '0.74rem',
+            fontWeight: 700,
+            textTransform: 'uppercase',
+            letterSpacing: '0.6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.6
+          }}
+        >
+          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#2dd4bf' }} />
+          {t('guidedTour.dndPreviewTitle')}
+        </Typography>
+
+        {/* Thông báo thành công tự động hiện khi thẻ hạ cánh sang Doing */}
+        <motion.div
+          animate={{
+            opacity: [0, 0, 0, 1, 1, 0],
+            scale: [0.85, 0.85, 0.85, 1, 1, 0.85]
+          }}
+          transition={{
+            duration: 4.2,
+            repeat: Infinity,
+            times: [0, 0.55, 0.65, 0.72, 0.9, 0.98],
+            ease: 'easeInOut'
+          }}
+        >
+          <Box sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.4,
+            color: '#4ade80',
+            fontSize: '0.72rem',
+            fontWeight: 700
+          }}>
+            <CheckCircleIcon sx={{ fontSize: '13px' }} />
+            <span>{t('guidedTour.dndPreviewSuccess')}</span>
+          </Box>
+        </motion.div>
+      </Box>
+
+      {/* Sân khấu 2 cột Kanban thu nhỏ */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 1.5,
+          position: 'relative'
+        }}
+      >
+        {/* Cột 1: To do */}
+        <Box
+          sx={{
+            bgcolor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            p: 1,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            minHeight: '74px'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8 }}>
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#38bdf8' }} />
+            <Typography sx={{ color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 700 }}>
+              To do
+            </Typography>
+          </Box>
+
+          {/* Vùng slot chờ (placeholder có viền đứt đoạn) */}
+          <Box
+            sx={{
+              height: '38px',
+              borderRadius: '6px',
+              border: '1px dashed rgba(255, 255, 255, 0.15)',
+              bgcolor: 'rgba(255, 255, 255, 0.02)'
+            }}
+          />
+        </Box>
+
+        {/* Cột 2: Doing */}
+        <Box
+          sx={{
+            bgcolor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '8px',
+            p: 1,
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            minHeight: '74px',
+            position: 'relative'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8 }}>
+            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#fbbf24' }} />
+            <Typography sx={{ color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 700 }}>
+              Doing
+            </Typography>
+          </Box>
+
+          {/* Vùng thả mục tiêu (target dropzone) */}
+          <Box
+            sx={{
+              height: '38px',
+              borderRadius: '6px',
+              border: '1px dashed rgba(45, 212, 191, 0.35)',
+              bgcolor: 'rgba(45, 212, 191, 0.05)'
+            }}
+          />
+        </Box>
+
+        {/* Thẻ nhiệm vụ chuyển động mượt mà (Animated Flying Card) */}
+        <motion.div
+          animate={{
+            x: ['0%', '0%', '110%', '110%', '0%'],
+            y: [0, -6, -6, 0, 0],
+            rotate: [0, 4, 3, 0, 0],
+            scale: [1, 1.05, 1.05, 1, 1]
+          }}
+          transition={{
+            duration: 4.2,
+            repeat: Infinity,
+            times: [0, 0.22, 0.65, 0.75, 1],
+            ease: 'easeInOut'
+          }}
+          style={{
+            position: 'absolute',
+            top: '32px',
+            left: '8px',
+            width: 'calc(50% - 14px)',
+            height: '38px',
+            zIndex: 10
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              bgcolor: '#1e293b',
+              border: '1px solid rgba(45, 212, 191, 0.6)',
+              borderRadius: '6px',
+              p: '6px 8px',
+              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.45)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 0.3
+            }}
+          >
+            {/* Nhãn màu mini */}
+            <Box sx={{ width: 22, height: 4, borderRadius: '2px', bgcolor: '#0052cc' }} />
+            {/* Tên thẻ */}
+            <Typography
+              sx={{
+                color: '#ffffff',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}
+            >
+              {t('guidedTour.dndPreviewCardTitle')}
+            </Typography>
+          </Box>
+        </motion.div>
+
+        {/* Bàn tay / Con trỏ ảo lướt theo thẻ */}
+        <motion.div
+          animate={{
+            x: ['0%', '0%', '110%', '110%', '0%'],
+            y: [0, -6, -6, 0, 0],
+            opacity: [0, 1, 1, 0, 0],
+            scale: [0.9, 1, 1, 0.9, 0.9]
+          }}
+          transition={{
+            duration: 4.2,
+            repeat: Infinity,
+            times: [0, 0.2, 0.65, 0.75, 1],
+            ease: 'easeInOut'
+          }}
+          style={{
+            position: 'absolute',
+            top: '46px',
+            left: 'calc(25% - 8px)',
+            zIndex: 20,
+            pointerEvents: 'none'
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#2dd4bf',
+              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))'
+            }}
+          >
+            <PanToolAltIcon sx={{ fontSize: '20px' }} />
+          </Box>
+        </motion.div>
+      </Box>
+    </Box>
+  )
 }
 
 function GuidedTour({ open, onClose }) {
@@ -58,6 +289,7 @@ function GuidedTour({ open, onClose }) {
         {
           target: '[data-tour="board-card"]',
           fallbackTarget: '[data-tour="board-column"]',
+          isDndStep: true,
           title: t('guidedTour.dndTitle'),
           description: t('guidedTour.dndDesc'),
           preferredPlacement: 'bottom'
@@ -351,25 +583,39 @@ function GuidedTour({ open, onClose }) {
               {t('guidedTour.stepCount', { current: activeStep + 1, total: totalSteps })}
             </Typography>
 
-            {/* Pill kéo thả trực quan */}
-            <Box
-              sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 0.5,
-                px: 1,
-                py: 0.3,
-                borderRadius: '12px',
-                bgcolor: 'rgba(45, 212, 191, 0.12)',
-                color: '#2dd4bf',
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                transition: 'background-color 0.2s',
-                '&:hover': { bgcolor: 'rgba(45, 212, 191, 0.22)' }
-              }}
-            >
-              <DragIndicatorIcon sx={{ fontSize: '15px' }} />
-              <span>{t('guidedTour.dragToMove')}</span>
+            {/* Cụm công cụ header: Pill kéo thả & nút đóng */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  px: 1,
+                  py: 0.3,
+                  borderRadius: '12px',
+                  bgcolor: 'rgba(45, 212, 191, 0.12)',
+                  color: '#2dd4bf',
+                  fontSize: '0.72rem',
+                  fontWeight: 600,
+                  transition: 'background-color 0.2s',
+                  '&:hover': { bgcolor: 'rgba(45, 212, 191, 0.22)' }
+                }}
+              >
+                <DragIndicatorIcon sx={{ fontSize: '15px' }} />
+                <span>{t('guidedTour.dragToMove')}</span>
+              </Box>
+
+              <IconButton
+                size="small"
+                onClick={handleClose}
+                sx={{
+                  color: '#94a3b8',
+                  p: '2px',
+                  '&:hover': { color: '#ffffff', bgcolor: 'rgba(255,255,255,0.1)' }
+                }}
+              >
+                <CloseIcon sx={{ fontSize: '16px' }} />
+              </IconButton>
             </Box>
           </Box>
 
@@ -385,6 +631,9 @@ function GuidedTour({ open, onClose }) {
         >
           {currentStepData.title}
         </Typography>
+
+        {/* Khung hoạt họa mô phỏng kéo thả tự động ở bước DnD */}
+        {currentStepData.isDndStep && <DndAnimationPreview />}
 
         {/* Nội dung mô tả chi tiết */}
         <Typography
