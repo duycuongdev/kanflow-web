@@ -444,8 +444,44 @@ function Board() {
       moveCardToDifferentColumn(targetCard._id, col0._id, col1._id, nextColumns)
     }
 
+    const handleAutoRevertCard = () => {
+      if (!board?.columns || board.columns.length < 2) return
+
+      const col0 = board.columns[0]
+      const col1 = board.columns[1]
+
+      // Tìm thẻ mẫu ở col1 (thẻ có tiêu đề chứa "Kéo tôi sang cột Doing" hoặc thẻ hợp lệ đầu tiên ở col1)
+      const targetCard = col1?.cards?.find(c => !c.FE_PlaceholderCard && (c.title?.includes('Doing') || true))
+      if (!targetCard) return
+
+      const nextColumns = cloneDeep(board.columns)
+      const targetCol0 = nextColumns.find(c => c._id === col0._id)
+      const targetCol1 = nextColumns.find(c => c._id === col1._id)
+      if (!targetCol0 || !targetCol1) return
+
+      // Xóa thẻ khỏi col1
+      targetCol1.cards = targetCol1.cards.filter(c => c._id !== targetCard._id)
+      if (targetCol1.cards.length === 0) {
+        targetCol1.cards = [generatePlaceholderCard(targetCol1)]
+      }
+      targetCol1.cardOrderIds = targetCol1.cards.map(c => c._id)
+
+      // Đưa thẻ trở lại đầu col0 (loại bỏ placeholder nếu có)
+      targetCol0.cards = targetCol0.cards.filter(c => !c.FE_PlaceholderCard)
+      const updatedCard = { ...targetCard, columnId: col0._id }
+      targetCol0.cards.unshift(updatedCard)
+      targetCol0.cardOrderIds = targetCol0.cards.map(c => c._id)
+
+      // Di chuyển thẻ thật về To do và cập nhật cơ sở dữ liệu
+      moveCardToDifferentColumn(targetCard._id, col1._id, col0._id, nextColumns)
+    }
+
     window.addEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
-    return () => window.removeEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
+    window.addEventListener('AUTO_REVERT_DEMO_CARD_TO_TODO', handleAutoRevertCard)
+    return () => {
+      window.removeEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
+      window.removeEventListener('AUTO_REVERT_DEMO_CARD_TO_TODO', handleAutoRevertCard)
+    }
   }, [board, moveCardToDifferentColumn])
 
   if (boardLoading || (!board && !boardError)) {

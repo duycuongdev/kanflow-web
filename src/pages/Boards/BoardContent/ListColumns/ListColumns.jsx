@@ -119,6 +119,7 @@ function ListColumns({ columns = [] }) {
                 {t('board.emptyColumnsHint')}
               </Typography>
               <Button
+                data-tour="empty-add-column-btn"
                 startIcon={<NoteAddIcon />}
                 onClick={toggleOpenNewColumnForm}
                 sx={{

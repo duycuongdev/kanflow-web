@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
@@ -11,6 +13,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import { motion, useDragControls } from 'framer-motion'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
+import ReplayIcon from '@mui/icons-material/Replay'
 
 const PADDING = 6
 
@@ -33,6 +36,7 @@ const findVisibleElement = (selector) => {
 function GuidedTour({ open, onClose }) {
   const { t } = useTranslation()
   const location = useLocation()
+  const currentBoard = useSelector(selectCurrentActiveBoard)
   const [activeStep, setActiveStep] = useState(0)
   const [targetRect, setTargetRect] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
@@ -44,8 +48,35 @@ function GuidedTour({ open, onClose }) {
     return /^\/boards\/[^/]+/.test(location.pathname)
   }, [location.pathname])
 
+  // Kiểm tra xem bảng hiện tại có phải là bảng trống (không có cột nào) hay không
+  const isBoardEmpty = useMemo(() => {
+    if (!isBoardDetail || !currentBoard) return false
+    const activeColumns = (currentBoard.columns || []).filter(c => !c._destroy)
+    return activeColumns.length === 0
+  }, [isBoardDetail, currentBoard])
+
   const steps = useMemo(() => {
     if (isBoardDetail) {
+      // Trường hợp Bảng trống (không mẫu): Kịch bản 2 bước ngắn gọn, thực tế, đúng trọng tâm
+      if (isBoardEmpty) {
+        return [
+          {
+            target: '[data-tour="empty-add-column-btn"]',
+            fallbackTarget: '[data-tour="add-column-btn"]',
+            title: t('guidedTour.emptyBoardAddColumnTitle'),
+            description: t('guidedTour.emptyBoardAddColumnDesc'),
+            preferredPlacement: 'bottom'
+          },
+          {
+            target: '[data-tour="board-tools"]',
+            title: t('guidedTour.boardToolsTitle'),
+            description: t('guidedTour.emptyBoardToolsDesc'),
+            preferredPlacement: 'bottom'
+          }
+        ]
+      }
+
+      // Trường hợp Bảng mẫu Kanban: Kịch bản 5 bước trực quan sinh động
       return [
         {
           target: '[data-tour="board-column"]',
@@ -312,8 +343,54 @@ function GuidedTour({ open, onClose }) {
 
   const handlePrev = () => {
     if (!isFirstStep) {
+      // Khi nhấn Back, nếu thẻ đã từng bị kéo sang Doing, tự động hoàn trả thẻ về To do để có thể xem lại kéo thả
+      if (hasMovedCardRef.current) {
+        hasMovedCardRef.current = false
+        setGhostFlight(null)
+        window.dispatchEvent(new CustomEvent('AUTO_REVERT_DEMO_CARD_TO_TODO'))
+      }
       setActiveStep(prev => prev - 1)
     }
+  }
+
+  const handleReplayDnd = () => {
+    setGhostFlight(null)
+    hasMovedCardRef.current = false
+    window.dispatchEvent(new CustomEvent('AUTO_REVERT_DEMO_CARD_TO_TODO'))
+    setTimeout(() => {
+      const sourceCard = findVisibleElement('[data-tour="board-card"]')
+      const allCols = document.querySelectorAll('[data-tour="board-column"]')
+      const destCol = allCols.length > 1 ? allCols[1] : null
+
+      if (sourceCard && destCol && allCols[0] && allCols[0].contains(sourceCard)) {
+        const sRect = sourceCard.getBoundingClientRect()
+        const dRect = destCol.getBoundingClientRect()
+        const col0Rect = allCols[0].getBoundingClientRect()
+        const destX = dRect.left + (sRect.left - col0Rect.left)
+        const destY = dRect.top + (sRect.top - col0Rect.top)
+        const deltaX = destX - sRect.left
+        const deltaY = destY - sRect.top
+        const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+        sourceCard.style.opacity = '0.35'
+        setGhostFlight({
+          top: sRect.top,
+          left: sRect.left,
+          width: sRect.width,
+          height: sRect.height,
+          destTop: destY,
+          destLeft: destX,
+          deltaX,
+          deltaY,
+          title: cardTitle,
+          col0Rect: {
+            top: col0Rect.top,
+            left: col0Rect.left,
+            width: col0Rect.width,
+            height: col0Rect.height
+          }
+        })
+      }
+    }, 260)
   }
 
   const handleClose = () => {
@@ -647,11 +724,40 @@ function GuidedTour({ open, onClose }) {
             color: '#cbd5e1',
             fontSize: '0.875rem',
             lineHeight: 1.55,
-            mb: 2.5
+            mb: currentStepData.isDndStep && hasMovedCardRef.current ? 1.5 : 2.5
           }}
         >
           {currentStepData.description}
         </Typography>
+
+        {/* Nút Xem lại kéo thả (Replay) hiển thị khi ở bước DnD và thẻ đã chuyển xong sang Doing */}
+        {currentStepData.isDndStep && hasMovedCardRef.current && (
+          <Box sx={{ mb: 2 }}>
+            <Button
+              size="small"
+              onClick={handleReplayDnd}
+              startIcon={<ReplayIcon sx={{ fontSize: '16px' }} />}
+              sx={{
+                color: '#2dd4bf',
+                bgcolor: 'rgba(45, 212, 191, 0.12)',
+                border: '1px solid rgba(45, 212, 191, 0.3)',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                textTransform: 'none',
+                px: 1.4,
+                py: 0.5,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  bgcolor: 'rgba(45, 212, 191, 0.22)',
+                  borderColor: '#2dd4bf'
+                }
+              }}
+            >
+              {t('guidedTour.replayAnimation')}
+            </Button>
+          </Box>
+        )}
 
         {/* Cụm nút hành động phía dưới: Bỏ qua - Quay lại - Tiếp */}
         <Box
