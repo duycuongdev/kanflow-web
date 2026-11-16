@@ -1,6 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-  <rect width="24" height="24" rx="4.5" fill="#0079BF"/>
-  <rect x="4" y="4.5" width="6.5" height="13" rx="1.5" fill="#FFFFFF"/>
-  <rect x="13.5" y="4.5" width="6.5" height="8" rx="1.5" fill="#FFFFFF"/>
+  <defs>
+    <linearGradient id="kanflow-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+  </defs>
+  <rect width="24" height="24" rx="6" fill="url(#kanflow-grad)" />
+  <rect x="3.8" y="4.5" width="4.4" height="15" rx="1.8" fill="#ffffff" />
+  <rect x="9.8" y="4.5" width="4.4" height="9.5" rx="1.8" fill="#ffffff" fill-opacity="0.9" />
+  <rect x="15.8" y="4.5" width="4.4" height="12.5" rx="1.8" fill="#ffffff" fill-opacity="0.8" />
 </svg>
-

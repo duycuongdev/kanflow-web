@@ -3,13 +3,16 @@ import SvgIcon from '@mui/material/SvgIcon'
 export default function KanflowIcon(props) {
   return (
     <SvgIcon {...props} viewBox="0 0 24 24">
-      {/* Outer squircle frame */}
-      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="currentColor" fillOpacity="0.16" />
-      <rect x="2" y="2" width="20" height="20" rx="5.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      {/* 3 Flowing Kanban Columns */}
-      <rect x="5.5" y="6" width="3.5" height="12" rx="1.5" fill="currentColor" />
-      <rect x="10.25" y="6" width="3.5" height="7.5" rx="1.5" fill="currentColor" />
-      <rect x="15" y="6" width="3.5" height="10" rx="1.5" fill="currentColor" />
+      <defs>
+        <linearGradient id="kanflow-icon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0284c7" />
+          <stop offset="100%" stopColor="#4f46e5" />
+        </linearGradient>
+      </defs>
+      <rect width="24" height="24" rx="6" fill="url(#kanflow-icon-grad)" />
+      <rect x="3.8" y="4.5" width="4.4" height="15" rx="1.8" fill="#ffffff" />
+      <rect x="9.8" y="4.5" width="4.4" height="9.5" rx="1.8" fill="#ffffff" fillOpacity="0.9" />
+      <rect x="15.8" y="4.5" width="4.4" height="12.5" rx="1.8" fill="#ffffff" fillOpacity="0.8" />
     </SvgIcon>
   )
 }
