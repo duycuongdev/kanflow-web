@@ -517,7 +517,7 @@
     "cardTitle": "Task Cards & Details",
     "cardDesc": "Each card is a specific task. Click any card to open full details: Markdown description, checklists, color labels, attachments, and due dates.",
     "dndTitle": "Smooth Drag & Drop",
-    "dndDesc": "The core of Trello: Drag and drop cards between columns to update status instantly with automatic real-time sync.",
+    "dndDesc": "The core of Trello: Drag and drop cards between columns to update status instantly. The sample card has been moved directly to Doing!",
     "dndPreviewTitle": "Live Drag & Drop Demo",
     "dndPreviewCardTitle": "Task Card",
     "dndPreviewSuccess": "Moved to Doing!",

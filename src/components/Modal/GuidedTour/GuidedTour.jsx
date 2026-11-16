@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
@@ -11,7 +11,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import { motion, useDragControls } from 'framer-motion'
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 
 const PADDING = 6
 
@@ -31,233 +30,6 @@ const findVisibleElement = (selector) => {
   return null
 }
 
-/**
- * DndAnimationPreview: Hoạt họa mô phỏng kéo thả thẻ tự động siêu mượt
- * (Auto-playing Drag & Drop Animation) chạy vòng lặp, minh họa thẻ từ "To do" lướt sang "Doing".
- */
-function DndAnimationPreview() {
-  const { t } = useTranslation()
-
-  return (
-    <Box
-      sx={{
-        width: '100%',
-        p: 1.5,
-        my: 1.5,
-        borderRadius: '12px',
-        bgcolor: 'rgba(0, 0, 0, 0.4)',
-        border: '1px solid rgba(45, 212, 191, 0.25)',
-        boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.35)',
-        overflow: 'hidden'
-      }}
-    >
-      {/* Tiêu đề thanh mô phỏng */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-        <Typography
-          sx={{
-            color: '#2dd4bf',
-            fontSize: '0.74rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.6px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.6
-          }}
-        >
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#2dd4bf' }} />
-          {t('guidedTour.dndPreviewTitle')}
-        </Typography>
-
-        {/* Thông báo thành công tự động hiện khi thẻ hạ cánh sang Doing */}
-        <motion.div
-          animate={{
-            opacity: [0, 0, 0, 1, 1, 0],
-            scale: [0.85, 0.85, 0.85, 1, 1, 0.85]
-          }}
-          transition={{
-            duration: 4.2,
-            repeat: Infinity,
-            times: [0, 0.55, 0.65, 0.72, 0.9, 0.98],
-            ease: 'easeInOut'
-          }}
-        >
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.4,
-            color: '#4ade80',
-            fontSize: '0.72rem',
-            fontWeight: 700
-          }}>
-            <CheckCircleIcon sx={{ fontSize: '13px' }} />
-            <span>{t('guidedTour.dndPreviewSuccess')}</span>
-          </Box>
-        </motion.div>
-      </Box>
-
-      {/* Sân khấu 2 cột Kanban thu nhỏ */}
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 1.5,
-          position: 'relative'
-        }}
-      >
-        {/* Cột 1: To do */}
-        <Box
-          sx={{
-            bgcolor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            p: 1,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            minHeight: '74px'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8 }}>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#38bdf8' }} />
-            <Typography sx={{ color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 700 }}>
-              To do
-            </Typography>
-          </Box>
-
-          {/* Vùng slot chờ (placeholder có viền đứt đoạn) */}
-          <Box
-            sx={{
-              height: '38px',
-              borderRadius: '6px',
-              border: '1px dashed rgba(255, 255, 255, 0.15)',
-              bgcolor: 'rgba(255, 255, 255, 0.02)'
-            }}
-          />
-        </Box>
-
-        {/* Cột 2: Doing */}
-        <Box
-          sx={{
-            bgcolor: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '8px',
-            p: 1,
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            minHeight: '74px',
-            position: 'relative'
-          }}
-        >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 0.8 }}>
-            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#fbbf24' }} />
-            <Typography sx={{ color: '#cbd5e1', fontSize: '0.72rem', fontWeight: 700 }}>
-              Doing
-            </Typography>
-          </Box>
-
-          {/* Vùng thả mục tiêu (target dropzone) */}
-          <Box
-            sx={{
-              height: '38px',
-              borderRadius: '6px',
-              border: '1px dashed rgba(45, 212, 191, 0.35)',
-              bgcolor: 'rgba(45, 212, 191, 0.05)'
-            }}
-          />
-        </Box>
-
-        {/* Thẻ nhiệm vụ chuyển động mượt mà (Animated Flying Card) */}
-        <motion.div
-          animate={{
-            x: ['0%', '0%', '110%', '110%', '0%'],
-            y: [0, -6, -6, 0, 0],
-            rotate: [0, 4, 3, 0, 0],
-            scale: [1, 1.05, 1.05, 1, 1]
-          }}
-          transition={{
-            duration: 4.2,
-            repeat: Infinity,
-            times: [0, 0.22, 0.65, 0.75, 1],
-            ease: 'easeInOut'
-          }}
-          style={{
-            position: 'absolute',
-            top: '32px',
-            left: '8px',
-            width: 'calc(50% - 14px)',
-            height: '38px',
-            zIndex: 10
-          }}
-        >
-          <Box
-            sx={{
-              width: '100%',
-              height: '100%',
-              bgcolor: '#1e293b',
-              border: '1px solid rgba(45, 212, 191, 0.6)',
-              borderRadius: '6px',
-              p: '6px 8px',
-              boxShadow: '0 6px 16px rgba(0, 0, 0, 0.45)',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              gap: 0.3
-            }}
-          >
-            {/* Nhãn màu mini */}
-            <Box sx={{ width: 22, height: 4, borderRadius: '2px', bgcolor: '#0052cc' }} />
-            {/* Tên thẻ */}
-            <Typography
-              sx={{
-                color: '#ffffff',
-                fontSize: '0.7rem',
-                fontWeight: 600,
-                lineHeight: 1.2,
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}
-            >
-              {t('guidedTour.dndPreviewCardTitle')}
-            </Typography>
-          </Box>
-        </motion.div>
-
-        {/* Bàn tay / Con trỏ ảo lướt theo thẻ */}
-        <motion.div
-          animate={{
-            x: ['0%', '0%', '110%', '110%', '0%'],
-            y: [0, -6, -6, 0, 0],
-            opacity: [0, 1, 1, 0, 0],
-            scale: [0.9, 1, 1, 0.9, 0.9]
-          }}
-          transition={{
-            duration: 4.2,
-            repeat: Infinity,
-            times: [0, 0.2, 0.65, 0.75, 1],
-            ease: 'easeInOut'
-          }}
-          style={{
-            position: 'absolute',
-            top: '46px',
-            left: 'calc(25% - 8px)',
-            zIndex: 20,
-            pointerEvents: 'none'
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#2dd4bf',
-              filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.6))'
-            }}
-          >
-            <PanToolAltIcon sx={{ fontSize: '20px' }} />
-          </Box>
-        </motion.div>
-      </Box>
-    </Box>
-  )
-}
-
 function GuidedTour({ open, onClose }) {
   const { t } = useTranslation()
   const location = useLocation()
@@ -266,6 +38,7 @@ function GuidedTour({ open, onClose }) {
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
   const dragControls = useDragControls()
   const [ghostFlight, setGhostFlight] = useState(null)
+  const hasMovedCardRef = useRef(false)
 
   const isBoardDetail = useMemo(() => {
     return /^\/boards\/[^/]+/.test(location.pathname)
@@ -428,12 +201,20 @@ function GuidedTour({ open, onClose }) {
       return
     }
 
+    if (hasMovedCardRef.current) {
+      return
+    }
+
+    let sourceCardEl = null
+
     const computeFlight = () => {
       const sourceCard = findVisibleElement('[data-tour="board-card"]')
       const allCols = document.querySelectorAll('[data-tour="board-column"]')
       const destCol = allCols.length > 1 ? allCols[1] : null
 
-      if (sourceCard && destCol) {
+      // Chỉ bay nếu thẻ đang nằm ở cột 0 và chưa từng di chuyển
+      if (sourceCard && destCol && allCols[0] && allCols[0].contains(sourceCard) && !hasMovedCardRef.current) {
+        sourceCardEl = sourceCard
         const sRect = sourceCard.getBoundingClientRect()
         const dRect = destCol.getBoundingClientRect()
         const col0Rect = allCols[0].getBoundingClientRect()
@@ -444,6 +225,9 @@ function GuidedTour({ open, onClose }) {
         const deltaY = destY - sRect.top
 
         const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+
+        // Làm mờ nhẹ thẻ gốc trong lúc hoạt ảnh kéo thả đang diễn ra
+        sourceCard.style.opacity = '0.35'
 
         setGhostFlight({
           top: sRect.top,
@@ -467,6 +251,9 @@ function GuidedTour({ open, onClose }) {
       clearTimeout(timer)
       window.removeEventListener('resize', computeFlight)
       window.removeEventListener('scroll', computeFlight, true)
+      if (sourceCardEl) {
+        sourceCardEl.style.opacity = ''
+      }
     }
   }, [open, activeStep, currentStepData])
 
@@ -475,6 +262,7 @@ function GuidedTour({ open, onClose }) {
       setActiveStep(0)
       setTargetRect(null)
       setGhostFlight(null)
+      hasMovedCardRef.current = false
     }
   }, [open])
 
@@ -616,17 +404,27 @@ function GuidedTour({ open, onClose }) {
       {/* Thẻ bay thực tế trên bảng: tự động di chuyển trực tiếp từ To do sang Doing */}
       {ghostFlight && (
         <motion.div
+          initial={{ x: 0, y: 0, scale: 1, rotate: 0 }}
           animate={{
-            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX, 0],
-            y: [0, -12, ghostFlight.deltaY - 12, ghostFlight.deltaY, 0],
-            rotate: [0, 4, 3, 0, 0],
-            scale: [1, 1.05, 1.05, 1, 1]
+            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX],
+            y: [0, -14, ghostFlight.deltaY - 14, ghostFlight.deltaY],
+            rotate: [0, 3, 2, 0],
+            scale: [1, 1.04, 1.04, 1]
           }}
           transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            times: [0, 0.22, 0.65, 0.76, 1],
+            duration: 1.4,
+            times: [0, 0.2, 0.85, 1],
             ease: 'easeInOut'
+          }}
+          onAnimationComplete={() => {
+            if (!hasMovedCardRef.current) {
+              hasMovedCardRef.current = true
+              window.dispatchEvent(new CustomEvent('AUTO_MOVE_DEMO_CARD_TO_DOING'))
+              setTimeout(() => {
+                setGhostFlight(null)
+                updatePosition()
+              }, 350)
+            }
           }}
           style={{
             position: 'fixed',
@@ -667,16 +465,16 @@ function GuidedTour({ open, onClose }) {
       {/* Bàn tay ảo lướt theo chiếc thẻ trên bảng */}
       {ghostFlight && (
         <motion.div
+          initial={{ x: 0, y: 0, scale: 0.9, opacity: 0 }}
           animate={{
-            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX, 0],
-            y: [0, -12, ghostFlight.deltaY - 12, ghostFlight.deltaY, 0],
-            opacity: [0, 1, 1, 0, 0],
-            scale: [0.9, 1, 1, 0.9, 0.9]
+            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX],
+            y: [0, -14, ghostFlight.deltaY - 14, ghostFlight.deltaY],
+            opacity: [0, 1, 1, 0],
+            scale: [0.9, 1, 1, 0.9]
           }}
           transition={{
-            duration: 4.5,
-            repeat: Infinity,
-            times: [0, 0.2, 0.65, 0.76, 1],
+            duration: 1.4,
+            times: [0, 0.2, 0.85, 1],
             ease: 'easeInOut'
           }}
           style={{
@@ -809,9 +607,6 @@ function GuidedTour({ open, onClose }) {
         >
           {currentStepData.title}
         </Typography>
-
-        {/* Khung hoạt họa mô phỏng kéo thả tự động ở bước DnD */}
-        {currentStepData.isDndStep && <DndAnimationPreview />}
 
         {/* Nội dung mô tả chi tiết */}
         <Typography

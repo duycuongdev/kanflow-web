@@ -31,7 +31,7 @@ import { selectCurrentUser } from '~/redux/user/userSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import cloneDeep from 'lodash/cloneDeep'
 import { useParams, useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
-import { slugify } from '~/utils/formatter'
+import { slugify, generatePlaceholderCard } from '~/utils/formatter'
 import { useTranslation } from 'react-i18next'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import ActiveCard from '~/components/Modal/ActiveCard/ActiveCard'
@@ -408,6 +408,45 @@ function Board() {
       dispatch(updateCurrentActiveBoard(board))
     })
   }
+
+  // Lắng nghe sự kiện di chuyển thẻ mẫu trực tiếp sang cột Doing trong Tour
+  useEffect(() => {
+    const handleAutoMoveCard = () => {
+      if (!board?.columns || board.columns.length < 2) return
+
+      const col0 = board.columns[0]
+      const col1 = board.columns[1]
+
+      // Tìm thẻ mẫu (thẻ đầu tiên ở col0)
+      const targetCard = col0?.cards?.find(c => !c.FE_PlaceholderCard)
+      if (!targetCard) return
+
+      // Tạo cấu trúc nextColumns đã di chuyển targetCard từ col0 sang col1
+      const nextColumns = cloneDeep(board.columns)
+      const targetCol0 = nextColumns.find(c => c._id === col0._id)
+      const targetCol1 = nextColumns.find(c => c._id === col1._id)
+      if (!targetCol0 || !targetCol1) return
+
+      // Xóa thẻ khỏi col0
+      targetCol0.cards = targetCol0.cards.filter(c => c._id !== targetCard._id)
+      if (targetCol0.cards.length === 0) {
+        targetCol0.cards = [generatePlaceholderCard(targetCol0)]
+      }
+      targetCol0.cardOrderIds = targetCol0.cards.map(c => c._id)
+
+      // Thêm thẻ vào col1 (loại bỏ placeholder nếu có)
+      targetCol1.cards = targetCol1.cards.filter(c => !c.FE_PlaceholderCard)
+      const updatedCard = { ...targetCard, columnId: col1._id }
+      targetCol1.cards.push(updatedCard)
+      targetCol1.cardOrderIds = targetCol1.cards.map(c => c._id)
+
+      // Di chuyển thẻ thật và cập nhật cơ sở dữ liệu
+      moveCardToDifferentColumn(targetCard._id, col0._id, col1._id, nextColumns)
+    }
+
+    window.addEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
+    return () => window.removeEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
+  }, [board, moveCardToDifferentColumn])
 
   if (boardLoading || (!board && !boardError)) {
     return <PageLoadingSpinner caption={t('board.loadingBoard')} />
