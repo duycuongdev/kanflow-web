@@ -54,8 +54,8 @@ function GuidedTour({ open, onClose }) {
           preferredPlacement: 'right'
         },
         {
-          target: '[data-tour="board-card"]',
-          fallbackTarget: '[data-tour="board-column"]',
+          target: '[data-tour="board-cards-list"]',
+          fallbackTarget: '[data-tour="board-card"]',
           title: t('guidedTour.cardTitle'),
           description: t('guidedTour.cardDesc'),
           preferredPlacement: 'right'
@@ -145,6 +145,21 @@ function GuidedTour({ open, onClose }) {
         let posTop = top + height + 16
         let posLeft = left
         const placement = currentStepData.preferredPlacement || 'bottom'
+
+        // Nếu ở bước kéo thả DnD: tính vị trí tooltip nằm an toàn DƯỚI TOÀN BỘ CỘT để không che khuất Thẻ 2
+        if (currentStepData.isDndStep) {
+          const colEl = element.closest('[data-tour="board-column"]') || document.querySelector('[data-tour="board-column"]')
+          if (colEl) {
+            const colRect = colEl.getBoundingClientRect()
+            posTop = colRect.bottom + 16
+            posLeft = Math.max(16, Math.min(colRect.left, vw - cardWidth - 16))
+            if (posTop + cardHeight > vh - 20) {
+              posTop = Math.max(20, vh - cardHeight - 20)
+            }
+            setTooltipPos({ top: posTop, left: posLeft })
+            return
+          }
+        }
 
         // Ưu tiên hiển thị bên phải nếu có đủ chỗ
         if (placement === 'right' && left + width + 16 + cardWidth <= vw - 16) {
@@ -238,7 +253,13 @@ function GuidedTour({ open, onClose }) {
           destLeft: destX,
           deltaX,
           deltaY,
-          title: cardTitle
+          title: cardTitle,
+          col0Rect: {
+            top: col0Rect.top,
+            left: col0Rect.left,
+            width: col0Rect.width,
+            height: col0Rect.height
+          }
         })
       }
     }
@@ -326,6 +347,18 @@ function GuidedTour({ open, onClose }) {
                 y={targetRect.top}
                 width={targetRect.width}
                 height={targetRect.height}
+                rx="14"
+                ry="14"
+                fill="black"
+              />
+            )}
+            {/* Khi ở bước kéo thả: mở sáng toàn bộ cột To do để người dùng thấy rõ cả Thẻ 1 và Thẻ 2 */}
+            {currentStepData?.isDndStep && ghostFlight?.col0Rect && (
+              <rect
+                x={ghostFlight.col0Rect.left - 4}
+                y={ghostFlight.col0Rect.top - 4}
+                width={ghostFlight.col0Rect.width + 8}
+                height={ghostFlight.col0Rect.height + 8}
                 rx="14"
                 ry="14"
                 fill="black"

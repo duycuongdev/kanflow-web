@@ -54,7 +54,9 @@ function ListCards({ cards }) {
 
   return (
     <SortableContext items={filteredCards?.map(c => c._id)} strategy={verticalListSortingStrategy}>
-      <Box sx={{
+      <Box
+        data-tour="board-cards-list"
+        sx={{
         p: '0 5px 5px 5px',
         m: '0 5px',
         display: 'flex',
