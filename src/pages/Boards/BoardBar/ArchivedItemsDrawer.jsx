@@ -156,17 +156,17 @@ function ArchivedItemsDrawer({ isOpen, onClose, boardId }) {
         currentUser
       })
       setArchivedColumns(prev => prev.filter(c => c._id !== column._id))
-      toast.success(t('board.listRestored'))
+      toast.success(t('board.columnRestored'))
     } catch (error) {
-      toast.error(error?.response?.data?.message || t('archived.restoreListFailed'))
+      toast.error(error?.response?.data?.message || t('archived.restoreColumnFailed'))
     }
   }
 
   // Xóa vĩnh viễn Column
   const handleDeleteColumnPermanently = (column) => {
     confirm({
-      title: t('archived.deleteListTitle'),
-      description: t('archived.deleteListDesc', { title: column.title }),
+      title: t('archived.deleteColumnTitle'),
+      description: t('archived.deleteColumnDesc', { title: column.title }),
       confirmationText: t('common.delete'),
       cancellationText: t('common.cancel')
     }).then(async () => {
@@ -179,9 +179,9 @@ function ArchivedItemsDrawer({ isOpen, onClose, boardId }) {
           currentUser
         })
         setArchivedColumns(prev => prev.filter(c => c._id !== column._id))
-        toast.success(t('board.listPermanentlyDeleted'))
+        toast.success(t('board.columnPermanentlyDeleted'))
       } catch (error) {
-        toast.error(error?.response?.data?.message || t('archived.deleteListFailed'))
+        toast.error(error?.response?.data?.message || t('archived.deleteColumnFailed'))
       }
     }).catch(() => {})
   }
@@ -252,7 +252,7 @@ function ArchivedItemsDrawer({ isOpen, onClose, boardId }) {
         }}
       >
         <Tab label={t('archived.cardsTab', { count: archivedCards.length })} />
-        <Tab label={t('archived.listsTab', { count: archivedColumns.length })} />
+        <Tab label={t('archived.columnsTab', { count: archivedColumns.length })} />
       </Tabs>
 
       {/* Body content */}
@@ -305,7 +305,7 @@ function ArchivedItemsDrawer({ isOpen, onClose, boardId }) {
 
                     {card.columnTitle && (
                       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                        {t('archived.inList')} <strong>{card.columnTitle}</strong>
+                        {t('archived.inColumn')} <strong>{card.columnTitle}</strong>
                       </Typography>
                     )}
 
@@ -336,12 +336,12 @@ function ArchivedItemsDrawer({ isOpen, onClose, boardId }) {
             </Box>
           )}
 
-          {/* Tab 1: Lists (Columns) */}
+          {/* Tab 1: Columns */}
           {tabIndex === 1 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {filteredColumns.length === 0 ? (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                  {t('archived.noArchivedLists')}
+                  {t('archived.noArchivedColumns')}
                 </Typography>
               ) : (
                 filteredColumns.map((col) => (
