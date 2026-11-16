@@ -244,6 +244,49 @@ function Boards() {
                 <FolderOffOutlinedIcon fontSize="small" />
                 {t('boards.sidebarClosedBoards')}
               </SidebarItem>
+
+              <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setOpenCreateBoardModal(true)}
+                sx={{
+                  justifyContent: 'flex-start',
+                  px: 2,
+                  py: 1.1,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  boxShadow: '0 2px 8px rgba(12, 102, 228, 0.25)'
+                }}
+              >
+                {t('boards.createBoard')}
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<FileUploadOutlinedIcon />}
+                onClick={() => setOpenImportBoardModal(true)}
+                sx={{
+                  justifyContent: 'flex-start',
+                  px: 2,
+                  py: 1.1,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  fontSize: '0.875rem',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0, 82, 204, 0.35)',
+                  color: (theme) => theme.palette.mode === 'dark' ? '#93c5fd' : '#0052cc',
+                  '&:hover': {
+                    borderColor: '#0052cc',
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0, 82, 204, 0.12)' : 'rgba(0, 82, 204, 0.05)'
+                  }
+                }}
+              >
+                {t('boards.importBoardBtn')}
+              </Button>
             </Stack>
           </Box>
 
@@ -277,6 +320,7 @@ function Boards() {
                     variant="outlined"
                     onClick={() => setOpenImportBoardModal(true)}
                     sx={{
+                      display: { xs: 'inline-flex', md: 'none' },
                       textTransform: 'none',
                       fontWeight: 600,
                       borderRadius: 2
@@ -290,6 +334,7 @@ function Boards() {
                     variant="contained"
                     onClick={() => setOpenCreateBoardModal(true)}
                     sx={{
+                      display: { xs: 'inline-flex', md: 'none' },
                       textTransform: 'none',
                       fontWeight: 600,
                       borderRadius: 2,
