@@ -19,6 +19,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import randomColor from 'randomcolor'
 import { CreateBoardModal } from './create'
+import ImportBoardModal from './ImportBoardModal'
+import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined'
 import { styled } from '@mui/material/styles'
 import { fetchBoardsAPI, reopenBoardAPI, deleteBoardDetailsAPI } from '~/apis/index.js'
 import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants.js'
@@ -87,6 +89,41 @@ function CreateBoardTile({ onClick }) {
   )
 }
 
+function ImportBoardTile({ onClick }) {
+  const { t } = useTranslation()
+  return (
+    <Card
+      onClick={onClick}
+      sx={{
+        cursor: 'pointer',
+        width: '100%',
+        height: '140px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1,
+        borderRadius: '10px',
+        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(14, 165, 233, 0.04)',
+        border: '2px dashed',
+        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(14, 165, 233, 0.4)',
+        boxShadow: 'none',
+        transition: 'all 0.2s ease',
+        '&:hover': {
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(14, 165, 233, 0.08)',
+          borderColor: '#0ea5e9',
+          transform: 'translateY(-3px)'
+        }
+      }}
+    >
+      <FileUploadOutlinedIcon sx={{ fontSize: 34, color: '#0ea5e9' }} />
+      <Typography sx={{ fontWeight: 600, color: '#0ea5e9', fontSize: '0.95rem' }}>
+        {t('boards.importBoardTile')}
+      </Typography>
+    </Card>
+  )
+}
+
 function Boards() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -98,6 +135,7 @@ function Boards() {
   const [loadError, setLoadError] = useState('')
   // Ô "+ Create new board" trong lưới board mở modal tạo board
   const [openCreateBoardModal, setOpenCreateBoardModal] = useState(false)
+  const [openImportBoardModal, setOpenImportBoardModal] = useState(false)
 
   // Xử lý phân trang từ url với MUI: https://mui.com/material-ui/react-pagination/#router-integration
   const location = useLocation()
@@ -216,24 +254,51 @@ function Boards() {
                 {isClosedView ? t('boards.closedBoards') : t('boards.yourBoards')}
               </Typography>
 
-              {/* Mobile/tablet (md trở xuống, sidebar đang ẩn): nút vào Bảng đã đóng.
-                  Khi đang ở view Đã đóng thì KHÔNG hiện nút quay lại - bấm tab Danh sách bảng ở bottom nav để ra */}
               {!isClosedView && (
-                <Button
-                  component={Link}
-                  to="/boards?closed=true"
-                  startIcon={<FolderOffOutlinedIcon />}
-                  size="small"
-                  variant="outlined"
-                  sx={{
-                    display: { xs: 'inline-flex', md: 'none' },
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderRadius: 2
-                  }}
-                >
-                  {t('boards.sidebarClosedBoards')}
-                </Button>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Button
+                    component={Link}
+                    to="/boards?closed=true"
+                    startIcon={<FolderOffOutlinedIcon />}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      display: { xs: 'inline-flex', md: 'none' },
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2
+                    }}
+                  >
+                    {t('boards.sidebarClosedBoards')}
+                  </Button>
+                  <Button
+                    startIcon={<FileUploadOutlinedIcon />}
+                    size="small"
+                    variant="outlined"
+                    onClick={() => setOpenImportBoardModal(true)}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2
+                    }}
+                  >
+                    {t('boards.importBoardBtn')}
+                  </Button>
+                  <Button
+                    startIcon={<AddIcon />}
+                    size="small"
+                    variant="contained"
+                    onClick={() => setOpenCreateBoardModal(true)}
+                    sx={{
+                      textTransform: 'none',
+                      fontWeight: 600,
+                      borderRadius: 2,
+                      boxShadow: '0 4px 14px rgba(12, 102, 228, 0.35)'
+                    }}
+                  >
+                    {t('boards.createBoard')}
+                  </Button>
+                </Stack>
               )}
             </Box>
 
@@ -243,7 +308,12 @@ function Boards() {
                 <Typography variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>
                   {isClosedView ? t('boards.noClosedBoards') : t('boards.noResults')}
                 </Typography>
-                {!isClosedView && <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />}
+                {!isClosedView && (
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2.5 }}>
+                    <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />
+                    <ImportBoardTile onClick={() => setOpenImportBoardModal(true)} />
+                  </Box>
+                )}
               </Box>
             )}
 
@@ -360,15 +430,25 @@ function Boards() {
                   </motion.div>
                 ))}
 
-                {/* Ô "+ Create new board" ngay trong lưới - người dùng Trello quen với cách này */}
+                {/* Ô "+ Create new board" & "Import from JSON" ngay trong lưới */}
                 {!isClosedView && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(boards.length * 0.04, 0.4), ease: 'easeOut' }}
-                  >
-                    <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />
-                  </motion.div>
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: Math.min(boards.length * 0.04, 0.4), ease: 'easeOut' }}
+                    >
+                      <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: Math.min((boards.length + 1) * 0.04, 0.44), ease: 'easeOut' }}
+                    >
+                      <ImportBoardTile onClick={() => setOpenImportBoardModal(true)} />
+                    </motion.div>
+                  </>
                 )}
               </Box>
             )}
@@ -378,6 +458,13 @@ function Boards() {
               open={openCreateBoardModal}
               onClose={() => setOpenCreateBoardModal(false)}
               afterCreateNewBoard={afterCreateNewBoard}
+            />
+
+            {/* Modal nhập board từ JSON */}
+            <ImportBoardModal
+              open={openImportBoardModal}
+              onClose={() => setOpenImportBoardModal(false)}
+              afterImportBoard={afterCreateNewBoard}
             />
 
             {/* Phân trang */}
