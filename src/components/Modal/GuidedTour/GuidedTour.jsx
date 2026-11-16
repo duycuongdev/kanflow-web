@@ -265,6 +265,7 @@ function GuidedTour({ open, onClose }) {
   const [targetRect, setTargetRect] = useState(null)
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
   const dragControls = useDragControls()
+  const [ghostFlight, setGhostFlight] = useState(null)
 
   const isBoardDetail = useMemo(() => {
     return /^\/boards\/[^/]+/.test(location.pathname)
@@ -420,10 +421,60 @@ function GuidedTour({ open, onClose }) {
     }
   }, [open, activeStep, updatePosition])
 
+  // Tự động tính toán đường bay của thẻ thật trên bảng từ cột To do sang Doing khi ở bước DnD
+  useEffect(() => {
+    if (!open || !currentStepData?.isDndStep) {
+      setGhostFlight(null)
+      return
+    }
+
+    const computeFlight = () => {
+      const sourceCard = findVisibleElement('[data-tour="board-card"]')
+      const allCols = document.querySelectorAll('[data-tour="board-column"]')
+      const destCol = allCols.length > 1 ? allCols[1] : null
+
+      if (sourceCard && destCol) {
+        const sRect = sourceCard.getBoundingClientRect()
+        const dRect = destCol.getBoundingClientRect()
+        const col0Rect = allCols[0].getBoundingClientRect()
+
+        const destX = dRect.left + (sRect.left - col0Rect.left)
+        const destY = dRect.top + (sRect.top - col0Rect.top)
+        const deltaX = destX - sRect.left
+        const deltaY = destY - sRect.top
+
+        const cardTitle = sourceCard.querySelector('p, span')?.innerText || '👋 Chào mừng bạn! Kéo tôi sang cột Doing nhé'
+
+        setGhostFlight({
+          top: sRect.top,
+          left: sRect.left,
+          width: sRect.width,
+          height: sRect.height,
+          destTop: destY,
+          destLeft: destX,
+          deltaX,
+          deltaY,
+          title: cardTitle
+        })
+      }
+    }
+
+    const timer = setTimeout(computeFlight, 150)
+    window.addEventListener('resize', computeFlight)
+    window.addEventListener('scroll', computeFlight, true)
+
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', computeFlight)
+      window.removeEventListener('scroll', computeFlight, true)
+    }
+  }, [open, activeStep, currentStepData])
+
   useEffect(() => {
     if (!open) {
       setActiveStep(0)
       setTargetRect(null)
+      setGhostFlight(null)
     }
   }, [open])
 
@@ -492,6 +543,17 @@ function GuidedTour({ open, onClose }) {
                 fill="black"
               />
             )}
+            {ghostFlight && (
+              <rect
+                x={ghostFlight.destLeft - 4}
+                y={ghostFlight.destTop - 4}
+                width={ghostFlight.width + 8}
+                height={ghostFlight.height + 8}
+                rx="14"
+                ry="14"
+                fill="black"
+              />
+            )}
           </mask>
         </defs>
         <rect
@@ -521,6 +583,122 @@ function GuidedTour({ open, onClose }) {
             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
         />
+      )}
+
+      {/* Vùng thả mục tiêu phát sáng trên cột Doing */}
+      {ghostFlight && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: ghostFlight.destTop,
+            left: ghostFlight.destLeft,
+            width: ghostFlight.width,
+            height: ghostFlight.height,
+            borderRadius: '12px',
+            border: '2px dashed #2dd4bf',
+            boxShadow: '0 0 16px rgba(45, 212, 191, 0.4), inset 0 0 12px rgba(45, 212, 191, 0.2)',
+            bgcolor: 'rgba(45, 212, 191, 0.08)',
+            pointerEvents: 'none',
+            zIndex: 99995,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#2dd4bf',
+            fontWeight: 700,
+            fontSize: '0.82rem',
+            letterSpacing: '0.5px'
+          }}
+        >
+          <span>🎯 Doing</span>
+        </Box>
+      )}
+
+      {/* Thẻ bay thực tế trên bảng: tự động di chuyển trực tiếp từ To do sang Doing */}
+      {ghostFlight && (
+        <motion.div
+          animate={{
+            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX, 0],
+            y: [0, -12, ghostFlight.deltaY - 12, ghostFlight.deltaY, 0],
+            rotate: [0, 4, 3, 0, 0],
+            scale: [1, 1.05, 1.05, 1, 1]
+          }}
+          transition={{
+            duration: 4.5,
+            repeat: Infinity,
+            times: [0, 0.22, 0.65, 0.76, 1],
+            ease: 'easeInOut'
+          }}
+          style={{
+            position: 'fixed',
+            top: ghostFlight.top,
+            left: ghostFlight.left,
+            width: ghostFlight.width,
+            height: ghostFlight.height,
+            pointerEvents: 'none',
+            zIndex: 99998
+          }}
+        >
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1e293b' : '#ffffff',
+              color: (theme) => theme.palette.mode === 'dark' ? '#f1f5f9' : '#172b4d',
+              border: '2px solid #2dd4bf',
+              borderRadius: '10px',
+              p: '10px 14px',
+              boxShadow: '0 12px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(45, 212, 191, 0.4)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              gap: 0.8
+            }}
+          >
+            {/* Nhãn màu của thẻ */}
+            <Box sx={{ width: 44, height: 6, borderRadius: '3px', bgcolor: '#0052cc' }} />
+            {/* Tiêu đề thẻ */}
+            <Typography sx={{ fontWeight: 600, fontSize: '0.88rem', lineHeight: 1.35 }}>
+              {ghostFlight.title}
+            </Typography>
+          </Box>
+        </motion.div>
+      )}
+
+      {/* Bàn tay ảo lướt theo chiếc thẻ trên bảng */}
+      {ghostFlight && (
+        <motion.div
+          animate={{
+            x: [0, 0, ghostFlight.deltaX, ghostFlight.deltaX, 0],
+            y: [0, -12, ghostFlight.deltaY - 12, ghostFlight.deltaY, 0],
+            opacity: [0, 1, 1, 0, 0],
+            scale: [0.9, 1, 1, 0.9, 0.9]
+          }}
+          transition={{
+            duration: 4.5,
+            repeat: Infinity,
+            times: [0, 0.2, 0.65, 0.76, 1],
+            ease: 'easeInOut'
+          }}
+          style={{
+            position: 'fixed',
+            top: ghostFlight.top + ghostFlight.height / 2,
+            left: ghostFlight.left + ghostFlight.width / 2,
+            pointerEvents: 'none',
+            zIndex: 99999
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#2dd4bf',
+              filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.8))'
+            }}
+          >
+            <PanToolAltIcon sx={{ fontSize: '32px' }} />
+          </Box>
+        </motion.div>
       )}
 
       {/* Khung gợi ý phong cách Dark Teal, hỗ trợ kéo thả (Draggable) linh hoạt */}
