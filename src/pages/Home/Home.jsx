@@ -31,6 +31,7 @@ import FilterListIcon from '@mui/icons-material/FilterList'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
 import SecurityIcon from '@mui/icons-material/Security'
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome'
 
 function Home() {
   const { t } = useTranslation()
@@ -469,6 +470,57 @@ function Home() {
               {t('home.capabilitiesSubtitle')}
             </Typography>
           </Box>
+
+          {/* Featured AI Assistant Highlight Banner */}
+          <Card sx={{
+            mb: 4,
+            borderRadius: 3.5,
+            background: (theme) => theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(14, 165, 233, 0.16) 0%, rgba(99, 102, 241, 0.22) 50%, rgba(124, 58, 237, 0.16) 100%)'
+              : 'linear-gradient(135deg, #eff6ff 0%, #eef2ff 50%, #f5f3ff 100%)',
+            border: '1px solid',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.35)' : 'rgba(99, 102, 241, 0.25)',
+            boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 10px 30px rgba(0, 0, 0, 0.35)' : '0 10px 30px rgba(79, 70, 229, 0.08)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            '&:hover': { transform: 'translateY(-3px)', boxShadow: 6 }
+          }}>
+            <CardContent sx={{ p: { xs: 3, md: 4 }, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, gap: 3 }}>
+              <Box sx={{
+                width: 60,
+                height: 60,
+                borderRadius: 2.5,
+                flexShrink: 0,
+                background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 55%, #7c3aed 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)'
+              }}>
+                <AutoAwesomeIcon sx={{ fontSize: 30 }} />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <Chip
+                  label={t('home.aiCardBadge')}
+                  size="small"
+                  sx={{
+                    mb: 1,
+                    fontWeight: 700,
+                    fontSize: '0.7rem',
+                    letterSpacing: 0.6,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.25)' : 'rgba(79, 70, 229, 0.12)',
+                    color: (theme) => theme.palette.mode === 'dark' ? '#c7d2fe' : '#4338ca'
+                  }}
+                />
+                <Typography component="h3" variant="h5" fontWeight={800} sx={{ mb: 1 }}>
+                  {t('home.aiCardTitle')}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" lineHeight={1.65}>
+                  {t('home.aiCardDesc')}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
 
           <Grid container spacing={3}>
             {/* Feature 1 */}

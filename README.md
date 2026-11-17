@@ -1,29 +1,29 @@
-# 📋 Kanflow - Full-Stack Real-Time Task & Project Management Platform
+# 📋 Kanflow - Real-Time Kanban & AI Workspace
 
 [![React](https://img.shields.io/badge/React-18.2.0-61DAFB?logo=react&logoColor=black)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Vite-5.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Material UI](https://img.shields.io/badge/MUI-v5-007FFF?logo=mui&logoColor=white)](https://mui.com/)
 [![Redux Toolkit](https://img.shields.io/badge/Redux%20Toolkit-2.0-764ABC?logo=redux&logoColor=white)](https://redux-toolkit.js.org/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.5%20Flash%20Lite-4285F4?logo=googlegemini&logoColor=white)](https://ai.google.dev/)
 [![Socket.IO](https://img.shields.io/badge/Socket.io-4.x-010101?logo=socket.io&logoColor=white)](https://socket.io/)
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-Media%20Storage-3448C5?logo=cloudinary&logoColor=white)](https://cloudinary.com/)
 [![Brevo](https://img.shields.io/badge/Brevo-Transactional%20Email-0092FF?logo=sendinblue&logoColor=white)](https://www.brevo.com/)
 [![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel&logoColor=white)](https://trello-web-tawny.vercel.app)
 
-> A modern, full-stack **Kanban-style** project and task management application (Kanflow). Built on the **MERN** stack, featuring a polished user interface, deep URL linking, and instant **Real-Time Collaboration**.
+> A modern, full-stack **Kanban & AI Workspace** (**Kanflow**). Built on the **MERN** stack, featuring an in-app **Kanflow Assistant (Google Gemini 2.5 Flash Lite)**, polished user interface, deep URL linking, and instant **Real-Time Collaboration**.
 
 ---
 
 ## 🌐 Live Demo
 
 - 🚀 **Web Application**: [https://trello-web-tawny.vercel.app](https://trello-web-tawny.vercel.app)
-- ⚡ **Try as Guest**: hit the **"Try as Guest"** button on the login page to explore a pre-seeded demo workspace instantly (no sign-up needed — normal registration requires Brevo email activation).
-- 🐢 Backend runs on Render free tier: **the first request may take ~30s to wake up**, then everything is snappy.
-- 📦 Prefer your own account? Register normally or sign in with your **Google Account** in one click!
+- 📦 Register with email verification (Brevo) or sign in instantly with your **Google Account** in one click!
 
 ---
 
 ## ✨ Key Features
 
+- 🤖 **Kanflow Assistant (Google Gemini 2.5 Flash Lite)**: Built-in AI Copilot with real-time Board Context Injection, bilingual chat (English / Vietnamese), Structured Action Execution (auto-scaffolding boards, columns, and task cards from natural language), and resilient multi-model fallback handling.
 - ⚡ **Intuitive Drag-and-Drop Kanban Board (`@dnd-kit`)**: Smooth drag-and-drop interactions for Cards and Columns with instant positional calculation and persistent database updates.
 - 🔄 **Real-Time Collaboration (Socket.IO)**: Synchronizes board updates (card movements, edits, member assignments, column changes) across all connected users in real time without refreshing.
 - 🔗 **Smart URL Slugs & Deep-Linking**:
