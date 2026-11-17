@@ -11,20 +11,18 @@ import Fab from '@mui/material/Fab'
 import InputBase from '@mui/material/InputBase'
 import Chip from '@mui/material/Chip'
 import Button from '@mui/material/Button'
-import Avatar from '@mui/material/Avatar'
 import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import MDEditor from '@uiw/react-md-editor'
 
-import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import SendRoundedIcon from '@mui/icons-material/SendRounded'
 import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded'
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
-import MinimizeRoundedIcon from '@mui/icons-material/MinimizeRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 
+import KanflowIcon from '~/components/Icons/KanflowIcon'
 import { selectCurrentActiveBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { chatWithAiCopilotAPI } from '~/apis'
@@ -174,17 +172,17 @@ export default function AiCopilotWidget() {
               bottom: { xs: 16, sm: 24 },
               right: { xs: 16, sm: 24 },
               zIndex: 1200,
-              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
+              background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
               color: 'white',
-              boxShadow: '0 8px 24px rgba(168, 85, 247, 0.45)',
+              boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               '&:hover': {
                 transform: 'scale(1.08)',
-                boxShadow: '0 12px 32px rgba(168, 85, 247, 0.65)'
+                boxShadow: '0 12px 32px rgba(79, 70, 229, 0.65)'
               }
             }}
           >
-            <AutoAwesomeRoundedIcon sx={{ fontSize: 26 }} />
+            <KanflowIcon sx={{ fontSize: 28 }} />
           </Fab>
         </Tooltip>
       )}
@@ -208,16 +206,17 @@ export default function AiCopilotWidget() {
             zIndex: 1300,
             border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
             boxShadow: (t) => t.palette.mode === 'dark'
-              ? '0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(168, 85, 247, 0.25)'
-              : '0 16px 40px rgba(15, 23, 42, 0.22), 0 0 20px rgba(168, 85, 247, 0.15)',
+              ? '0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(79, 70, 229, 0.25)'
+              : '0 16px 40px rgba(15, 23, 42, 0.22), 0 0 20px rgba(79, 70, 229, 0.15)',
             bgcolor: (t) => t.palette.mode === 'dark' ? '#0f172a' : '#ffffff'
           }}
         >
           {/* Header */}
           <Box
             sx={{
-              p: 1.75,
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%)',
+              px: 2,
+              py: 1.5,
+              background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
@@ -226,25 +225,10 @@ export default function AiCopilotWidget() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-              <Avatar
-                sx={{
-                  bgcolor: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  width: 38,
-                  height: 38,
-                  backdropFilter: 'blur(8px)'
-                }}
-              >
-                <AutoAwesomeRoundedIcon sx={{ fontSize: 20 }} />
-              </Avatar>
-              <Box>
-                <Typography sx={{ fontWeight: 700, fontSize: '0.975rem', lineHeight: 1.2, letterSpacing: '-0.01em' }}>
-                  {t('copilot.title')}
-                </Typography>
-                <Typography sx={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 500 }}>
-                  {t('copilot.subtitle')}
-                </Typography>
-              </Box>
+              <KanflowIcon sx={{ fontSize: 28, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }} />
+              <Typography sx={{ fontWeight: 700, fontSize: '1rem', lineHeight: 1.2, letterSpacing: '-0.01em' }}>
+                {t('copilot.title')}
+              </Typography>
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -255,16 +239,6 @@ export default function AiCopilotWidget() {
                   sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
                 >
                   <DeleteSweepRoundedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title={t('copilot.minimize')} arrow>
-                <IconButton
-                  size="small"
-                  onClick={() => setIsOpen(false)}
-                  sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
-                >
-                  <MinimizeRoundedIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
 

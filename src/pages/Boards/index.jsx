@@ -20,9 +20,7 @@ import { motion } from 'framer-motion'
 import randomColor from 'randomcolor'
 import { CreateBoardModal } from './create'
 import ImportBoardModal from './ImportBoardModal'
-import AiCreateBoardModal from './AiCreateBoardModal'
 import FileUploadOutlinedIcon from '@mui/icons-material/FileUploadOutlined'
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh'
 import { styled } from '@mui/material/styles'
 import { fetchBoardsAPI, reopenBoardAPI, deleteBoardDetailsAPI } from '~/apis/index.js'
 import { DEFAULT_PAGE, DEFAULT_ITEMS_PER_PAGE } from '~/utils/constants.js'
@@ -138,7 +136,6 @@ function Boards() {
   // Ô "+ Create new board" trong lưới board mở modal tạo board
   const [openCreateBoardModal, setOpenCreateBoardModal] = useState(false)
   const [openImportBoardModal, setOpenImportBoardModal] = useState(false)
-  const [openAiCreateBoardModal, setOpenAiCreateBoardModal] = useState(false)
 
   // Xử lý phân trang từ url với MUI: https://mui.com/material-ui/react-pagination/#router-integration
   const location = useLocation()
@@ -249,30 +246,6 @@ function Boards() {
               </SidebarItem>
 
               <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-
-              <Button
-                variant="contained"
-                startIcon={<AutoFixHighIcon />}
-                onClick={() => setOpenAiCreateBoardModal(true)}
-                sx={{
-                  justifyContent: 'flex-start',
-                  px: 2,
-                  py: 1.1,
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.875rem',
-                  background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
-                  color: '#ffffff',
-                  boxShadow: '0 4px 14px rgba(168, 85, 247, 0.35)',
-                  '&:hover': {
-                    background: 'linear-gradient(135deg, #4f46e5 0%, #9333ea 50%, #db2777 100%)',
-                    boxShadow: '0 6px 18px rgba(168, 85, 247, 0.5)'
-                  }
-                }}
-              >
-                {t('boards.aiCreateBoardBtn')}
-              </Button>
 
               <Button
                 variant="contained"
@@ -537,12 +510,6 @@ function Boards() {
               open={openImportBoardModal}
               onClose={() => setOpenImportBoardModal(false)}
               afterImportBoard={afterCreateNewBoard}
-            />
-
-            <AiCreateBoardModal
-              open={openAiCreateBoardModal}
-              onClose={() => setOpenAiCreateBoardModal(false)}
-              afterCreateBoard={afterCreateNewBoard}
             />
 
             {/* Phân trang */}
