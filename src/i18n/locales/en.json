@@ -631,5 +631,26 @@
     "restoreColumnFailed": "Failed to restore column",
     "deleteListFailed": "Failed to delete column",
     "deleteColumnFailed": "Failed to delete column"
+  },
+  "copilot": {
+    "title": "Kanflow Copilot",
+    "subtitle": "AI Agile & Kanban Project Assistant",
+    "tooltip": "Chat with Kanflow Copilot",
+    "greeting": "👋 **Hello! I'm Kanflow Copilot.**\nI can help you design new boards, add task cards, plan Agile workflows, or answer any project management questions.",
+    "inputPlaceholder": "Ask or prompt Copilot... (Enter to send)",
+    "activeBoardContext": "Board: {{title}}",
+    "clearHistory": "Clear history",
+    "minimize": "Minimize",
+    "close": "Close",
+    "thinking": "Copilot is thinking...",
+    "quickPrompt1": "🚀 Plan a 2-week Agile Sprint",
+    "quickPrompt2": "📝 Add urgent task to Doing",
+    "quickPrompt3": "📊 Summarize tasks in this board",
+    "quickPrompt4": "💡 Suggest a project board structure",
+    "boardCreatedSuccess": "🎉 Board created successfully!",
+    "openBoard": "Open board now",
+    "columnCreatedSuccess": "✅ Added column: {{title}}",
+    "cardCreatedSuccess": "✅ Created card: {{title}}",
+    "errorOccurred": "An error occurred while chatting with Copilot. Please try again!"
   }
 }

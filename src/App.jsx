@@ -6,6 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, fetchCurrentUserAPI } from '~/redux/user/userSlice'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
+import AiCopilotWidget from '~/components/AiCopilot/AiCopilotWidget'
 
 // Chỉ tải mã của route đang truy cập.
 const Board = lazy(() => import('~/pages/Boards/_id'))
@@ -145,6 +146,7 @@ function App() {
         {/* 404 route */}
         <Route path='*' element={<PageFade><NotFound /></PageFade>} />
       </Routes>
+      <AiCopilotWidget />
     </Suspense>
   )
 }

@@ -631,5 +631,26 @@
     "restoreColumnFailed": "Khôi phục cột thất bại",
     "deleteListFailed": "Xóa cột thất bại",
     "deleteColumnFailed": "Xóa cột thất bại"
+  },
+  "copilot": {
+    "title": "Kanflow Copilot",
+    "subtitle": "Trợ lý AI Quản lý Dự án & Kanban",
+    "tooltip": "Trò chuyện với Kanflow Copilot",
+    "greeting": "👋 **Xin chào! Tôi là Kanflow Copilot.**\nTôi có thể giúp bạn tạo bảng dự án mới, thêm thẻ công việc, sắp xếp kế hoạch Agile hoặc giải đáp bất kỳ thắc mắc nào.",
+    "inputPlaceholder": "Hỏi hoặc yêu cầu Copilot... (Enter để gửi)",
+    "activeBoardContext": "Bảng: {{title}}",
+    "clearHistory": "Xóa hội thoại",
+    "minimize": "Thu nhỏ",
+    "close": "Đóng",
+    "thinking": "Copilot đang suy nghĩ...",
+    "quickPrompt1": "🚀 Lập kế hoạch Sprint 2 tuần",
+    "quickPrompt2": "📝 Thêm thẻ việc quan trọng vào cột Doing",
+    "quickPrompt3": "📊 Tóm tắt các đầu việc trong bảng",
+    "quickPrompt4": "💡 Gợi ý cấu trúc bảng quản lý dự án",
+    "boardCreatedSuccess": "🎉 Đã tạo bảng thành công!",
+    "openBoard": "Mở bảng ngay",
+    "columnCreatedSuccess": "✅ Đã thêm cột: {{title}}",
+    "cardCreatedSuccess": "✅ Đã tạo thẻ: {{title}}",
+    "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Copilot. Vui lòng thử lại!"
   }
 }

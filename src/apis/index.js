@@ -95,6 +95,11 @@ export const aiGenerateBoardAPI = async (data) => {
   return response.data
 }
 
+export const chatWithAiCopilotAPI = async (chatData) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/ai/chat`, chatData)
+  return response.data
+}
+
 export const deleteCardAPI = async (cardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/cards/${cardId}`)
   return response.data
