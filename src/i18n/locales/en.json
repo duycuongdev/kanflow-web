@@ -641,6 +641,7 @@
     "clearHistory": "Clear history",
     "close": "Close",
     "thinking": "Kanflow Assistant is thinking...",
+    "quickSuggestions": "Quick suggestions:",
     "quickPrompt1": "🚀 Plan a 2-week Agile Sprint",
     "quickPrompt2": "📝 Add urgent task to Doing",
     "quickPrompt3": "📊 Summarize tasks in this board",

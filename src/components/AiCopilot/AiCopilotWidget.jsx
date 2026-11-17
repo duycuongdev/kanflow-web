@@ -51,6 +51,7 @@ export default function AiCopilotWidget() {
       setMessages([
         {
           id: 'welcome-msg',
+          isWelcome: true,
           role: 'assistant',
           content: t('copilot.greeting'),
           timestamp: Date.now()
@@ -58,6 +59,14 @@ export default function AiCopilotWidget() {
       ])
     }
   }, [t, messages.length])
+
+  // Tự động cập nhật nội dung tin nhắn chào hỏi khi đổi ngôn ngữ
+  useEffect(() => {
+    setMessages(prev => prev.map(m => (m.isWelcome || m.id?.startsWith('welcome'))
+      ? { ...m, content: t('copilot.greeting') }
+      : m
+    ))
+  }, [i18n.language, t])
 
   // Tự động cuộn xuống cuối mỗi khi có tin nhắn mới
   const scrollToBottom = useCallback(() => {
@@ -97,11 +106,13 @@ export default function AiCopilotWidget() {
         .slice(-6)
         .map(m => ({ role: m.role, content: m.content }))
 
+      const currentLang = i18n.language?.startsWith('vi') ? 'vi' : 'en'
+
       const response = await chatWithAiCopilotAPI({
         message: query,
         history: historyPayload,
         currentBoardId: currentBoard?._id || null,
-        language: i18n.language === 'en' ? 'en' : 'vi'
+        language: currentLang
       })
 
       const botMessageId = `bot-${Date.now()}`
@@ -146,6 +157,7 @@ export default function AiCopilotWidget() {
     setMessages([
       {
         id: `welcome-${Date.now()}`,
+        isWelcome: true,
         role: 'assistant',
         content: t('copilot.greeting'),
         timestamp: Date.now()
@@ -338,7 +350,7 @@ export default function AiCopilotWidget() {
                           '& ul, & ol': { pl: 2.5, my: 0.5 }
                         }}
                       >
-                        <MDEditor.Markdown source={msg.content} />
+                        <MDEditor.Markdown source={msg.isWelcome || msg.id?.startsWith('welcome') ? t('copilot.greeting') : msg.content} />
                       </Box>
                     )}
 
@@ -407,7 +419,7 @@ export default function AiCopilotWidget() {
             {messages.length <= 2 && !isLoading && (
               <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }}>
                 <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary', fontWeight: 600, px: 0.5 }}>
-                  {i18n.language === 'en' ? 'Quick suggestions:' : 'Gợi ý nhanh:'}
+                  {t('copilot.quickSuggestions')}
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
                   {quickPrompts.map((prompt, idx) => (
