@@ -354,7 +354,7 @@ function Boards() {
                   {isClosedView ? t('boards.noClosedBoards') : t('boards.noResults')}
                 </Typography>
                 {!isClosedView && (
-                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(5, 1fr)' }, gap: 2.5 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))', lg: 'repeat(5, minmax(0, 1fr))' }, gap: 2.5 }}>
                     <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />
                     <ImportBoardTile onClick={() => setOpenImportBoardModal(true)} />
                   </Box>
@@ -367,10 +367,10 @@ function Boards() {
               <Box data-tour="boards-grid" sx={{
                 display: 'grid',
                 gridTemplateColumns: {
-                  xs: 'repeat(1, 1fr)',
-                  sm: 'repeat(2, 1fr)',
-                  md: 'repeat(3, 1fr)',
-                  lg: 'repeat(5, 1fr)'
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(3, minmax(0, 1fr))',
+                  lg: 'repeat(5, minmax(0, 1fr))'
                 },
                 gap: 2.5
               }}>
@@ -380,6 +380,7 @@ function Boards() {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: Math.min(index * 0.04, 0.4), ease: 'easeOut' }}
+                    style={{ minWidth: 0, width: '100%' }}
                   >
                     <Card
                       onClick={() => navigate(`/boards/${b._id}/${b.slug || slugify(b.title)}`)}
@@ -474,27 +475,6 @@ function Boards() {
                     </Card>
                   </motion.div>
                 ))}
-
-                {/* Ô "+ Create new board" & "Import from JSON" ngay trong lưới */}
-                {!isClosedView && (
-                  <>
-                    <motion.div
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: Math.min(boards.length * 0.04, 0.4), ease: 'easeOut' }}
-                    >
-                      <CreateBoardTile onClick={() => setOpenCreateBoardModal(true)} />
-                    </motion.div>
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: Math.min((boards.length + 1) * 0.04, 0.44), ease: 'easeOut' }}
-                    >
-                      <ImportBoardTile onClick={() => setOpenImportBoardModal(true)} />
-                    </motion.div>
-                  </>
-                )}
               </Box>
             )}
 
