@@ -64,6 +64,17 @@ function LoginForm() {
     toast.error(t('auth.googleLoginFailed'))
   }
 
+  const handleQuickGuestLogin = () => {
+    toast.promise(dispatch(loginUserApi({
+      email: 'guest@duycuong.dev',
+      password: 'Kanflow@2026'
+    })), {
+      pending: t('auth.tryingAsGuest')
+    }).then((res) => {
+      if (!res.error) { navigate('/') }
+    })
+  }
+
   return (
     <form onSubmit={handleSubmit(submitLogIn)} style={{ width: '100%', maxWidth: 420 }}>
       <CardEntrance delay={0.1}>
@@ -224,6 +235,35 @@ function LoginForm() {
               text="signin_with"
               shape="rectangular"
             />
+          </Box>
+
+          {/* Guest / Demo Recruiter Login */}
+          <Box sx={{ px: 1.5, mb: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <Button
+              type="button"
+              variant="outlined"
+              fullWidth
+              onClick={handleQuickGuestLogin}
+              sx={{
+                py: 1,
+                borderRadius: 2,
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                textTransform: 'none',
+                borderColor: '#0c66e4',
+                color: '#0c66e4',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(12, 102, 228, 0.1)' : 'rgba(12, 102, 228, 0.05)',
+                '&:hover': {
+                  borderColor: '#0747a6',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(12, 102, 228, 0.2)' : 'rgba(12, 102, 228, 0.12)'
+                }
+              }}
+            >
+              🚀 {t('auth.tryAsGuest')}
+            </Button>
+            <Typography variant="caption" sx={{ color: 'text.secondary', textAlign: 'center', fontSize: '0.75rem' }}>
+              HR / Test: <strong>guest@duycuong.dev</strong> | <strong>Kanflow@2026</strong>
+            </Typography>
           </Box>
 
 
