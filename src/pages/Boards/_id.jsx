@@ -199,7 +199,7 @@ function Board() {
             nextBoard.columnOrderIds.push(payload._id)
             dispatch(updateCurrentActiveBoard(nextBoard))
             if (senderName) {
-              toast.info(t('board.addedColumn', { name: senderName, title: payload.title }), { autoClose: 2500, position: 'bottom-right' })
+              toast.info(t('board.addedColumn', { name: senderName, title: payload.title }), { autoClose: 2500 })
             }
           }
         }
@@ -241,7 +241,7 @@ function Board() {
             }
             dispatch(updateCurrentActiveBoard(nextBoard))
             if (senderName) {
-              toast.info(t('board.addedCard', { name: senderName, title: payload.title }), { autoClose: 2500, position: 'bottom-right' })
+              toast.info(t('board.addedCard', { name: senderName, title: payload.title }), { autoClose: 2500 })
             }
           }
         }
@@ -269,7 +269,7 @@ function Board() {
               next.delete('cardId')
               return next
             }, { replace: true })
-            toast.info(t('board.cardRemovedByTeammate'), { position: 'bottom-right' })
+            toast.info(t('board.cardRemovedByTeammate'))
           }
         }
         break
@@ -311,7 +311,7 @@ function Board() {
     const onRemovedFromBoard = (payload) => {
       if (!payload?.boardId || payload.boardId !== boardId) return
       leaveBoardRoom(boardId)
-      toast.info(t('board.youWereRemoved'), { position: 'bottom-right' })
+      toast.info(t('board.youWereRemoved'))
       navigate('/boards')
     }
     socketIoInstance.on('BE_BOARD_MEMBER_REMOVED', onRemovedFromBoard)

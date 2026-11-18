@@ -76,7 +76,7 @@ function Column({ column }) {
   const [newCardTitle, setNewCardTitle] = useState('')
   const addNewCard = async () => {
     if (!newCardTitle) {
-      toast.error(t('board.cardTitleRequired'), { position: 'top-right' })
+      toast.error(t('board.cardTitleRequired'))
       return
     }
 
@@ -142,7 +142,7 @@ function Column({ column }) {
 
       // gọi API xử lý phía BE
       deleteColumnDetailsAPI(column._id).then(() => {
-        toast.success(t('board.columnDeleted'), { position: 'top-center' })
+        toast.success(t('board.columnDeleted'))
       }).catch(() => {})
     }).catch(() => { })
   }

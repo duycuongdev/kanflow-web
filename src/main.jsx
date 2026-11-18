@@ -64,36 +64,76 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 '@media (max-width: 896px)': {
                   'input, textarea, select': { fontSize: '16px !important' }
                 },
-                // Tinh chỉnh Toast thông báo siêu nhỏ gọn (Compact Pill), chuẩn đẹp trên cả Mobile và Desktop
+                // Modern Floating Glass Toast (phong cách iOS / Linear / Sonner):
+                // Nền tối mờ tương phản cao, chỉ tô màu icon, ẩn progress bar, chuẩn safe-area mobile
                 '.Toastify__toast-container': {
-                  width: 'min(92vw, 380px) !important',
+                  width: 'min(calc(100vw - 24px), 380px) !important',
                   left: '50% !important',
                   transform: 'translateX(-50%) !important',
-                  top: '16px !important',
+                  top: 'calc(12px + env(safe-area-inset-top, 0px)) !important',
                   padding: '0 !important',
                   zIndex: '99999 !important'
                 },
                 '.Toastify__toast': {
-                  borderRadius: '10px !important',
-                  minHeight: '38px !important',
-                  padding: '6px 12px !important',
-                  fontSize: '13px !important',
+                  borderRadius: '14px !important',
+                  minHeight: '46px !important',
+                  padding: '10px 14px !important',
+                  fontSize: '14px !important',
                   fontWeight: '500 !important',
-                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2) !important',
-                  marginBottom: '6px !important'
+                  color: '#f8fafc !important',
+                  background: 'rgba(15, 23, 42, 0.92) !important',
+                  backdropFilter: 'blur(14px)',
+                  WebkitBackdropFilter: 'blur(14px)',
+                  border: '1px solid rgba(255, 255, 255, 0.14) !important',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.32), 0 2px 6px rgba(0, 0, 0, 0.16) !important',
+                  marginBottom: '8px !important',
+                  alignItems: 'center !important'
+                },
+                '.Toastify__toast--error': {
+                  borderColor: 'rgba(239, 68, 68, 0.45) !important'
+                },
+                '.Toastify__toast--success': {
+                  borderColor: 'rgba(34, 197, 94, 0.35) !important'
+                },
+                '.Toastify__toast--warning': {
+                  borderColor: 'rgba(245, 158, 11, 0.4) !important'
+                },
+                '.Toastify__toast--info': {
+                  borderColor: 'rgba(56, 189, 248, 0.35) !important'
                 },
                 '.Toastify__toast-body': {
                   padding: '0 !important',
                   margin: '0 !important',
-                  lineHeight: '1.4 !important'
+                  lineHeight: '1.42 !important',
+                  color: '#f8fafc !important'
                 },
                 '.Toastify__toast-icon': {
-                  width: '18px !important',
-                  marginRight: '10px !important'
+                  width: '20px !important',
+                  marginInlineEnd: '10px !important',
+                  flexShrink: '0 !important'
+                },
+                '.Toastify__toast--success .Toastify__toast-icon svg': {
+                  fill: '#22c55e !important'
+                },
+                '.Toastify__toast--error .Toastify__toast-icon svg': {
+                  fill: '#ef4444 !important'
+                },
+                '.Toastify__toast--warning .Toastify__toast-icon svg': {
+                  fill: '#f59e0b !important'
+                },
+                '.Toastify__toast--info .Toastify__toast-icon svg': {
+                  fill: '#38bdf8 !important'
                 },
                 '.Toastify__close-button': {
                   alignSelf: 'center !important',
-                  opacity: '0.8 !important'
+                  color: '#94a3b8 !important',
+                  opacity: '0.85 !important',
+                  padding: '6px !important',
+                  marginLeft: '4px !important'
+                },
+                '.Toastify__close-button:hover': {
+                  color: '#ffffff !important',
+                  opacity: '1 !important'
                 }
               }} />
               <CssBaseline />
@@ -105,12 +145,16 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               </MotionConfig>
               <ToastContainer
                 position='top-center'
-                autoClose={4000}
-                hideProgressBar={false}
+                autoClose={2800}
+                limit={2}
+                hideProgressBar
                 newestOnTop
                 closeOnClick
+                draggable
+                draggablePercent={35}
+                pauseOnFocusLoss={false}
                 pauseOnHover
-                theme='colored'
+                theme='dark'
               />
             </ConfirmProvider>
           </CssVarsProvider>
