@@ -51,6 +51,15 @@ const theme = extendTheme({
             ':root': {
               '--trello-board-content-height': `calc(100dvh - ${BOARD_BAR_HEIGHT} - ${MOBILE_BOTTOM_NAV_HEIGHT} - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))`
             }
+          },
+          // Chống iOS Safari tự zoom khi chạm vào ô input / textarea (< 16px)
+          'input, textarea, select': {
+            fontSize: '16px !important'
+          },
+          // Tối ưu cảm ứng mobile: loại bỏ độ trễ double-tap 300ms & highlight xanh mặc định
+          'button, a, [role="button"]': {
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent'
           }
         },
         '[data-mui-color-scheme="dark"], [data-color-scheme="dark"]': {

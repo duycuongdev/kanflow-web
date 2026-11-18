@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useDispatch } from 'react-redux'
 import cloneDeep from 'lodash/cloneDeep'
-import Popover from '@mui/material/Popover'
+import Popover from '~/components/Common/ResponsivePopover'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'

@@ -219,7 +219,7 @@ function Boards() {
       transition: 'background-color 0.3s ease, color 0.3s ease'
     }}>
       <AppBar />
-      <Container maxWidth="xl" sx={{ py: { xs: 2.5, sm: 4 }, pb: { xs: 'calc(80px + env(safe-area-inset-bottom, 0px))', sm: 4 }, px: { xs: 1.5, sm: 3, md: 4 } }}>
+      <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 4 }, pb: { xs: 'calc(140px + env(safe-area-inset-bottom, 0px))', sm: 4 }, px: { xs: 1.5, sm: 3, md: 4 } }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
           {/* Sidebar - ẩn trên mobile: bottom nav đã có tab Danh sách bảng,
               "Bảng đã đóng" nằm ở icon trên AppBar (mobile) */}
@@ -298,7 +298,7 @@ function Boards() {
               </Typography>
 
               {!isClosedView && (
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                   <Button
                     component={Link}
                     to="/boards?closed=true"
@@ -307,6 +307,7 @@ function Boards() {
                     variant="outlined"
                     sx={{
                       display: { xs: 'inline-flex', md: 'none' },
+                      minHeight: 36,
                       textTransform: 'none',
                       fontWeight: 600,
                       borderRadius: 2
@@ -321,6 +322,7 @@ function Boards() {
                     onClick={() => setOpenImportBoardModal(true)}
                     sx={{
                       display: { xs: 'inline-flex', md: 'none' },
+                      minHeight: 36,
                       textTransform: 'none',
                       fontWeight: 600,
                       borderRadius: 2
@@ -335,6 +337,7 @@ function Boards() {
                     onClick={() => setOpenCreateBoardModal(true)}
                     sx={{
                       display: { xs: 'inline-flex', md: 'none' },
+                      minHeight: 36,
                       textTransform: 'none',
                       fontWeight: 600,
                       borderRadius: 2,
@@ -362,17 +365,17 @@ function Boards() {
               </Box>
             )}
 
-            {/* Render danh sách boards theo CSS Grid 5 cột trên hàng */}
+            {/* Render danh sách boards theo CSS Grid: 2 cột gọn gàng trên mobile, 5 cột trên desktop */}
             {boards?.length > 0 && (
               <Box data-tour="boards-grid" sx={{
                 display: 'grid',
                 gridTemplateColumns: {
-                  xs: '1fr',
+                  xs: 'repeat(2, minmax(0, 1fr))',
                   sm: 'repeat(2, minmax(0, 1fr))',
                   md: 'repeat(3, minmax(0, 1fr))',
                   lg: 'repeat(5, minmax(0, 1fr))'
                 },
-                gap: 2.5
+                gap: { xs: 1.5, sm: 2.5 }
               }}>
                 {boards.map((b, index) => (
                   <motion.div
@@ -387,7 +390,7 @@ function Boards() {
                       sx={{
                         cursor: 'pointer',
                         width: '100%',
-                        height: '140px',
+                        height: { xs: '116px', sm: '140px' },
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
@@ -398,6 +401,7 @@ function Boards() {
                         borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                         boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 8px rgba(0,0,0,0.3)' : '0 2px 6px rgba(0,0,0,0.04)',
                         transition: 'all 0.2s ease',
+                        '&:active': { transform: { xs: 'scale(0.98)', sm: 'none' } },
                         '&:hover': {
                           transform: 'translateY(-3px)',
                           borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0, 82, 204, 0.35)',
@@ -406,7 +410,7 @@ function Boards() {
                       }}
                     >
                       <Box sx={{
-                        height: '50px',
+                        height: { xs: '42px', sm: '50px' },
                         // Dùng shorthand `background` để hỗ trợ cả ảnh, gradient và màu đặc
                         background: b.background?.startsWith('http')
                           ? `url("${b.background}") center/cover no-repeat`

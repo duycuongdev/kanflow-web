@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import Popover from '@mui/material/Popover'
+import Popover from '~/components/Common/ResponsivePopover'
 import TextField from '@mui/material/TextField'
 import { useTranslation } from 'react-i18next'
 import Button from '@mui/material/Button'

@@ -82,6 +82,11 @@ function ListColumns({ columns = [] }) {
         position: 'relative',
         overflowX: 'auto',
         overflowY: 'hidden',
+        px: { xs: 1.5, sm: 0 },
+        scrollSnapType: { xs: 'x proximity', sm: 'none' },
+        scrollPaddingLeft: { xs: '12px', sm: 0 },
+        WebkitOverflowScrolling: 'touch',
+        overscrollBehaviorX: 'contain',
         // thanh scroll thẳng với list card
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
@@ -145,10 +150,12 @@ function ListColumns({ columns = [] }) {
         {/* add new column */}
         {!openNewColumnForm
           ? <Box data-tour="add-column-btn" onClick={toggleOpenNewColumnForm} sx={{
-            minWidth: '250px',
-            maxWidth: '250px',
-            mx: 2,
-            borderRadius: '6px',
+            minWidth: { xs: '84vw', sm: '250px' },
+            maxWidth: { xs: '84vw', sm: '250px' },
+            mx: { xs: 0, sm: 2 },
+            mr: { xs: 1.5, sm: 2 },
+            scrollSnapAlign: { xs: 'center', sm: 'none' },
+            borderRadius: { xs: '12px', sm: '6px' },
             height: 'fit-content',
             bgcolor: 'rgba(0, 0, 0, 0.32)',
             backdropFilter: 'blur(4px)',
@@ -159,6 +166,7 @@ function ListColumns({ columns = [] }) {
               sx={{
                 color: 'white',
                 width: '100%',
+                minHeight: { xs: 46, sm: 'auto' },
                 justifyContent: 'flex-start',
                 pl: 2.5,
                 py: 1
@@ -168,11 +176,13 @@ function ListColumns({ columns = [] }) {
             </Button>
           </Box>
           : <Box sx={{
-            minWidth: '250px',
-            maxWidth: '250px',
-            mx: 2,
-            p: 1,
-            borderRadius: '6px',
+            minWidth: { xs: '84vw', sm: '250px' },
+            maxWidth: { xs: '84vw', sm: '250px' },
+            mx: { xs: 0, sm: 2 },
+            mr: { xs: 1.5, sm: 2 },
+            scrollSnapAlign: { xs: 'center', sm: 'none' },
+            p: 1.25,
+            borderRadius: { xs: '12px', sm: '6px' },
             height: 'fit-content',
             bgcolor: '#ffffff3d',
             display: 'flex',

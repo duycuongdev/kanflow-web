@@ -201,14 +201,15 @@ function Column({ column }) {
         data-tour="board-column"
         {...listeners}
         sx={{
-          minWidth: '300px',
-          maxWidth: '300px',
+          minWidth: { xs: '84vw', sm: '300px' },
+          maxWidth: { xs: '84vw', sm: '300px' },
           bgcolor: (theme) => (theme.palette.mode === 'dark' ? '#333643' : '#ebecf0'),
-          // margin left
-          ml: 2,
-          borderRadius: '6px',
+          ml: { xs: 0, sm: 2 },
+          mr: { xs: 1.5, sm: 0 },
+          scrollSnapAlign: { xs: 'center', sm: 'none' },
+          borderRadius: { xs: '12px', sm: '6px' },
           height: 'fit-content',
-          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(5)})`
+          maxHeight: (theme) => `calc(${theme.trello.boardContentHeight} - ${theme.spacing(4)})`
         }
         }>
         {/* header */}
@@ -231,12 +232,17 @@ function Column({ column }) {
               <IconButton
                 size="small"
                 id="basic-column-propdown"
+                data-no-dnd="true"
                 aria-controls={open ? 'basic-menu-column-propdown' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
                 aria-label={t('column.moreOptions')}
                 onClick={handleClick}
-                sx={{ color: 'text.primary' }}
+                sx={{
+                  color: 'text.primary',
+                  width: { xs: 38, sm: 'auto' },
+                  height: { xs: 38, sm: 'auto' }
+                }}
               >
                 <ExpandMoreIcon fontSize="small" />
               </IconButton>
@@ -290,7 +296,14 @@ function Column({ column }) {
               alignItems: 'center',
               justifyContent: 'space-between'
             }}>
-              <Button startIcon={<AddcardIcon />} onClick={toggleOpenNewCardForm}>{t('board.addCard')}</Button>
+              <Button
+                data-no-dnd="true"
+                startIcon={<AddcardIcon />}
+                onClick={toggleOpenNewCardForm}
+                sx={{ minHeight: { xs: 40, sm: 'auto' }, px: { xs: 1.5, sm: 1 } }}
+              >
+                {t('board.addCard')}
+              </Button>
               <Tooltip title={t('column.dragToMove')}>
                 <DragHandleIcon sx={{ cursor: 'pointer' }} />
               </Tooltip>

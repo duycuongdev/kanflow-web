@@ -20,6 +20,7 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
   const activeBoard = useSelector(selectCurrentActiveBoard)
   // Kính mờ chỉ khi đang ở board chi tiết có ảnh nền (không kéo sang trang danh sách)
   const onBoardWithImage = /^\/boards\/[^/]+/.test(location.pathname) && Boolean(activeBoard?.background)
+  const isBoardsActive = location.pathname === '/boards' || location.pathname === '/boards/'
 
   return (
     <Box sx={{
@@ -35,25 +36,27 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
       height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
       paddingBottom: 'env(safe-area-inset-bottom, 0px)',
       bgcolor: onBoardWithImage
-        ? 'rgba(0, 0, 0, 0.55)'
-        : (theme) => (theme.palette.mode === 'dark' ? '#0f172a' : '#0052cc'),
-      backdropFilter: onBoardWithImage ? 'blur(16px)' : 'none',
-      borderTop: '1px solid rgba(255, 255, 255, 0.15)'
+        ? 'rgba(0, 0, 0, 0.58)'
+        : (theme) => (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.94)' : 'rgba(0, 82, 204, 0.96)'),
+      backdropFilter: 'blur(16px)',
+      borderTop: '1px solid rgba(255, 255, 255, 0.16)',
+      boxShadow: '0 -4px 16px rgba(0, 0, 0, 0.14)'
     }}>
       <TabLink
         to="/boards/"
         icon={<SpaceDashboardIcon />}
         label={t('appBar.boardList')}
+        active={isBoardsActive}
       />
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 64 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 68, transition: 'transform 0.12s ease', '&:active': { transform: 'scale(0.93)' } }}>
         <Notifications openUpward />
-        <Typography sx={{ fontSize: '0.65rem', fontWeight: 400, lineHeight: 1, color: '#ffffff' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 500, lineHeight: 1, color: '#ffffff' }}>
           {t('appBar.notifications')}
         </Typography>
       </Box>
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 64 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 68, transition: 'transform 0.12s ease', '&:active': { transform: 'scale(0.93)' } }}>
         <Profile onOpenTour={onOpenTour} onOpenShortcuts={onOpenShortcuts} openUpward />
-        <Typography sx={{ fontSize: '0.65rem', fontWeight: 400, lineHeight: 1, color: '#ffffff' }}>
+        <Typography sx={{ fontSize: '0.68rem', fontWeight: 500, lineHeight: 1, color: '#ffffff' }}>
           {t('profileMenu.profile')}
         </Typography>
       </Box>
@@ -61,7 +64,7 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
   )
 }
 
-function TabLink({ to, icon, label }) {
+function TabLink({ to, icon, label, active = false }) {
   return (
     <Box
       component={Link}
@@ -71,18 +74,28 @@ function TabLink({ to, icon, label }) {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '2px',
-        minWidth: 64,
-        py: 1,
-        // Đồng bộ hoàn toàn với 2 tab còn lại: không phân biệt active bằng màu
+        minWidth: 68,
+        py: 0.75,
         color: '#ffffff',
-        textDecoration: 'none'
+        textDecoration: 'none',
+        transition: 'transform 0.12s ease',
+        '&:active': { transform: 'scale(0.93)' }
       }}
     >
-      {/* Hàng icon cao cố định 40px để icon thẳng hàng icon, chữ thẳng hàng chữ trên cả 3 tab */}
-      <Box sx={{ height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* Hàng icon cao cố định 36px để icon thẳng hàng icon, chữ thẳng hàng chữ trên cả 3 tab */}
+      <Box sx={{
+        height: 36,
+        px: 1.75,
+        borderRadius: 99,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: active ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+        transition: 'background-color 0.2s ease'
+      }}>
         {icon}
       </Box>
-      <Typography sx={{ fontSize: '0.65rem', fontWeight: 400, lineHeight: 1, color: '#ffffff' }}>
+      <Typography sx={{ fontSize: '0.68rem', fontWeight: active ? 700 : 500, lineHeight: 1, color: '#ffffff' }}>
         {label}
       </Typography>
     </Box>

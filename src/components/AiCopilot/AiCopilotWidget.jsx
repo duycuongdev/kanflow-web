@@ -178,10 +178,13 @@ export default function AiCopilotWidget() {
       {!isOpen && (
         <Tooltip title={t('copilot.tooltip')} placement="left" arrow>
           <Fab
+            size={isMobile ? 'medium' : 'large'}
+            aria-label={t('copilot.title')}
             onClick={() => setIsOpen(true)}
             sx={{
               position: 'fixed',
-              bottom: { xs: 16, sm: 24 },
+              // Trên mobile đặt phía trên MobileBottomNav (60px + safe-area) để không che tab Profile
+              bottom: { xs: 'calc(76px + env(safe-area-inset-bottom, 0px))', sm: 24 },
               right: { xs: 16, sm: 24 },
               zIndex: 1200,
               background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
@@ -194,7 +197,7 @@ export default function AiCopilotWidget() {
               }
             }}
           >
-            <KanflowIcon sx={{ fontSize: 28 }} />
+            <KanflowIcon sx={{ fontSize: isMobile ? 24 : 28 }} />
           </Fab>
         </Tooltip>
       )}
@@ -205,18 +208,20 @@ export default function AiCopilotWidget() {
           elevation={12}
           sx={{
             position: 'fixed',
-            bottom: { xs: 12, sm: 24 },
-            right: { xs: 12, sm: 24 },
-            left: { xs: 12, sm: 'auto' },
-            width: { xs: 'calc(100vw - 24px)', sm: 400 },
-            height: { xs: 'calc(100vh - 80px)', sm: 580 },
-            maxHeight: 'min(620px, calc(100vh - 40px))',
-            borderRadius: 3.5,
+            top: { xs: 0, sm: 'auto' },
+            bottom: { xs: 0, sm: 24 },
+            right: { xs: 0, sm: 24 },
+            left: { xs: 0, sm: 'auto' },
+            width: { xs: '100vw', sm: 400 },
+            // Dùng 100dvh để khi bàn phím ảo mobile bật lên, ô nhập chat tự co giãn và không bị che
+            height: { xs: '100dvh', sm: 580 },
+            maxHeight: { xs: '100dvh', sm: 'min(620px, calc(100dvh - 48px))' },
+            borderRadius: { xs: 0, sm: 3.5 },
             display: 'flex',
             flexDirection: 'column',
             overflow: 'hidden',
-            zIndex: 1300,
-            border: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}`,
+            zIndex: 1350,
+            border: (t) => ({ xs: 'none', sm: `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'}` }),
             boxShadow: (t) => t.palette.mode === 'dark'
               ? '0 16px 40px rgba(0,0,0,0.7), 0 0 20px rgba(79, 70, 229, 0.25)'
               : '0 16px 40px rgba(15, 23, 42, 0.22), 0 0 20px rgba(79, 70, 229, 0.15)',
@@ -227,13 +232,15 @@ export default function AiCopilotWidget() {
           <Box
             sx={{
               px: 2,
-              py: 1.5,
+              pt: { xs: 'calc(12px + env(safe-area-inset-top, 0px))', sm: 1.5 },
+              pb: 1.5,
               background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+              boxShadow: '0 2px 10px rgba(0,0,0,0.15)',
+              flexShrink: 0
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
@@ -246,7 +253,8 @@ export default function AiCopilotWidget() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Tooltip title={t('copilot.clearHistory')} arrow>
                 <IconButton
-                  size="small"
+                  size={isMobile ? 'medium' : 'small'}
+                  aria-label={t('copilot.clearHistory')}
                   onClick={handleClearHistory}
                   sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
                 >
@@ -256,7 +264,8 @@ export default function AiCopilotWidget() {
 
               <Tooltip title={t('copilot.close')} arrow>
                 <IconButton
-                  size="small"
+                  size={isMobile ? 'medium' : 'small'}
+                  aria-label={t('copilot.close')}
                   onClick={() => setIsOpen(false)}
                   sx={{ color: 'white', '&:hover': { bgcolor: 'rgba(255,255,255,0.15)' } }}
                 >
@@ -452,7 +461,10 @@ export default function AiCopilotWidget() {
           {/* Input Bar */}
           <Box
             sx={{
-              p: 1.5,
+              px: 1.5,
+              pt: 1.25,
+              pb: { xs: 'calc(12px + env(safe-area-inset-bottom, 0px))', sm: 1.5 },
+              flexShrink: 0,
               bgcolor: (t) => t.palette.mode === 'dark' ? '#0f172a' : '#ffffff',
               borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`
             }}
@@ -484,16 +496,18 @@ export default function AiCopilotWidget() {
                 sx={{
                   ml: 1,
                   flex: 1,
-                  fontSize: '0.85rem',
+                  fontSize: { xs: '1rem', sm: '0.875rem' },
                   lineHeight: 1.4
                 }}
               />
               <IconButton
                 color="primary"
+                aria-label={t('common.send') || 'Send'}
                 onClick={() => handleSendMessage()}
                 disabled={!inputValue.trim() || isLoading}
                 sx={{
-                  p: '6px',
+                  width: { xs: 40, sm: 34 },
+                  height: { xs: 40, sm: 34 },
                   background: inputValue.trim() && !isLoading
                     ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'
                     : 'transparent',

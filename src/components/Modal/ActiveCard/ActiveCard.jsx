@@ -465,9 +465,10 @@ function ActiveCard() {
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
+        justifyContent: { xs: 'flex-end', sm: 'flex-start' },
         overflow: 'hidden',
-        paddingTop: 'env(safe-area-inset-top, 0px)',
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)'
+        paddingTop: { xs: 0, sm: 'env(safe-area-inset-top, 0px)' },
+        paddingBottom: { xs: 0, sm: 'env(safe-area-inset-bottom, 0px)' }
       }}>
       <Box sx={{
         position: 'relative',
@@ -475,23 +476,45 @@ function ActiveCard() {
         flexDirection: 'column',
         flex: '0 1 auto',
         minHeight: 0,
-        width: { xs: '92%', sm: '90%', md: 900 },
+        width: { xs: '100%', sm: '90%', md: 900 },
+        height: { xs: '92dvh', sm: 'auto' },
+        maxHeight: { xs: '92dvh', sm: 'calc(100dvh - 70px)' },
         maxWidth: 900,
         boxShadow: 24,
-        borderRadius: '8px',
+        borderRadius: { xs: '20px 20px 0 0', sm: '10px' },
         border: 'none',
         outline: 0,
         overflow: 'hidden',
-        margin: { xs: '12px auto', sm: '35px auto', md: '50px auto' },
+        margin: { xs: 0, sm: '35px auto', md: '50px auto' },
         backgroundColor: (theme) => (theme.palette.mode === 'dark' ? '#1A2027' : '#fff')
       }}>
+        {/* Thanh nắm trực quan chuẩn Mobile Bottom Sheet */}
+        <Box
+          onClick={handleCloseModal}
+          sx={{
+            display: { xs: 'flex', sm: 'none' },
+            justifyContent: 'center',
+            pt: 1.25,
+            pb: 0.5,
+            flexShrink: 0,
+            cursor: 'pointer'
+          }}
+        >
+          <Box sx={{
+            width: 42,
+            height: 4,
+            borderRadius: 2,
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.28)' : 'rgba(15,23,42,0.2)'
+          }} />
+        </Box>
+
         <IconButton
           onClick={handleCloseModal}
           aria-label={t('common.close')}
           sx={{
             position: 'absolute',
-            top: '6px',
-            right: '6px',
+            top: { xs: '8px', sm: '6px' },
+            right: { xs: '8px', sm: '6px' },
             zIndex: 3,
             width: 44,
             height: 44,
@@ -511,7 +534,8 @@ function ActiveCard() {
           minHeight: 0,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
-          padding: { xs: '50px 14px 18px', sm: '40px 20px 20px' }
+          WebkitOverflowScrolling: 'touch',
+          padding: { xs: '12px 16px calc(24px + env(safe-area-inset-bottom, 0px))', sm: '40px 20px 20px' }
         }}>
 
           {/* Banner thông báo thẻ đã lưu trữ */}
@@ -699,8 +723,10 @@ function ActiveCard() {
                 sx={{
                   overflowX: { xs: 'auto', sm: 'visible' },
                   overflowY: 'hidden',
-                  pb: { xs: 1, sm: 0 },
-                  '& > *': { flexShrink: { xs: 0, sm: 1 }, whiteSpace: 'nowrap' }
+                  pb: { xs: 0.75, sm: 0 },
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  '& > *': { flexShrink: { xs: 0, sm: 1 }, whiteSpace: 'nowrap', minHeight: { xs: 38, sm: 'auto' } }
                 }}
               >
                 {/* Feature 05: Xử lý hành động bản thân user tự join / leave khỏi card */}
@@ -804,8 +830,10 @@ function ActiveCard() {
                 sx={{
                   overflowX: { xs: 'auto', sm: 'visible' },
                   overflowY: 'hidden',
-                  pb: { xs: 1, sm: 0 },
-                  '& > *': { flexShrink: { xs: 0, sm: 1 }, whiteSpace: 'nowrap' }
+                  pb: { xs: 0.75, sm: 0 },
+                  scrollbarWidth: 'none',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  '& > *': { flexShrink: { xs: 0, sm: 1 }, whiteSpace: 'nowrap', minHeight: { xs: 38, sm: 'auto' } }
                 }}
               >
                 <SidebarItem

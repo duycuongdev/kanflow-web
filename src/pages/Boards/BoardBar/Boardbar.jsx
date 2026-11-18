@@ -536,7 +536,7 @@ function BoardBar({ board, onlineUsers = [] }) {
         </Menu>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 1 }, flexShrink: 0 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1 }, flexShrink: 0 }}>
         {/* Live Active Viewers Indicator */}
         {onlineUsers.length > 0 && (
           <Tooltip title={t('boardBar.onlineOnBoard', { users: onlineUsers.map(u => u.displayName || u.email).join(', ') })}>

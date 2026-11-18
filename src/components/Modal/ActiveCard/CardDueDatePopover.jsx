@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
-import Popover from '@mui/material/Popover'
+import Popover from '~/components/Common/ResponsivePopover'
 import TextField from '@mui/material/TextField'
 import Select from '@mui/material/Select'
 import MenuItem from '@mui/material/MenuItem'
