@@ -4,7 +4,8 @@ import { API_ROOT } from '~/utils/constants'
 
 // Khởi tạo giá trị của một Slice trong redux
 const initialState = {
-  currentNotifications: null
+  currentNotifications: null,
+  isLoading: false
 }
 
 // Các hành động gọi api (bất đồng bộ) và cập nhật dữ liệu vào Redux, dùng Middleware createAsyncThunk
@@ -17,6 +18,15 @@ export const fetchInvitationsAPI = createAsyncThunk(
     const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/invitations`)
     // Lưu ý: axios sẽ trả kết quả về qua property của nó là data
     return response.data
+  },
+  {
+    // Ngăn chặn gọi trùng lặp (in-flight request deduplication)
+    condition: (_arg, { getState }) => {
+      const { notifications } = getState()
+      if (notifications?.isLoading) {
+        return false // Bỏ qua nếu đang có một request fetchInvitationsAPI đang chạy dở
+      }
+    }
   }
 )
 
@@ -54,7 +64,11 @@ export const notificationsSlice = createSlice({
   },
   // ExtraReducers: Xử lý dữ liệu bất đồng bộ
   extraReducers: (builder) => {
+    builder.addCase(fetchInvitationsAPI.pending, (state) => {
+      state.isLoading = true
+    })
     builder.addCase(fetchInvitationsAPI.fulfilled, (state, action) => {
+      state.isLoading = false
       let incomingInvitations = action.payload
 
       // Sắp xếp thông báo mới nhất lên đầu tiên (thời gian giảm dần)
@@ -66,8 +80,9 @@ export const notificationsSlice = createSlice({
         })
       }
       state.currentNotifications = Array.isArray(incomingInvitations) ? incomingInvitations : []
-
-
+    })
+    builder.addCase(fetchInvitationsAPI.rejected, (state) => {
+      state.isLoading = false
     })
 
     builder.addCase(updateBoardInvitationAPI.fulfilled, (state, action) => {

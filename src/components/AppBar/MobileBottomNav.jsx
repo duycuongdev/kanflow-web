@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
 import Notifications from './Notifications/Notifications'
 import Profile from './Menus/Profile'
@@ -16,8 +18,14 @@ import Profile from './Menus/Profile'
  */
 function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
   const { t } = useTranslation()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const location = useLocation()
   const activeBoard = useSelector(selectCurrentActiveBoard)
+
+  // Trên desktop (sm trở lên), không mount MobileBottomNav vào DOM để tránh gọi trùng API Notifications/Profile
+  if (!isMobile) return null
+
   // Kính mờ chỉ khi đang ở board chi tiết có ảnh nền (không kéo sang trang danh sách)
   const onBoardWithImage = /^\/boards\/[^/]+/.test(location.pathname) && Boolean(activeBoard?.background)
   const isBoardsActive = location.pathname === '/boards' || location.pathname === '/boards/'

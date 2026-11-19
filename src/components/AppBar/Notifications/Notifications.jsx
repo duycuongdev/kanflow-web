@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback, useId } from 'react'
+import { useEffect, useState, useMemo, useCallback, useId, useRef } from 'react'
 import dayjs from 'dayjs'
 import Badge from '@mui/material/Badge'
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone'
@@ -170,6 +170,11 @@ function Notifications({ openUpward = false }) {
     }
   }, [dismissedIds, dismissedStorageKey])
 
+  const tRef = useRef(t)
+  useEffect(() => {
+    tRef.current = t
+  }, [t])
+
   useEffect(() => {
     if (userId) {
       socketIoInstance.emit('FE_USER_JOIN_ROOM', userId)
@@ -187,9 +192,9 @@ function Notifications({ openUpward = false }) {
 
     const onReceiveCardDueDateChanged = ({ card, boardTitle }) => {
       dispatch(fetchInvitationsAPI())
-      const cardTitle = card?.title ? `'${card.title}'` : t('notifications.assignedCardFallback')
-      const boardInfo = boardTitle ? t('notifications.onBoardSuffix', { board: boardTitle }) : ''
-      toast.info(t('board.deadlineUpdated', { cardTitle, boardInfo }))
+      const cardTitle = card?.title ? `'${card.title}'` : tRef.current('notifications.assignedCardFallback')
+      const boardInfo = boardTitle ? tRef.current('notifications.onBoardSuffix', { board: boardTitle }) : ''
+      toast.info(tRef.current('board.deadlineUpdated', { cardTitle, boardInfo }))
     }
 
     socketIoInstance.on('BE_CARD_DUE_DATE_CHANGED', onReceiveCardDueDateChanged)
@@ -197,21 +202,17 @@ function Notifications({ openUpward = false }) {
     const onConnect = () => {
       if (userId) {
         socketIoInstance.emit('FE_USER_JOIN_ROOM', userId)
+        dispatch(fetchInvitationsAPI())
       }
     }
     socketIoInstance.on('connect', onConnect)
 
-    const timer = setInterval(() => {
-      dispatch(fetchInvitationsAPI())
-    }, 60000)
-
     return () => {
-      clearInterval(timer)
       socketIoInstance.off('BE_USER_INVITED_TO_BOARD', onReceiveInvitation)
       socketIoInstance.off('BE_CARD_DUE_DATE_CHANGED', onReceiveCardDueDateChanged)
       socketIoInstance.off('connect', onConnect)
     }
-  }, [dispatch, userId, t])
+  }, [dispatch, userId])
 
   const updateBoardInvitation = (status, invitationId) => {
     markAsRead(invitationId)

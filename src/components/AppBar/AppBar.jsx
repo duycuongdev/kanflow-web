@@ -8,6 +8,8 @@ import AppsIcon from '@mui/icons-material/Apps'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
+import useMediaQuery from '@mui/material/useMediaQuery'
+import { useTheme } from '@mui/material/styles'
 import Profile from './Menus/Profile'
 import { Link, useLocation } from 'react-router-dom'
 import Notifications from './Notifications/Notifications'
@@ -21,6 +23,8 @@ import KeyboardShortcutsModal from '~/components/Modal/KeyboardShortcutsModal/Ke
 
 function AppBar() {
   const { t } = useTranslation()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const location = useLocation()
   const activeBoard = useSelector(selectCurrentActiveBoard)
   const currentUser = useSelector(selectCurrentUser)
@@ -135,16 +139,18 @@ function AppBar() {
           </Box>
 
           {/* notifications + account: chỉ trên desktop/tablet - trên mobile chúng nằm ở BottomNav */}
-          <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-            <Notifications />
+          {!isMobile && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
+              <Notifications />
 
-            {/* Desktop: navbar đã có sẵn nút Chế độ + Ngôn ngữ phía trên nên ẩn 2 mục đó trong menu Profile */}
-            <Profile
-              onOpenTour={() => setOpenTour(true)}
-              onOpenShortcuts={() => setOpenShortcuts(true)}
-              showPreferences={false}
-            />
-          </Box>
+              {/* Desktop: navbar đã có sẵn nút Chế độ + Ngôn ngữ phía trên nên ẩn 2 mục đó trong menu Profile */}
+              <Profile
+                onOpenTour={() => setOpenTour(true)}
+                onOpenShortcuts={() => setOpenShortcuts(true)}
+                showPreferences={false}
+              />
+            </Box>
+          )}
         </Box>
       </Box>
 
