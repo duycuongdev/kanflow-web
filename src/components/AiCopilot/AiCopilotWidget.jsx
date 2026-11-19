@@ -14,6 +14,7 @@ import Button from '@mui/material/Button'
 import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
+import { motion, AnimatePresence } from 'framer-motion'
 import MDEditor from '@uiw/react-md-editor'
 
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
@@ -26,6 +27,7 @@ import KanflowIcon from '~/components/Icons/KanflowIcon'
 import { selectCurrentActiveBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { chatWithAiCopilotAPI } from '~/apis'
+import { getPageLoading, subscribePageLoading } from '~/utils/pageLoadingState'
 
 export default function AiCopilotWidget() {
   const { t, i18n } = useTranslation()
@@ -36,6 +38,16 @@ export default function AiCopilotWidget() {
 
   const currentUser = useSelector(selectCurrentUser)
   const currentBoard = useSelector(selectCurrentActiveBoard)
+  const boardLoading = useSelector((state) => state.activeBoard?.isLoading)
+
+  const [isPageLoading, setIsPageLoading] = useState(getPageLoading())
+
+  useEffect(() => {
+    const unsubscribe = subscribePageLoading(setIsPageLoading)
+    return unsubscribe
+  }, [])
+
+  const shouldHideWidget = isPageLoading || Boolean(boardLoading)
 
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState([])
@@ -175,35 +187,46 @@ export default function AiCopilotWidget() {
   return (
     <>
       {/* Floating Action Button (FAB) */}
-      {!isOpen && (
-        <Tooltip title={t('copilot.tooltip')} placement="left" arrow>
-          <Fab
-            size={isMobile ? 'medium' : 'large'}
-            aria-label={t('copilot.title')}
-            onClick={() => setIsOpen(true)}
-            sx={{
+      <AnimatePresence>
+        {!isOpen && !shouldHideWidget && (
+          <motion.div
+            key="ai-copilot-fab"
+            initial={{ opacity: 0, scale: 0.5, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5, y: 16 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 22 }}
+            style={{
               position: 'fixed',
-              // Trên mobile đặt phía trên MobileBottomNav (60px + safe-area) để không che tab Profile
-              bottom: { xs: 'calc(76px + env(safe-area-inset-bottom, 0px))', sm: 24 },
-              right: { xs: 16, sm: 24 },
-              zIndex: 1200,
-              background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
-              color: 'white',
-              boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              '&:hover': {
-                transform: 'scale(1.08)',
-                boxShadow: '0 12px 32px rgba(79, 70, 229, 0.65)'
-              }
+              bottom: isMobile ? 'calc(76px + env(safe-area-inset-bottom, 0px))' : 24,
+              right: isMobile ? 16 : 24,
+              zIndex: 1200
             }}
           >
-            <KanflowIcon sx={{ fontSize: isMobile ? 24 : 28 }} />
-          </Fab>
-        </Tooltip>
-      )}
+            <Tooltip title={t('copilot.tooltip')} placement="left" arrow>
+              <Fab
+                size={isMobile ? 'medium' : 'large'}
+                aria-label={t('copilot.title')}
+                onClick={() => setIsOpen(true)}
+                sx={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #4f46e5 50%, #7c3aed 100%)',
+                  color: 'white',
+                  boxShadow: '0 8px 24px rgba(79, 70, 229, 0.45)',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  '&:hover': {
+                    transform: 'scale(1.08)',
+                    boxShadow: '0 12px 32px rgba(79, 70, 229, 0.65)'
+                  }
+                }}
+              >
+                <KanflowIcon sx={{ fontSize: isMobile ? 24 : 28 }} />
+              </Fab>
+            </Tooltip>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Copilot Chat Window */}
-      {isOpen && (
+      {isOpen && !shouldHideWidget && (
         <Paper
           elevation={12}
           sx={{

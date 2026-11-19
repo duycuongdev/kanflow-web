@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, fetchCurrentUserAPI } from '~/redux/user/userSlice'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import AiCopilotWidget from '~/components/AiCopilot/AiCopilotWidget'
+import { usePageLoadingSignal } from '~/utils/pageLoadingState'
 
 // Chỉ tải mã của route đang truy cập.
 const Board = lazy(() => import('~/pages/Boards/_id'))
@@ -20,31 +21,35 @@ const Settings = lazy(() => import('~/pages/Settings/Settings'))
 const NotFound = lazy(() => import('~/pages/404/NotFound'))
 
 // Giữ nền theo theme trong lúc tải route để tránh lóe màu.
-const PageLoading = () => (
-  <Box sx={{
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 2.5,
-    bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0b1120' : '#f4f5f7'
-  }}>
+const PageLoading = () => {
+  usePageLoadingSignal()
+
+  return (
     <Box sx={{
-      width: 52,
-      height: 52,
-      borderRadius: 2.5,
-      bgcolor: '#0052cc',
+      minHeight: '100vh',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      boxShadow: '0 8px 24px rgba(0, 82, 204, 0.35)'
+      gap: 2.5,
+      bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0b1120' : '#f4f5f7'
     }}>
-      <KanflowIcon sx={{ color: 'white', fontSize: 30 }} />
+      <Box sx={{
+        width: 52,
+        height: 52,
+        borderRadius: 2.5,
+        bgcolor: '#0052cc',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 8px 24px rgba(0, 82, 204, 0.35)'
+      }}>
+        <KanflowIcon sx={{ color: 'white', fontSize: 30 }} />
+      </Box>
+      <CircularProgress size={22} thickness={5} sx={{ color: '#0052cc' }} />
     </Box>
-    <CircularProgress size={22} thickness={5} sx={{ color: '#0052cc' }} />
-  </Box>
-)
+  )
+}
 
 /**
  * Giải pháp Clean Code trong việc xác định các route nào cần đăng nhập tài khoản xong thì mới cho truy cập
