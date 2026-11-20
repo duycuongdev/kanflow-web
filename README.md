@@ -8,7 +8,7 @@
 [![Socket.IO](https://img.shields.io/badge/Socket.io-4.x-010101?logo=socket.io&logoColor=white)](https://socket.io/)
 [![Cloudinary](https://img.shields.io/badge/Cloudinary-Media%20Storage-3448C5?logo=cloudinary&logoColor=white)](https://cloudinary.com/)
 [![Brevo](https://img.shields.io/badge/Brevo-Transactional%20Email-0092FF?logo=sendinblue&logoColor=white)](https://www.brevo.com/)
-[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel&logoColor=white)](https://trello-web-tawny.vercel.app)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?logo=vercel&logoColor=white)](https://kanflow-smart.vercel.app)
 
 > A modern, full-stack **Kanban & AI Workspace** (**Kanflow**). Built on the **MERN** stack, featuring an in-app **Kanflow Assistant (Google Gemini 2.5 Flash Lite)**, polished user interface, deep URL linking, and instant **Real-Time Collaboration**.
 
@@ -16,7 +16,7 @@
 
 ## 🌐 Live Demo
 
-- 🚀 **Web Application**: [https://trello-web-tawny.vercel.app](https://trello-web-tawny.vercel.app)
+- 🚀 **Web Application**: [https://kanflow-smart.vercel.app](https://kanflow-smart.vercel.app)
 - 📦 Register with email verification (Brevo) or sign in instantly with your **Google Account** in one click!
 
 ---
@@ -262,7 +262,7 @@ AUTHOR=Duy Cuong
 BUILD_MODE=dev
 
 WEBSITE_DOMAIN_DEVELOPMENT=http://localhost:5173
-WEBSITE_DOMAIN_PRODUCTION=https://trello-web-tawny.vercel.app
+WEBSITE_DOMAIN_PRODUCTION=https://kanflow-smart.vercel.app
 
 BREVO_API_KEY=your_brevo_api_key
 ADMIN_EMAIL_ADDRESS=your_email@example.com
