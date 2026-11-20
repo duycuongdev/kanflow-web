@@ -650,6 +650,11 @@
     "openBoard": "Mở bảng ngay",
     "columnCreatedSuccess": "✅ Đã thêm cột: {{title}}",
     "cardCreatedSuccess": "✅ Đã tạo thẻ: {{title}}",
-    "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Assistant. Vui lòng thử lại!"
+    "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Assistant. Vui lòng thử lại!",
+    "attachFile": "Đính kèm tệp hoặc ảnh (hoặc Ctrl+V)",
+    "removeAttachment": "Xóa tệp đính kèm",
+    "defaultAttachmentPrompt": "Hãy xem và phân tích tệp/ảnh đính kèm này.",
+    "maxFilesExceeded": "Chỉ có thể đính kèm tối đa 5 tệp cùng lúc.",
+    "fileTooLarge": "Tệp {{name}} vượt quá kích thước cho phép (tối đa 5MB)."
   }
 }

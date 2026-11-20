@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'react-toastify'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -22,12 +23,18 @@ import SendRoundedIcon from '@mui/icons-material/SendRounded'
 import DeleteSweepRoundedIcon from '@mui/icons-material/DeleteSweepRounded'
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded'
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded'
+import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded'
 
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import { selectCurrentActiveBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { chatWithAiCopilotAPI } from '~/apis'
 import { getPageLoading, subscribePageLoading } from '~/utils/pageLoadingState'
+
+const MAX_ATTACHMENTS = 5
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
 export default function AiCopilotWidget() {
   const { t, i18n } = useTranslation()
@@ -49,28 +56,77 @@ export default function AiCopilotWidget() {
 
   const shouldHideWidget = isPageLoading || Boolean(boardLoading)
 
+  // Khóa localStorage cho lịch sử trò chuyện theo từng người dùng
+  const historyStorageKey = currentUser?._id
+    ? `kanflow_copilot_history_${currentUser._id}`
+    : 'kanflow_copilot_history_guest'
+
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState([])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [attachments, setAttachments] = useState([])
+
+  // Khởi tạo tin nhắn từ localStorage hoặc tin nhắn chào ban đầu
+  const [messages, setMessages] = useState(() => {
+    try {
+      const saved = localStorage.getItem(historyStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      }
+    } catch {
+      // ignore storage load error
+    }
+    return [
+      {
+        id: 'welcome-msg',
+        isWelcome: true,
+        role: 'assistant',
+        content: t('copilot.greeting'),
+        timestamp: Date.now()
+      }
+    ]
+  })
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
+  const fileInputRef = useRef(null)
 
-  // Khởi tạo tin nhắn chào hỏi ban đầu khi mở widget
+  // Đồng bộ lịch sử khi người dùng đổi tài khoản đăng nhập
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          id: 'welcome-msg',
-          isWelcome: true,
-          role: 'assistant',
-          content: t('copilot.greeting'),
-          timestamp: Date.now()
+    try {
+      const saved = localStorage.getItem(historyStorageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setMessages(parsed)
+          return
         }
-      ])
+      }
+    } catch {
+      // ignore
     }
-  }, [t, messages.length])
+    setMessages([
+      {
+        id: `welcome-${Date.now()}`,
+        isWelcome: true,
+        role: 'assistant',
+        content: t('copilot.greeting'),
+        timestamp: Date.now()
+      }
+    ])
+  }, [historyStorageKey, t])
+
+  // Lưu lịch sử vào localStorage mỗi khi messages thay đổi (giữ tối đa 40 tin nhắn mới nhất)
+  useEffect(() => {
+    if (!messages || messages.length === 0) return
+    try {
+      const toSave = messages.slice(-40)
+      localStorage.setItem(historyStorageKey, JSON.stringify(toSave))
+    } catch {
+      // ignore storage save error
+    }
+  }, [messages, historyStorageKey])
 
   // Tự động cập nhật nội dung tin nhắn chào hỏi khi đổi ngôn ngữ
   useEffect(() => {
@@ -80,7 +136,7 @@ export default function AiCopilotWidget() {
     ))
   }, [i18n.language, t])
 
-  // Tự động cuộn xuống cuối mỗi khi có tin nhắn mới
+  // Tự động cuộn xuống cuối mỗi khi có tin nhắn mới hoặc thêm tệp đính kèm
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [])
@@ -92,39 +148,136 @@ export default function AiCopilotWidget() {
     }
   }, [isOpen, messages, scrollToBottom])
 
+  // Xử lý đọc file thành Base64 và URL xem trước
+  const processFiles = useCallback((fileList) => {
+    const filesArray = Array.from(fileList || [])
+    if (filesArray.length === 0) return
+
+    if (attachments.length + filesArray.length > MAX_ATTACHMENTS) {
+      toast.warning(t('copilot.maxFilesExceeded'))
+      return
+    }
+
+    filesArray.forEach((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        toast.error(t('copilot.fileTooLarge', { name: file.name }))
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result
+        const base64 = typeof dataUrl === 'string' && dataUrl.includes(',')
+          ? dataUrl.split(',')[1]
+          : ''
+
+        const newAttachment = {
+          id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          name: file.name || 'clipboard-image.png',
+          mimeType: file.type || 'image/png',
+          base64,
+          dataUrl,
+          isImage: file.type?.startsWith('image/')
+        }
+
+        setAttachments(prev => {
+          if (prev.length >= MAX_ATTACHMENTS) return prev
+          return [...prev, newAttachment]
+        })
+      }
+
+      reader.readAsDataURL(file)
+    })
+  }, [attachments.length, t])
+
+  // Lắng nghe sự kiện paste ảnh từ clipboard (Ctrl+V)
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    const imageFiles = []
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      if (item.type && item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile()
+        if (file) imageFiles.push(file)
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      e.preventDefault()
+      processFiles(imageFiles)
+    }
+  }, [processFiles])
+
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files)
+      e.target.value = '' // Reset input để cho phép chọn lại cùng file
+    }
+  }
+
+  const handleRemoveAttachment = (idToRemove) => {
+    setAttachments(prev => prev.filter(att => att.id !== idToRemove))
+  }
+
   if (!currentUser) return null
 
   const handleSendMessage = async (textToSend) => {
-    const query = (textToSend || inputValue || '').trim()
+    let query = (textToSend || inputValue || '').trim()
+
+    // Nếu không nhập nội dung text nhưng có đính kèm file, dùng câu hỏi mặc định
+    if (!query && attachments.length > 0) {
+      query = t('copilot.defaultAttachmentPrompt')
+    }
+
     if (!query || isLoading) return
 
+    const currentAttachments = [...attachments]
     const userMessageId = `user-${Date.now()}`
     const newUserMsg = {
       id: userMessageId,
       role: 'user',
       content: query,
+      attachments: currentAttachments,
       timestamp: Date.now()
     }
 
-    // Cập nhật tin nhắn người dùng ngay lập tức
+    // Cập nhật tin nhắn người dùng ngay lập tức & dọn dẹp input
     const updatedMessages = [...messages, newUserMsg]
     setMessages(updatedMessages)
     setInputValue('')
+    setAttachments([])
     setIsLoading(true)
 
     try {
-      // Chuẩn bị payload gửi lên backend
+      // Chuẩn bị payload gửi lên backend (lịch sử tối đa 6 lượt)
       const historyPayload = updatedMessages
         .slice(-6)
-        .map(m => ({ role: m.role, content: m.content }))
+        .map(m => ({
+          role: m.role,
+          content: m.content,
+          attachments: (m.attachments || []).map(a => ({
+            name: a.name,
+            mimeType: a.mimeType
+          }))
+        }))
 
       const currentLang = i18n.language?.startsWith('vi') ? 'vi' : 'en'
+
+      const attachmentsPayload = currentAttachments.map(att => ({
+        name: att.name,
+        mimeType: att.mimeType,
+        base64: att.base64,
+        dataUrl: att.dataUrl
+      }))
 
       const response = await chatWithAiCopilotAPI({
         message: query,
         history: historyPayload,
         currentBoardId: currentBoard?._id || null,
-        language: currentLang
+        language: currentLang,
+        attachments: attachmentsPayload
       })
 
       const botMessageId = `bot-${Date.now()}`
@@ -166,6 +319,11 @@ export default function AiCopilotWidget() {
   }
 
   const handleClearHistory = () => {
+    try {
+      localStorage.removeItem(historyStorageKey)
+    } catch {
+      // ignore
+    }
     setMessages([
       {
         id: `welcome-${Date.now()}`,
@@ -175,6 +333,7 @@ export default function AiCopilotWidget() {
         timestamp: Date.now()
       }
     ])
+    setAttachments([])
   }
 
   const quickPrompts = [
@@ -183,6 +342,8 @@ export default function AiCopilotWidget() {
     t('copilot.quickPrompt3'),
     t('copilot.quickPrompt4')
   ]
+
+  const canSend = (Boolean(inputValue.trim()) || attachments.length > 0) && !isLoading
 
   return (
     <>
@@ -229,16 +390,17 @@ export default function AiCopilotWidget() {
       {isOpen && !shouldHideWidget && (
         <Paper
           elevation={12}
+          onPaste={handlePaste}
           sx={{
             position: 'fixed',
             top: { xs: 0, sm: 'auto' },
             bottom: { xs: 0, sm: 24 },
             right: { xs: 0, sm: 24 },
             left: { xs: 0, sm: 'auto' },
-            width: { xs: '100vw', sm: 400 },
+            width: { xs: '100vw', sm: 420 },
             // Dùng 100dvh để khi bàn phím ảo mobile bật lên, ô nhập chat tự co giãn và không bị che
-            height: { xs: '100dvh', sm: 580 },
-            maxHeight: { xs: '100dvh', sm: 'min(620px, calc(100dvh - 48px))' },
+            height: { xs: '100dvh', sm: 600 },
+            maxHeight: { xs: '100dvh', sm: 'min(640px, calc(100dvh - 48px))' },
             borderRadius: { xs: 0, sm: 3.5 },
             display: 'flex',
             flexDirection: 'column',
@@ -362,6 +524,55 @@ export default function AiCopilotWidget() {
                         })
                     }}
                   >
+                    {/* Hiển thị tệp / ảnh đính kèm trong tin nhắn của người dùng */}
+                    {isUser && msg.attachments && msg.attachments.length > 0 && (
+                      <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {msg.attachments.map((att, attIdx) => {
+                          if (att.isImage || att.mimeType?.startsWith('image/')) {
+                            return (
+                              <Box
+                                key={att.id || attIdx}
+                                component="img"
+                                src={att.dataUrl || `data:${att.mimeType};base64,${att.base64}`}
+                                alt={att.name || 'image'}
+                                onClick={() => {
+                                  const url = att.dataUrl || `data:${att.mimeType};base64,${att.base64}`
+                                  window.open(url, '_blank')
+                                }}
+                                sx={{
+                                  maxHeight: 140,
+                                  maxWidth: '100%',
+                                  borderRadius: 1.5,
+                                  objectFit: 'cover',
+                                  cursor: 'pointer',
+                                  border: '1px solid rgba(255,255,255,0.3)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                  transition: 'transform 0.2s',
+                                  '&:hover': {
+                                    transform: 'scale(1.02)'
+                                  }
+                                }}
+                              />
+                            )
+                          }
+                          return (
+                            <Chip
+                              key={att.id || attIdx}
+                              icon={<InsertDriveFileRoundedIcon sx={{ fontSize: '14px !important', color: 'inherit !important' }} />}
+                              label={att.name}
+                              size="small"
+                              sx={{
+                                bgcolor: 'rgba(255,255,255,0.2)',
+                                color: '#ffffff',
+                                fontSize: '0.75rem',
+                                maxWidth: '100%'
+                              }}
+                            />
+                          )
+                        })}
+                      </Box>
+                    )}
+
                     {isUser ? (
                       <Typography sx={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                         {msg.content}
@@ -492,9 +703,96 @@ export default function AiCopilotWidget() {
               borderTop: (t) => `1px solid ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'}`
             }}
           >
+            {/* Thanh Preview tệp / ảnh đính kèm trước khi gửi */}
+            {attachments.length > 0 && (
+              <Box
+                sx={{
+                  mb: 1,
+                  p: 1,
+                  borderRadius: 2,
+                  bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                  border: (t) => `1px dashed ${t.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  overflowX: 'auto',
+                  flexWrap: 'nowrap'
+                }}
+              >
+                {attachments.map((att) => (
+                  <Box
+                    key={att.id}
+                    sx={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      flexShrink: 0
+                    }}
+                  >
+                    {att.isImage ? (
+                      <Box sx={{ position: 'relative' }}>
+                        <Box
+                          component="img"
+                          src={att.dataUrl}
+                          alt={att.name}
+                          sx={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: 1.5,
+                            objectFit: 'cover',
+                            border: '1px solid rgba(99, 102, 241, 0.3)'
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          aria-label={t('copilot.removeAttachment')}
+                          onClick={() => handleRemoveAttachment(att.id)}
+                          sx={{
+                            position: 'absolute',
+                            top: -6,
+                            right: -6,
+                            bgcolor: '#ef4444',
+                            color: 'white',
+                            p: '2px',
+                            '&:hover': { bgcolor: '#dc2626' }
+                          }}
+                        >
+                          <CancelRoundedIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
+                      </Box>
+                    ) : (
+                      <Chip
+                        icon={<InsertDriveFileRoundedIcon sx={{ fontSize: '16px !important' }} />}
+                        label={att.name}
+                        size="small"
+                        onDelete={() => handleRemoveAttachment(att.id)}
+                        sx={{
+                          fontSize: '0.75rem',
+                          maxWidth: 160
+                        }}
+                      />
+                    )}
+                  </Box>
+                ))}
+                <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary', ml: 'auto', flexShrink: 0 }}>
+                  {attachments.length}/{MAX_ATTACHMENTS}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Hidden file input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*,.pdf,.txt,.json,.csv,.md"
+              multiple
+              onChange={handleFileSelect}
+              style={{ display: 'none' }}
+            />
+
             <Paper
               sx={{
-                p: '4px 8px',
+                p: '4px 6px',
                 display: 'flex',
                 alignItems: 'center',
                 borderRadius: 2.5,
@@ -507,34 +805,55 @@ export default function AiCopilotWidget() {
                 }
               }}
             >
+              {/* Nút đính kèm tệp */}
+              <Tooltip title={t('copilot.attachFile')} arrow placement="top">
+                <IconButton
+                  size="small"
+                  aria-label={t('copilot.attachFile')}
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isLoading || attachments.length >= MAX_ATTACHMENTS}
+                  sx={{
+                    color: 'text.secondary',
+                    p: 0.75,
+                    '&:hover': {
+                      color: '#6366f1',
+                      bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(99, 102, 241, 0.08)'
+                    }
+                  }}
+                >
+                  <AttachFileRoundedIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </Tooltip>
+
               <InputBase
                 inputRef={inputRef}
                 multiline
                 maxRows={3}
-                placeholder={t('copilot.inputPlaceholder')}
+                placeholder={attachments.length > 0 ? t('copilot.defaultAttachmentPrompt') : t('copilot.inputPlaceholder')}
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 disabled={isLoading}
                 sx={{
-                  ml: 1,
+                  ml: 0.5,
                   flex: 1,
                   fontSize: { xs: '1rem', sm: '0.875rem' },
                   lineHeight: 1.4
                 }}
               />
+
               <IconButton
                 color="primary"
                 aria-label={t('common.send') || 'Send'}
                 onClick={() => handleSendMessage()}
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!canSend}
                 sx={{
                   width: { xs: 40, sm: 34 },
                   height: { xs: 40, sm: 34 },
-                  background: inputValue.trim() && !isLoading
+                  background: canSend
                     ? 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)'
                     : 'transparent',
-                  color: inputValue.trim() && !isLoading ? 'white' : 'text.disabled',
+                  color: canSend ? 'white' : 'text.disabled',
                   transition: 'all 0.2s',
                   '&:hover': {
                     background: 'linear-gradient(135deg, #4f46e5 0%, #9333ea 100%)',

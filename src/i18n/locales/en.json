@@ -650,6 +650,11 @@
     "openBoard": "Open board now",
     "columnCreatedSuccess": "✅ Added column: {{title}}",
     "cardCreatedSuccess": "✅ Created card: {{title}}",
-    "errorOccurred": "An error occurred while chatting with Assistant. Please try again!"
+    "errorOccurred": "An error occurred while chatting with Assistant. Please try again!",
+    "attachFile": "Attach file or image (or Ctrl+V)",
+    "removeAttachment": "Remove attachment",
+    "defaultAttachmentPrompt": "Please review and analyze this attached file/image.",
+    "maxFilesExceeded": "You can only attach up to 5 files at a time.",
+    "fileTooLarge": "File {{name}} exceeds maximum allowed size (max 5MB)."
   }
 }
