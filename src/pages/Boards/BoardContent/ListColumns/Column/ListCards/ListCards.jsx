@@ -57,21 +57,21 @@ function ListCards({ cards }) {
       <Box
         data-tour="board-cards-list"
         sx={{
-        p: '0 5px 5px 5px',
-        m: '0 5px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        overflowX: 'hidden',
-        // thanh scroll
-        overflowY: 'auto',
-        maxHeight: (theme) => `calc(
+          p: '0 5px 5px 5px',
+          m: '0 5px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          overflowX: 'hidden',
+          // thanh scroll
+          overflowY: 'auto',
+          maxHeight: (theme) => `calc(
                   ${theme.trello.boardContentHeight} - 
                   ${theme.spacing(5)} -
                   ${theme.trello.columnHeaderheight} -
                   ${theme.trello.columnFooterHeight}
                 )`
-      }}>
+        }}>
         {filteredCards?.map(card => <Card key={card._id} card={card} />)}
       </Box >
     </SortableContext>

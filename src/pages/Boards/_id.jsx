@@ -482,7 +482,8 @@ function Board() {
       window.removeEventListener('AUTO_MOVE_DEMO_CARD_TO_DOING', handleAutoMoveCard)
       window.removeEventListener('AUTO_REVERT_DEMO_CARD_TO_TODO', handleAutoRevertCard)
     }
-  }, [board, moveCardToDifferentColumn])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board])
 
   if (boardLoading || (!board && !boardError)) {
     return <PageLoadingSpinner caption={t('board.loadingBoard')} />

@@ -15,8 +15,6 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator'
 import PanToolAltIcon from '@mui/icons-material/PanToolAlt'
 import ReplayIcon from '@mui/icons-material/Replay'
 
-const PADDING = 0
-
 /**
  * Tìm phần tử DOM THỰC SỰ đang hiển thị trên giao diện (bỏ qua các placeholder ẩn display: none)
  */
@@ -141,7 +139,7 @@ function GuidedTour({ open, onClose }) {
         preferredPlacement: 'top'
       }
     ]
-  }, [isBoardDetail, t])
+  }, [isBoardDetail, isBoardEmpty, t])
 
   const currentStepData = steps[activeStep] || steps[0]
   const totalSteps = steps.length
@@ -376,6 +374,7 @@ function GuidedTour({ open, onClose }) {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeStep, isLastStep])
 
   const handleNext = () => {
@@ -764,146 +763,146 @@ function GuidedTour({ open, onClose }) {
             </Box>
           </Box>
 
-        {/* Tiêu đề hướng dẫn */}
-        <Typography
-          sx={{
-            color: '#ffffff',
-            fontSize: { xs: '1.02rem', sm: '1.1rem' },
-            fontWeight: 700,
-            lineHeight: 1.35,
-            mb: 1
-          }}
-        >
-          {currentStepData.title}
-        </Typography>
-
-        {/* Nội dung mô tả chi tiết */}
-        <Typography
-          sx={{
-            color: '#cbd5e1',
-            fontSize: '0.875rem',
-            lineHeight: 1.55,
-            mb: currentStepData.isDndStep && hasMovedCardRef.current ? 1.5 : 2.5
-          }}
-        >
-          {currentStepData.description}
-        </Typography>
-
-        {/* Nút Xem lại kéo thả (Replay) hiển thị khi ở bước DnD và thẻ đã chuyển xong sang Doing */}
-        {currentStepData.isDndStep && hasMovedCardRef.current && (
-          <Box sx={{ mb: 2 }}>
-            <Button
-              size="small"
-              onClick={handleReplayDnd}
-              startIcon={<ReplayIcon sx={{ fontSize: '16px' }} />}
-              sx={{
-                color: '#2dd4bf',
-                bgcolor: 'rgba(45, 212, 191, 0.12)',
-                border: '1px solid rgba(45, 212, 191, 0.3)',
-                borderRadius: '8px',
-                fontSize: '0.78rem',
-                fontWeight: 600,
-                textTransform: 'none',
-                px: 1.4,
-                py: 0.5,
-                transition: 'all 0.2s',
-                '&:hover': {
-                  bgcolor: 'rgba(45, 212, 191, 0.22)',
-                  borderColor: '#2dd4bf'
-                }
-              }}
-            >
-              {t('guidedTour.replayAnimation')}
-            </Button>
-          </Box>
-        )}
-
-        {/* Cụm nút hành động phía dưới: Bỏ qua - Quay lại - Tiếp */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1
-          }}
-        >
-          {/* Nút Bỏ qua */}
-          <Button
-            onClick={handleClose}
+          {/* Tiêu đề hướng dẫn */}
+          <Typography
             sx={{
-              color: '#94a3b8',
-              textTransform: 'none',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              p: '4px 8px',
-              minWidth: 'auto',
-              '&:hover': {
-                color: '#ffffff',
-                bgcolor: 'transparent'
-              }
+              color: '#ffffff',
+              fontSize: { xs: '1.02rem', sm: '1.1rem' },
+              fontWeight: 700,
+              lineHeight: 1.35,
+              mb: 1
             }}
           >
-            {t('guidedTour.skip')}
-          </Button>
+            {currentStepData.title}
+          </Typography>
 
-          {/* Cụm nút Quay lại & Tiếp */}
-          <Stack direction="row" spacing={1} alignItems="center">
-            {activeStep > 0 && (
+          {/* Nội dung mô tả chi tiết */}
+          <Typography
+            sx={{
+              color: '#cbd5e1',
+              fontSize: '0.875rem',
+              lineHeight: 1.55,
+              mb: currentStepData.isDndStep && hasMovedCardRef.current ? 1.5 : 2.5
+            }}
+          >
+            {currentStepData.description}
+          </Typography>
+
+          {/* Nút Xem lại kéo thả (Replay) hiển thị khi ở bước DnD và thẻ đã chuyển xong sang Doing */}
+          {currentStepData.isDndStep && hasMovedCardRef.current && (
+            <Box sx={{ mb: 2 }}>
               <Button
-                onClick={handlePrev}
+                size="small"
+                onClick={handleReplayDnd}
+                startIcon={<ReplayIcon sx={{ fontSize: '16px' }} />}
                 sx={{
-                  color: '#f1f5f9',
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
-                  textTransform: 'none',
-                  fontSize: '0.82rem',
+                  color: '#2dd4bf',
+                  bgcolor: 'rgba(45, 212, 191, 0.12)',
+                  border: '1px solid rgba(45, 212, 191, 0.3)',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
                   fontWeight: 600,
-                  borderRadius: '9999px',
-                  px: 1.8,
-                  py: 0.6,
-                  minWidth: 'auto',
+                  textTransform: 'none',
+                  px: 1.4,
+                  py: 0.5,
+                  transition: 'all 0.2s',
                   '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 0.18)'
+                    bgcolor: 'rgba(45, 212, 191, 0.22)',
+                    borderColor: '#2dd4bf'
                   }
                 }}
               >
-                {t('guidedTour.back')}
+                {t('guidedTour.replayAnimation')}
               </Button>
-            )}
+            </Box>
+          )}
 
+          {/* Cụm nút hành động phía dưới: Bỏ qua - Quay lại - Tiếp */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1
+            }}
+          >
+            {/* Nút Bỏ qua */}
             <Button
-              onClick={handleNext}
+              onClick={handleClose}
               sx={{
-                color: '#042727',
-                bgcolor: '#14b8a6',
+                color: '#94a3b8',
                 textTransform: 'none',
-                fontSize: '0.82rem',
-                fontWeight: 700,
-                borderRadius: '9999px',
-                px: 2.2,
-                py: 0.6,
-                boxShadow: '0 2px 10px rgba(20, 184, 166, 0.4)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 0.5,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                p: '4px 8px',
+                minWidth: 'auto',
                 '&:hover': {
-                  bgcolor: '#2dd4bf'
+                  color: '#ffffff',
+                  bgcolor: 'transparent'
                 }
               }}
             >
-              {isLastStep ? (
-                <span>{t('guidedTour.finish')}</span>
-              ) : (
-                <>
-                  <span>{t('guidedTour.next')}</span>
-                  <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>→</span>
-                </>
-              )}
+              {t('guidedTour.skip')}
             </Button>
-          </Stack>
+
+            {/* Cụm nút Quay lại & Tiếp */}
+            <Stack direction="row" spacing={1} alignItems="center">
+              {activeStep > 0 && (
+                <Button
+                  onClick={handlePrev}
+                  sx={{
+                    color: '#f1f5f9',
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    textTransform: 'none',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    borderRadius: '9999px',
+                    px: 1.8,
+                    py: 0.6,
+                    minWidth: 'auto',
+                    '&:hover': {
+                      bgcolor: 'rgba(255, 255, 255, 0.18)'
+                    }
+                  }}
+                >
+                  {t('guidedTour.back')}
+                </Button>
+              )}
+
+              <Button
+                onClick={handleNext}
+                sx={{
+                  color: '#042727',
+                  bgcolor: '#14b8a6',
+                  textTransform: 'none',
+                  fontSize: '0.82rem',
+                  fontWeight: 700,
+                  borderRadius: '9999px',
+                  px: 2.2,
+                  py: 0.6,
+                  boxShadow: '0 2px 10px rgba(20, 184, 166, 0.4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5,
+                  '&:hover': {
+                    bgcolor: '#2dd4bf'
+                  }
+                }}
+              >
+                {isLastStep ? (
+                  <span>{t('guidedTour.finish')}</span>
+                ) : (
+                  <>
+                    <span>{t('guidedTour.next')}</span>
+                    <span style={{ fontSize: '1.05rem', lineHeight: 1 }}>→</span>
+                  </>
+                )}
+              </Button>
+            </Stack>
+          </Box>
         </Box>
-      </Box>
-    </motion.div>
-  </Portal>
+      </motion.div>
+    </Portal>
   )
 }
 
