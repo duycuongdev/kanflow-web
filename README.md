@@ -161,6 +161,14 @@ Manage board invitations and deadline alerts with an intuitive *"You're all caug
 
 ---
 
+### 16. Kanflow AI Assistant (Google Gemini 2.5 Flash Lite)
+
+Context-aware in-app AI Copilot. Supports file attachments, clipboard image paste (`Ctrl + V`), automated board/task generation, agile planning, and persistent conversation history in `localStorage`.
+
+![Kanflow AI Assistant](./screenshots/17-kanflow-assistant.png)
+
+---
+
 ## ⚡ Real-Time Proof
 
 Two independent browser sessions watching the same board. Dragging a card between columns in one window propagates **instantly** to the other through the Socket.IO `board:<id>` room — no refresh, no polling.
