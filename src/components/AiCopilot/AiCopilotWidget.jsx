@@ -45,7 +45,6 @@ export default function AiCopilotWidget() {
 
   const currentUser = useSelector(selectCurrentUser)
   const currentBoard = useSelector(selectCurrentActiveBoard)
-  const boardLoading = useSelector((state) => state.activeBoard?.isLoading)
 
   const [isPageLoading, setIsPageLoading] = useState(getPageLoading())
 
@@ -54,7 +53,7 @@ export default function AiCopilotWidget() {
     return unsubscribe
   }, [])
 
-  const shouldHideWidget = isPageLoading || Boolean(boardLoading)
+  const shouldHideWidget = isPageLoading
 
   // Khóa localStorage cho lịch sử trò chuyện theo từng người dùng
   const historyStorageKey = currentUser?._id

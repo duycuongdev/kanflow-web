@@ -1,36 +1,46 @@
-import { useLayoutEffect, useEffect } from 'react'
+import { useLayoutEffect, useEffect, useId } from 'react'
 
-let loadingCount = 0
-let debounceTimer = null
+// Quản lý danh sách ID các loader đang hoạt động bằng Set để ngăn ngừa tuyệt đối rò rỉ trạng thái (state leak)
+const activeLoaders = new Set()
 const listeners = new Set()
+let falseNotifyTimer = null
 
 const notify = () => {
-  const isLoading = loadingCount > 0
-  listeners.forEach((listener) => listener(isLoading))
+  const hasActiveLoaders = activeLoaders.size > 0
+
+  if (hasActiveLoaders) {
+    // Có ít nhất 1 loader đang chạy: hủy bỏ timer kết thúc (nếu có) và báo ngay là đang loading
+    if (falseNotifyTimer) {
+      clearTimeout(falseNotifyTimer)
+      falseNotifyTimer = null
+    }
+    listeners.forEach((listener) => listener(true))
+  } else {
+    // Không còn loader nào active: trì hoãn thông báo false 80ms để chuyển cảnh mượt mà giữa các trang,
+    // tránh hiện tượng chớp nháy khi component Suspense unmount và component trang con mount
+    if (falseNotifyTimer) {
+      clearTimeout(falseNotifyTimer)
+    }
+    falseNotifyTimer = setTimeout(() => {
+      falseNotifyTimer = null
+      if (activeLoaders.size === 0) {
+        listeners.forEach((listener) => listener(false))
+      }
+    }, 80)
+  }
 }
 
-export const incrementPageLoading = () => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-    debounceTimer = null
-  }
-  loadingCount++
+export const registerLoader = (id) => {
+  activeLoaders.add(id)
   notify()
 }
 
-export const decrementPageLoading = () => {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer)
-  }
-  // Giữ trạng thái loading thêm 150ms để chuyển cảnh mượt mà giữa các route, tránh chớp nháy
-  debounceTimer = setTimeout(() => {
-    loadingCount = Math.max(0, loadingCount - 1)
-    debounceTimer = null
-    notify()
-  }, 150)
+export const unregisterLoader = (id) => {
+  activeLoaders.delete(id)
+  notify()
 }
 
-export const getPageLoading = () => loadingCount > 0
+export const getPageLoading = () => activeLoaders.size > 0
 
 export const subscribePageLoading = (listener) => {
   listeners.add(listener)
@@ -39,16 +49,16 @@ export const subscribePageLoading = (listener) => {
 
 /**
  * Hook đánh dấu component đang trong trạng thái loading toàn trang (full-page loading).
- * Dùng useLayoutEffect để cập nhật trạng thái đồng bộ trước khi trình duyệt vẽ (paint),
- * ngăn chặn hoàn toàn hiện tượng FAB hoặc widget bị chớp nháy trong 1 khung hình.
+ * Dùng Set với id duy nhất để đảm bảo mỗi instance chỉ được đăng ký một lần và hủy đúng một lần.
  */
 export const usePageLoadingSignal = () => {
+  const id = useId()
   const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
   useIsomorphicLayoutEffect(() => {
-    incrementPageLoading()
+    registerLoader(id)
     return () => {
-      decrementPageLoading()
+      unregisterLoader(id)
     }
-  }, [])
+  }, [id])
 }
