@@ -118,8 +118,10 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
 
   const handleEntryMouseDown = (e, entry) => {
     if (e.button !== 0) return
+    const startMs = dayjs(entry.startAt).valueOf()
+    const endMs = dayjs(entry.endAt).valueOf()
     // Chặn kéo entry có thời gian không hợp lệ (tránh sinh NaN khi tính vị trí mới)
-    if (!Number.isFinite(entry.startAt) || !Number.isFinite(entry.endAt)) return
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return
     // Không kéo khi bấm vào phần tử con tương tác (nếu có)
     const rect = e.currentTarget.getBoundingClientRect()
     const grabOffsetMin = Math.max(0, ((e.clientY - rect.top) / HOUR_HEIGHT) * 60)
@@ -144,7 +146,9 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       if (!col) return
       const dayStr = col.getAttribute('data-day-col')
       const colRect = col.getBoundingClientRect()
-      const durationMin = Math.max(1, Math.round((session.entry.endAt - session.entry.startAt) / 60000))
+      const startMs = dayjs(session.entry.startAt).valueOf()
+      const endMs = dayjs(session.entry.endAt).valueOf()
+      const durationMin = Math.max(1, Math.round((endMs - startMs) / 60000))
       if (!Number.isFinite(durationMin)) return
       const rawMinutes = ((e.clientY - colRect.top) / HOUR_HEIGHT) * 60 - session.grabOffsetMin
       const snapped = Math.max(0, Math.min(24 * 60 - durationMin, Math.round(rawMinutes / 30) * 30))

@@ -113,8 +113,10 @@ export default function Schedule() {
             return prev.map((e) => (e._id === entry._id ? entry : e))
           }
           // Chỉ thêm vào list nếu entry nằm trong khoảng đang hiển thị
-          const inRange = entry.startAt < displayRange.to && entry.endAt > displayRange.from
-          return inRange ? [...prev, entry].sort((a, b) => a.startAt - b.startAt) : prev
+          const entryStartMs = dayjs(entry.startAt).valueOf()
+          const entryEndMs = dayjs(entry.endAt).valueOf()
+          const inRange = entryStartMs < displayRange.to && entryEndMs > displayRange.from
+          return inRange ? [...prev, entry].sort((a, b) => dayjs(a.startAt).valueOf() - dayjs(b.startAt).valueOf()) : prev
         }
         return prev
       })
@@ -145,7 +147,9 @@ export default function Schedule() {
 
   // Kéo-thả entry trong view Tuần: dời startAt (giữ nguyên độ dài) + lưu API
   const handleEntryDrop = async (entry, newStartMs) => {
-    const durationMs = entry.endAt - entry.startAt
+    const startMs = dayjs(entry.startAt).valueOf()
+    const endMs = dayjs(entry.endAt).valueOf()
+    const durationMs = endMs - startMs
     // Chặn giá trị không hợp lệ (không bao giờ gửi NaN lên API)
     if (!Number.isFinite(newStartMs) || !Number.isFinite(durationMs) || durationMs <= 0) return
     const payload = {
