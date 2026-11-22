@@ -143,6 +143,33 @@ export default function Schedule() {
     setEntries((prev) => prev.filter((e) => e._id !== entryId))
   }
 
+  // Kéo-thả entry trong view Tuần: dời startAt (giữ nguyên độ dài) + lưu API
+  const handleEntryDrop = async (entry, newStartMs) => {
+    const durationMs = entry.endAt - entry.startAt
+    const payload = {
+      title: entry.title,
+      startAt: newStartMs,
+      endAt: newStartMs + durationMs,
+      colorKey: entry.colorKey,
+      cardId: entry.cardId || null,
+      boardId: entry.boardId || null,
+      cardTitle: entry.cardTitle || null,
+      boardTitle: entry.boardTitle || null,
+      checklistId: entry.checklistId || null,
+      checklistItemId: entry.checklistItemId || null,
+      checklistTitle: entry.checklistTitle || null,
+      itemTitle: entry.itemTitle || null
+    }
+    // Optimistic: cập nhật ngay để entry nhảy tới vị trí mới
+    setEntries((prev) => prev.map((e) => (e._id === entry._id ? { ...e, ...payload } : e)))
+    try {
+      const updated = await updateScheduleEntryAPI(entry._id, payload)
+      setEntries((prev) => prev.map((e) => (e._id === entry._id ? updated : e)))
+    } catch {
+      // lỗi đã toast ở interceptor - trạng thái sẽ khớp lại khi server phản hồi qua socket
+    }
+  }
+
   const openCreatePopover = (draft, anchorEl = null) => {
     setPopoverState({ mode: 'create', draft, anchorEl })
   }
@@ -293,6 +320,7 @@ export default function Schedule() {
             isLoading={isLoading}
             onSlotClick={(slotStart, anchorEl) => openCreatePopover({ startAt: slotStart.valueOf(), endAt: slotStart.add(1, 'hour').valueOf() }, anchorEl)}
             onEntryClick={openEditPopover}
+            onEntryDrop={handleEntryDrop}
           />
         )}
 

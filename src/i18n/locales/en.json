@@ -744,7 +744,7 @@
     "noEntries": "No events scheduled for this day",
     "entriesTitle": "events",
     "moreEntries": "+{{count}} more - view week",
-    "weekHint": "💡 Click an empty slot to schedule something at that hour. Click an event to edit it."
+    "weekHint": "💡 Click an empty slot to schedule something at that hour. Drag an event to move it. Click an event to edit it."
   },
   "focusPage": {
     "title": "Focus",

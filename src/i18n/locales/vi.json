@@ -744,7 +744,7 @@
     "noEntries": "Chưa có lịch nào trong ngày này",
     "entriesTitle": "lịch",
     "moreEntries": "+{{count}} lịch khác - xem tuần",
-    "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Bấm vào lịch để sửa."
+    "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Kéo giữ entry để dời lịch. Bấm entry để sửa."
   },
   "focusPage": {
     "title": "Trang tập trung",
