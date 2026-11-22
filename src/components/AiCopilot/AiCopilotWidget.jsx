@@ -26,6 +26,7 @@ import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import AttachFileRoundedIcon from '@mui/icons-material/AttachFileRounded'
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded'
+import ReplayRoundedIcon from '@mui/icons-material/ReplayRounded'
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded'
 
 import KanflowIcon from '~/components/Icons/KanflowIcon'
@@ -223,7 +224,7 @@ export default function AiCopilotWidget() {
 
   if (!currentUser) return null
 
-  const handleSendMessage = async (textToSend) => {
+  const handleSendMessage = async (textToSend, { attachmentsOverride = null, failedMsgId = null } = {}) => {
     let query = (textToSend || inputValue || '').trim()
 
     // Nếu không nhập nội dung text nhưng có đính kèm file, dùng câu hỏi mặc định
@@ -233,7 +234,7 @@ export default function AiCopilotWidget() {
 
     if (!query || isLoading) return
 
-    const currentAttachments = [...attachments]
+    const currentAttachments = attachmentsOverride ?? [...attachments]
     const userMessageId = `user-${Date.now()}`
     const newUserMsg = {
       id: userMessageId,
@@ -244,7 +245,9 @@ export default function AiCopilotWidget() {
     }
 
     // Cập nhật tin nhắn người dùng ngay lập tức & dọn dẹp input
-    const updatedMessages = [...messages, newUserMsg]
+    // (đang GỬI LẠI thì bỏ tin nhắn lỗi cũ)
+    const baseMessages = failedMsgId ? messages.filter((m) => m.id !== failedMsgId) : messages
+    const updatedMessages = [...baseMessages, newUserMsg]
     setMessages(updatedMessages)
     setInputValue('')
     setAttachments([])
@@ -301,16 +304,24 @@ export default function AiCopilotWidget() {
         }
       }
     } catch (err) {
-      const errorMsg = {
-        id: `err-${Date.now()}`,
-        role: 'assistant',
-        content: `⚠️ ${err?.response?.data?.message || t('copilot.errorOccurred')}`,
-        timestamp: Date.now()
-      }
-      setMessages(prev => [...prev, errorMsg])
+      // Đánh dấu tin nhắn gửi thất bại -> hiện nút "Gửi lại" ngay dưới tin nhắn
+      const reason = err?.response?.data?.message || err?.message || t('copilot.errorOccurred')
+      setMessages(prev => prev.map((m) => (m.id === userMessageId ? { ...m, failed: true, failedReason: reason } : m)))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Gửi lại 1 tin nhắn đã thất bại: xóa tin lỗi rồi gửi lại nguyên nội dung + attachments
+  const handleResendMessage = (msg) => {
+    if (isLoading) return
+    const attachmentsForResend = (msg.attachments || []).map((a) => ({
+      name: a.name,
+      mimeType: a.mimeType,
+      base64: a.base64,
+      dataUrl: a.dataUrl
+    }))
+    handleSendMessage(msg.content, { attachmentsOverride: attachmentsForResend, failedMsgId: msg.id })
   }
 
   const handleKeyDown = (e) => {
@@ -576,9 +587,29 @@ export default function AiCopilotWidget() {
                     )}
 
                     {isUser ? (
-                      <Typography sx={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                        {msg.content}
-                      </Typography>
+                      <>
+                        <Typography sx={{ fontSize: '0.875rem', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                          {msg.content}
+                        </Typography>
+                        {msg.failed && (
+                          <Box sx={{ mt: 0.75, display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+                            <Typography sx={{ fontSize: '0.72rem', color: '#ff9b7b', flex: 1, minWidth: 100 }}>
+                              ⚠️ {msg.failedReason || t('copilot.errorOccurred')}
+                            </Typography>
+                            <Button
+                              size='small'
+                              variant='contained'
+                              color='error'
+                              startIcon={<ReplayRoundedIcon sx={{ fontSize: '15px !important' }} />}
+                              onClick={() => handleResendMessage(msg)}
+                              disabled={isLoading}
+                              sx={{ textTransform: 'none', fontSize: '0.72rem', fontWeight: 700, py: 0.15, borderRadius: 1.5 }}
+                            >
+                              {t('copilot.resend')}
+                            </Button>
+                          </Box>
+                        )}
+                      </>
                     ) : (
                       <Box
                         data-color-mode={theme.palette.mode}

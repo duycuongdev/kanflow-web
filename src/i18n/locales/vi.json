@@ -652,6 +652,7 @@
     "openBoard": "Mở bảng ngay",
     "columnCreatedSuccess": "✅ Đã thêm cột: {{title}}",
     "cardCreatedSuccess": "✅ Đã tạo thẻ: {{title}}",
+    "resend": "Gửi lại",
     "scheduleCreatedSuccess": "📅 Đã tạo lịch \"{{title}}\" vào {{time}}",
     "openSchedule": "Mở bảng lịch",
     "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Assistant. Vui lòng thử lại!",

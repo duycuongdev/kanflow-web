@@ -652,6 +652,7 @@
     "openBoard": "Open board now",
     "columnCreatedSuccess": "✅ Added column: {{title}}",
     "cardCreatedSuccess": "✅ Created card: {{title}}",
+    "resend": "Resend",
     "scheduleCreatedSuccess": "📅 Schedule \"{{title}}\" created at {{time}}",
     "openSchedule": "Open schedule",
     "errorOccurred": "An error occurred while chatting with Assistant. Please try again!",
