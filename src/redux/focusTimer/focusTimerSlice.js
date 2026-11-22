@@ -50,6 +50,7 @@ const initialState = {
   focusedMs: 0,
   pomodoroCount: 0,
   customMinutes: 25,
+  hydrated: false,
   // Nhiệm vụ đang focus (log phiên gắn vào card/board này)
   task: { cardId: null, boardId: null, title: null },
   // Chuỗi lặp: tập trung focusMinutes' × repeats lượt, nghỉ breakMode giữa các lượt
@@ -84,6 +85,18 @@ const timerSlice = createSlice({
       }
       // Task không persist theo user (gắn theo phiên làm việc) - reset về null
       state.task = { cardId: null, boardId: null, title: null }
+
+      // Sau hydrate: nếu đang idle ở mode Focus, vòng đếm phản ánh đúng cấu hình chuỗi đã lưu
+      // (tránh lệch giữa vòng đếm và form "Chế độ lặp" trên trang Focus)
+      if (!state.plan?.active && !state.isRunning && state.mode === 'focus') {
+        const minutes = Math.min(180, Math.max(1, Number(state.plan?.focusMinutes) || 1))
+        state.customMinutes = minutes
+        state.durationMs = minutes * 60 * 1000
+        state.remainingMs = minutes * 60 * 1000
+      }
+
+      // Đánh dấu đã hydrate xong (cờ KHÔNG persist - mỗi lần mở lại trang chờ nạp mới)
+      state.hydrated = true
     },
 
     startFocusTimer: (state, action) => {

@@ -24,7 +24,9 @@ export default function FocusTimerTicker() {
   useEffect(() => {
     if (hydratedKeyRef.current !== timerStorageKey) return
     try {
-      localStorage.setItem(timerStorageKey, JSON.stringify(timerState))
+      const persistable = { ...timerState }
+      delete persistable.hydrated // cờ phiên, không persist
+      localStorage.setItem(timerStorageKey, JSON.stringify(persistable))
     } catch {
       // ignore
     }

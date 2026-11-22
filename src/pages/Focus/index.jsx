@@ -448,14 +448,33 @@ export default function Focus() {
     return () => clearInterval(interval)
   }, [])
 
-  // Cấu hình chuỗi (local state cho form) - đồng bộ khi plan đang chạy
+  // Cấu hình chuỗi (local state cho form) - chỉ init SAU khi đã hydrate đúng user
+  const hydrated = timerState.hydrated === true
   const [focusMinutes, setFocusMinutes] = useState(plan.focusMinutes)
   const [repeats, setRepeats] = useState(plan.repeats)
   const [breakMode, setBreakMode] = useState(plan.breakMode)
 
+  // Khi hydrate xong (hoặc đổi user): nạp cấu hình chuỗi đã lưu vào form
+  useEffect(() => {
+    if (!hydrated) return
+    setFocusMinutes(plan.focusMinutes)
+    setRepeats(plan.repeats)
+    setBreakMode(plan.breakMode)
+    // Chỉ chạy khi cờ hydrated đổi - giữ nguyên form khi user đang gõ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated])
+
   const remainingMs = timerState.isRunning && timerState.endAt
     ? Math.max(0, timerState.endAt - now)
     : timerState.remainingMs
+
+  // Khi idle ở mode Focus: vòng đếm luôn phản ánh đúng cấu hình chuỗi (plan form là nguồn chuẩn)
+  useEffect(() => {
+    if (!hydrated) return
+    if (!plan.active && !timerState.isRunning && timerState.mode === 'focus') {
+      dispatch(setCustomMinutes(plan.focusMinutes))
+    }
+  }, [hydrated, plan.focusMinutes, plan.active, timerState.isRunning, timerState.mode, dispatch])
 
   // Phiên đang diễn ra (đang chạy / nghỉ trong chuỗi / tạm dừng giữa chừng) -> toàn màn hình
   const sessionActive = timerState.isRunning || plan.active || remainingMs !== timerState.durationMs
@@ -780,10 +799,26 @@ export default function Focus() {
                     onChange={(e, v) => v && setBreakMode(v)}
                     size='small'
                     disabled={plan.active}
-                    sx={{ gap: 0.75 }}
+                    sx={{
+                      gap: 0.75,
+                      // Mỗi nút là pill riêng (gap làm hỏng bo góc grouped mặc định của MUI)
+                      '& .MuiToggleButtonGroup-grouped': {
+                        borderRadius: '10px !important',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        textTransform: 'none',
+                        fontWeight: 600,
+                        '&.Mui-selected': {
+                          bgcolor: 'rgba(0, 82, 204, 0.12)',
+                          color: '#0052cc',
+                          borderColor: 'rgba(0, 82, 204, 0.45)',
+                          '&:hover': { bgcolor: 'rgba(0, 82, 204, 0.18)' }
+                        }
+                      }
+                    }}
                   >
-                    <ToggleButton value='short' sx={{ textTransform: 'none' }}>{t('focusPage.breakShort')}</ToggleButton>
-                    <ToggleButton value='long' sx={{ textTransform: 'none' }}>{t('focusPage.breakLong')}</ToggleButton>
+                    <ToggleButton value='short'>{t('focusPage.breakShort')}</ToggleButton>
+                    <ToggleButton value='long'>{t('focusPage.breakLong')}</ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
               </Box>
