@@ -5,12 +5,10 @@ import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
-import Button from '@mui/material/Button'
 import { useTheme } from '@mui/material/styles'
 
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
-import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
 import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 
 import {
@@ -53,13 +51,22 @@ export default function FocusTimerSidebarCard() {
   const ringCircumference = 2 * Math.PI * ringRadius
 
   return (
-    <Box sx={{
-      borderRadius: '10px',
-      border: '1px solid',
-      borderColor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0, 82, 204, 0.18)',
-      bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0, 82, 204, 0.04)',
-      p: 1.5
-    }}>
+    <Box
+      onClick={() => navigate('/focus')}
+      sx={{
+        borderRadius: '10px',
+        border: '1px solid',
+        borderColor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0, 82, 204, 0.18)',
+        bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0, 82, 204, 0.04)',
+        p: 1.5,
+        cursor: 'pointer',
+        transition: 'all 0.15s ease',
+        '&:hover': {
+          borderColor: 'rgba(0, 82, 204, 0.5)',
+          bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.07)' : 'rgba(0, 82, 204, 0.08)'
+        }
+      }}
+    >
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
         <TimerRoundedIcon sx={{ fontSize: 18, color: modeConfig.color }} />
@@ -117,9 +124,12 @@ export default function FocusTimerSidebarCard() {
         <IconButton
           size='small'
           aria-label={timerState.isRunning ? t('focusTimer.pause') : t('focusTimer.start')}
-          onClick={() => (timerState.isRunning
-            ? dispatch(pauseFocusTimer({ now: Date.now() }))
-            : dispatch(startFocusTimer({ now: Date.now() })))}
+          onClick={(e) => {
+            e.stopPropagation()
+            dispatch(timerState.isRunning
+              ? pauseFocusTimer({ now: Date.now() })
+              : startFocusTimer({ now: Date.now() }))
+          }}
           sx={{
             bgcolor: modeConfig.color, color: '#fff',
             '&:hover': { bgcolor: modeConfig.color, filter: 'brightness(1.1)' }
@@ -129,17 +139,6 @@ export default function FocusTimerSidebarCard() {
         </IconButton>
       </Box>
 
-      {/* Mở panel đầy đủ */}
-      <Button
-        fullWidth
-        size='small'
-        variant='text'
-        startIcon={<OpenInNewRoundedIcon sx={{ fontSize: 16 }} />}
-        onClick={() => navigate('/focus')}
-        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', justifyContent: 'flex-start', px: 1 }}
-      >
-        {t('focusTimer.openFullPanel')}
-      </Button>
     </Box>
   )
 }

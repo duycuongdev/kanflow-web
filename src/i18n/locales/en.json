@@ -693,8 +693,7 @@
     "sessionsUnit": "sessions",
     "leaderboard": "Focus leaderboard",
     "leaderboardEmpty": "Nobody has focused in this period yet. Start now to lead the board!",
-    "you": "you",
-    "openFullPanel": "Open focus page"
+    "you": "you"
   },
   "schedule": {
     "prev": "Previous",
