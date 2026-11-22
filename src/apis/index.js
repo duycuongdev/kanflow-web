@@ -214,3 +214,37 @@ export const getFocusLeaderboardAPI = async (from, to) => {
   })
   return response.data
 }
+
+/** ================= Schedule (bảng lịch cá nhân) ================= */
+
+// Chi tiết 1 board (columns + cards) - dùng khi gắn card vào entry lịch
+export const fetchBoardDetailsAPI = async (boardId) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/boards/${boardId}`)
+  return response.data
+}
+
+// Entry lịch của user giao với khoảng from/to (epoch ms)
+export const getScheduleEntriesAPI = async (from, to) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/schedules`, {
+    params: { from, to }
+  })
+  return response.data
+}
+
+// Tạo entry lịch mới (title, startAt, endAt, colorKey, gắn được card)
+export const createScheduleEntryAPI = async (entryData) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/schedules`, entryData)
+  return response.data
+}
+
+// Sửa entry lịch (chỉ chủ nhân)
+export const updateScheduleEntryAPI = async (entryId, updateData) => {
+  const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/schedules/${entryId}`, updateData)
+  return response.data
+}
+
+// Xóa entry lịch (soft delete, chỉ chủ nhân)
+export const deleteScheduleEntryAPI = async (entryId) => {
+  const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/schedules/${entryId}`)
+  return response.data
+}

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
@@ -29,6 +30,7 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
   // Kính mờ chỉ khi đang ở board chi tiết có ảnh nền (không kéo sang trang danh sách)
   const onBoardWithImage = /^\/boards\/[^/]+/.test(location.pathname) && Boolean(activeBoard?.background)
   const isBoardsActive = location.pathname === '/boards' || location.pathname === '/boards/'
+  const isScheduleActive = location.pathname.startsWith('/schedule')
 
   return (
     <Box sx={{
@@ -55,6 +57,12 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
         icon={<SpaceDashboardIcon />}
         label={t('appBar.boardList')}
         active={isBoardsActive}
+      />
+      <TabLink
+        to="/schedule"
+        icon={<CalendarMonthRoundedIcon />}
+        label={t('appBar.schedule')}
+        active={isScheduleActive}
       />
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 68, transition: 'transform 0.12s ease', '&:active': { transform: 'scale(0.93)' } }}>
         <Notifications openUpward />

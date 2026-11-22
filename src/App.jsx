@@ -19,6 +19,7 @@ const AccountVerification = lazy(() => import('~/pages/Auth/AccountVerification'
 const ForgotPassword = lazy(() => import('~/pages/Auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('~/pages/Auth/ResetPassword'))
 const Settings = lazy(() => import('~/pages/Settings/Settings'))
+const Schedule = lazy(() => import('~/pages/Schedule/index.jsx'))
 const NotFound = lazy(() => import('~/pages/404/NotFound'))
 
 // Giữ nền theo theme trong lúc tải route để tránh lóe màu.
@@ -136,6 +137,9 @@ function App() {
           <Route path='boards/:boardId' element={<PageFade><Board /></PageFade>} />
           <Route path='boards/:boardId/:slug' element={<PageFade><Board /></PageFade>} />
           <Route path='boards/' element={<PageFade><Boards /></PageFade>} />
+
+          {/* Schedule (bảng lịch cá nhân) */}
+          <Route path='schedule' element={<PageFade><Schedule /></PageFade>} />
 
           {/* User Settings */}
           <Route path='settings/account' element={<PageFade><Settings /></PageFade>} />

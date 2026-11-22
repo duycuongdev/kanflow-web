@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
 import AppsIcon from '@mui/icons-material/Apps'
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import Typography from '@mui/material/Typography'
 import Tooltip from '@mui/material/Tooltip'
@@ -114,6 +115,17 @@ function AppBar() {
                   aria-label={t('appBar.boardList')}
                 >
                   <AppsIcon />
+                </IconButton>
+              </Tooltip>
+            </Link>
+            {/* Icon bảng lịch (Schedule) - nằm cùng nhóm ẩn trên mobile với icon lưới */}
+            <Link to='/schedule'>
+              <Tooltip title={t('appBar.schedule')}>
+                <IconButton
+                  sx={{ color: 'white' }}
+                  aria-label={t('appBar.schedule')}
+                >
+                  <CalendarMonthRoundedIcon />
                 </IconButton>
               </Tooltip>
             </Link>
