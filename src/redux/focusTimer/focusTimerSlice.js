@@ -287,6 +287,8 @@ export const stopFocusSession = createAsyncThunk(
     dispatch(resetFocusTimer())
     if (timer.plan?.active) {
       dispatch(setFocusPlan({ active: false, round: 1, phase: 'idle' }))
+      // Quay về mode focus với thời lượng mặc định để sẵn sàng cho phiên mới
+      dispatch(switchTimerMode('focus'))
       toast.info(i18n.t('focusPage.planStopped'))
     }
   }
