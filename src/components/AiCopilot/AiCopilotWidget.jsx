@@ -16,6 +16,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { motion, AnimatePresence } from 'framer-motion'
+import dayjs from 'dayjs'
 import MDEditor from '@uiw/react-md-editor'
 
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
@@ -276,7 +277,9 @@ export default function AiCopilotWidget() {
         history: historyPayload,
         currentBoardId: currentBoard?._id || null,
         language: currentLang,
-        attachments: attachmentsPayload
+        attachments: attachmentsPayload,
+        // Giờ máy client để AI giải mã các mốc thời gian tương đối ("ngày mai 9h"...)
+        localNowISO: dayjs().format()
       })
 
       const botMessageId = `bot-${Date.now()}`
@@ -616,6 +619,7 @@ export default function AiCopilotWidget() {
                             {msg.actionResult.type === 'BOARD_CREATED' && t('copilot.boardCreatedSuccess')}
                             {msg.actionResult.type === 'COLUMN_CREATED' && t('copilot.columnCreatedSuccess', { title: msg.actionResult.data?.title })}
                             {msg.actionResult.type === 'CARD_CREATED' && t('copilot.cardCreatedSuccess', { title: msg.actionResult.data?.title })}
+                            {msg.actionResult.type === 'SCHEDULE_CREATED' && t('copilot.scheduleCreatedSuccess', { title: msg.actionResult.data?.title, time: msg.actionResult.data?.startAt ? dayjs(msg.actionResult.data.startAt).format('DD/MM/YYYY HH:mm') : '' })}
                           </Typography>
                         </Box>
 
@@ -638,6 +642,28 @@ export default function AiCopilotWidget() {
                             }}
                           >
                             {t('copilot.openBoard')}
+                          </Button>
+                        )}
+
+                        {msg.actionResult.type === 'SCHEDULE_CREATED' && (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            endIcon={<LaunchRoundedIcon sx={{ fontSize: '16px !important' }} />}
+                            onClick={() => {
+                              navigate('/schedule')
+                              if (isMobile) setIsOpen(false)
+                            }}
+                            sx={{
+                              textTransform: 'none',
+                              fontSize: '0.775rem',
+                              fontWeight: 600,
+                              py: 0.5,
+                              borderRadius: 1.5
+                            }}
+                          >
+                            {t('copilot.openSchedule')}
                           </Button>
                         )}
                       </Box>
