@@ -51,6 +51,8 @@ import {
   setFocusTask,
   startFocusPlan
 } from '~/redux/focusTimer/focusTimerSlice'
+import Pagination from '@mui/material/Pagination'
+
 import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI } from '~/apis'
 
 /** Cascade chọn nhiệm vụ: Bảng → Card → Checklist → Item (tái dùng pattern của Schedule popover) */
@@ -482,6 +484,7 @@ export default function Focus() {
   // ==================== Insights (stats + leaderboard) ====================
   const [stats, setStats] = useState(null)
   const [leaderboardPeriod, setLeaderboardPeriod] = useState('week')
+  const [leaderboardPage, setLeaderboardPage] = useState(1)
   const [leaderboard, setLeaderboard] = useState(null)
 
   const loadInsights = useCallback(async () => {
@@ -503,11 +506,11 @@ export default function Focus() {
       const [from, to] = leaderboardPeriod === 'month'
         ? [nowDayjs.startOf('month').valueOf(), nowDayjs.endOf('month').valueOf() + 1]
         : [nowDayjs.startOf('week').valueOf(), nowDayjs.endOf('week').valueOf() + 1]
-      setLeaderboard(await getFocusLeaderboardAPI(from, to))
+      setLeaderboard(await getFocusLeaderboardAPI(from, to, leaderboardPage))
     } catch {
       // im lặng
     }
-  }, [currentUser, leaderboardPeriod])
+  }, [currentUser, leaderboardPeriod, leaderboardPage])
 
   useEffect(() => {
     loadInsights()
@@ -563,7 +566,7 @@ export default function Focus() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
           {/* TRÁI: vòng tròn tập trung */}
           <Paper elevation={0} sx={{
-            flexShrink: 0, width: { xs: '100%', md: 380 },
+            flexShrink: 0, width: { xs: '100%', md: 420 },
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             p: { xs: 2.5, md: 3 }, borderRadius: 4,
             border: '1px solid', borderColor: 'divider',
@@ -718,17 +721,11 @@ export default function Focus() {
                 {t(`focusPage.tip${(dayOfYear % 6) + 1}`)}
               </Typography>
             </Box>
-          </Paper>
 
-          {/* PHẢI: nhiệm vụ + chế độ lặp + thống kê */}
-          <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {/* Nhiệm vụ */}
-            <Paper elevation={0} sx={{
-              p: { xs: 2, md: 2.5 }, borderRadius: 4,
-              border: '1px solid', borderColor: 'divider',
-              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
-              boxShadow: '0 4px 18px rgba(0, 82, 204, 0.07)'
-            }}>
+            {/* Phần setup: nhiệm vụ + chế độ lặp - nằm cùng cột với vòng đếm */}
+            <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
+
+            <Box sx={{ alignSelf: 'stretch', width: '100%' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
                 <EventNoteRoundedIcon sx={{ color: '#0052cc', fontSize: 20 }} />
                 <Typography sx={{ fontWeight: 700 }}>
@@ -747,20 +744,15 @@ export default function Focus() {
               <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
                 {t('focusPage.taskHint')}
               </Typography>
-            </Paper>
+            </Box>
 
-            {/* Chế độ lặp */}
-            <Paper elevation={0} sx={{
-              p: { xs: 2, md: 2.5 }, borderRadius: 4,
-              border: '1px solid', borderColor: 'divider',
-              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
-              boxShadow: '0 4px 18px rgba(0, 82, 204, 0.07)'
-            }}>
+            <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
+
+            <Box sx={{ alignSelf: 'stretch', width: '100%' }}>
               <Typography sx={{ fontWeight: 700, mb: 1.5 }}>
                 {t('focusPage.planSection')}
               </Typography>
-
-              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end', mb: 1.5 }}>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'flex-end', mb: 1.5 }}>
                 <TextField
                   type='number'
                   size='small'
@@ -777,7 +769,7 @@ export default function Focus() {
                     }
                   }}
                   InputProps={{ inputProps: { min: 1, max: 180 } }}
-                  sx={{ width: 150, '& input': { textAlign: 'center' } }}
+                  sx={{ width: 140, '& input': { textAlign: 'center' } }}
                 />
                 <TextField
                   type='number'
@@ -787,7 +779,7 @@ export default function Focus() {
                   disabled={plan.active}
                   onChange={(e) => setRepeats(e.target.value)}
                   InputProps={{ inputProps: { min: 1, max: 12 } }}
-                  sx={{ width: 150, '& input': { textAlign: 'center' } }}
+                  sx={{ width: 130, '& input': { textAlign: 'center' } }}
                 />
                 <Box>
                   <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
@@ -833,8 +825,6 @@ export default function Focus() {
                 })}
               </Typography>
 
-              <Divider sx={{ mb: 1.5 }} />
-
               {plan.active ? (
                 <Button
                   fullWidth
@@ -849,16 +839,18 @@ export default function Focus() {
                 <Button
                   fullWidth
                   variant='contained'
-                  size='large'
                   startIcon={<TimerRoundedIcon />}
                   onClick={handleStartPlan}
-                  sx={{ textTransform: 'none', fontWeight: 700, py: 1.2, borderRadius: 2.5, boxShadow: '0 6px 18px rgba(0, 82, 204, 0.3)' }}
+                  sx={{ textTransform: 'none', fontWeight: 700, py: 1.1, borderRadius: 2.5, boxShadow: '0 6px 18px rgba(0, 82, 204, 0.3)' }}
                 >
                   {t('focusPage.startPlan')}
                 </Button>
               )}
-            </Paper>
+            </Box>
+          </Paper>
 
+          {/* PHẢI: nhiệm vụ + chế độ lặp + thống kê */}
+          <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
             {/* Thống kê + bảng xếp hạng */}
             <Paper elevation={0} sx={{
               p: { xs: 2, md: 2.5 }, borderRadius: 4,
@@ -957,6 +949,19 @@ export default function Focus() {
                   </>
                 )}
               </Paper>
+
+              {/* Phân trang khi nhiều user */}
+              {(leaderboard?.totalPages || 1) > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
+                  <Pagination
+                    count={leaderboard.totalPages}
+                    page={leaderboard?.page || 1}
+                    onChange={(e, newPage) => setLeaderboardPage(newPage)}
+                    size='small'
+                    color='primary'
+                  />
+                </Box>
+              )}
             </Paper>
           </Box>
         </Box>
