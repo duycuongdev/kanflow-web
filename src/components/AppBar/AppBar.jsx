@@ -4,7 +4,6 @@ import LanguageSelect from '~/components/LanguageSelect/LanguageSelect'
 import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import IconButton from '@mui/material/IconButton'
-import AppsIcon from '@mui/icons-material/Apps'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import Typography from '@mui/material/Typography'
@@ -106,19 +105,15 @@ function AppBar() {
         '&::-webkit-scrollbar-track': { m: 2 }
       }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
-          {/* Icon lưới chuyển bảng: ẩn trên mobile (bottom nav đã có tab Danh sách bảng) */}
+          {/* Logo Kanflow đứng đầu - bấm về danh sách bảng */}
+          <Link to='/boards' style={{ textDecoration: 'none' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+              <KanflowIcon fontSize='small' sx={{ color: 'white' }} />
+              <Typography variant='span' sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', letterSpacing: '0.5px' }}>Kanflow</Typography>
+            </Box>
+          </Link>
+          {/* Icon bảng lịch (Schedule): ẩn trên mobile (bottom nav đã có tab Lịch) */}
           <Box sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>
-            <Link to='/boards'>
-              <Tooltip title={t('appBar.boardList')}>
-                <IconButton
-                  sx={{ color: 'white' }}
-                  aria-label={t('appBar.boardList')}
-                >
-                  <AppsIcon />
-                </IconButton>
-              </Tooltip>
-            </Link>
-            {/* Icon bảng lịch (Schedule) - nằm cùng nhóm ẩn trên mobile với icon lưới */}
             <Link to='/schedule'>
               <Tooltip title={t('appBar.schedule')}>
                 <IconButton
@@ -130,12 +125,6 @@ function AppBar() {
               </Tooltip>
             </Link>
           </Box>
-          <Link to='/boards' style={{ textDecoration: 'none' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-              <KanflowIcon fontSize='small' sx={{ color: 'white' }} />
-              <Typography variant='span' sx={{ fontSize: '1.2rem', fontWeight: 800, color: 'white', letterSpacing: '0.5px' }}>Kanflow</Typography>
-            </Box>
-          </Link>
         </Box>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 } }}>
