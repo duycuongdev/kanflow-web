@@ -43,12 +43,13 @@ export default function FocusTimerTicker() {
     hydratedKeyRef.current = timerStorageKey
   }, [timerStorageKey, dispatch])
 
-  // Tick 500ms
+  // Tick 500ms chỉ khi timer đang chạy (tránh tốn CPU và render thừa khi idle)
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
+    if (!timerState.isRunning) return
     const interval = setInterval(() => setNow(Date.now()), 500)
     return () => clearInterval(interval)
-  }, [])
+  }, [timerState.isRunning])
 
   // Phát hiện hết giờ -> hoàn thành phiên (dispatch là idempotent: applyCompleted set isRunning=false)
   useEffect(() => {

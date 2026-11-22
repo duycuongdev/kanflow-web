@@ -359,7 +359,18 @@ function GuidedTour({ open, onClose }) {
       setGhostFlight(null)
       hasMovedCardRef.current = false
     }
+    return () => {
+      hasMovedCardRef.current = false
+    }
   }, [open])
+
+  // Tự động đóng tour và dọn dẹp khi người dùng điều hướng sang trang khác
+  useEffect(() => {
+    if (open) {
+      handleClose()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname])
 
   useEffect(() => {
     const handleKeyDown = (e) => {

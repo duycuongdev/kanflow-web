@@ -56,10 +56,13 @@ import Checkbox from '@mui/material/Checkbox'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI, updateCardDetailsAPI } from '~/apis'
 
+// Cache danh sách boards ở tầng module để tránh fetch lại mỗi lần component TaskCascade mount
+let cachedBoards = null
+
 /** Cascade chọn nhiệm vụ: Bảng → Card → Checklist → Item (tái dùng pattern của Schedule popover) */
 function TaskCascade({ onChainChange }) {
   const { t } = useTranslation()
-  const [boards, setBoards] = useState([])
+  const [boards, setBoards] = useState(() => cachedBoards || [])
   const [boardId, setBoardId] = useState('')
   const [cardId, setCardId] = useState('')
   const [checklistId, setChecklistId] = useState('')
@@ -107,8 +110,16 @@ function TaskCascade({ onChainChange }) {
   }
 
   useEffect(() => {
+    if (cachedBoards && cachedBoards.length > 0) {
+      setBoards(cachedBoards)
+      return
+    }
     fetchBoardsAPI('?page=1&itemsPerPage=100')
-      .then((data) => setBoards(data.boards || []))
+      .then((data) => {
+        const list = data.boards || []
+        cachedBoards = list
+        setBoards(list)
+      })
       .catch(() => { /* lỗi đã toast ở interceptor */ })
   }, [])
 
@@ -544,9 +555,10 @@ export default function Focus() {
 
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
+    if (!timerState.isRunning) return
     const interval = setInterval(() => setNow(Date.now()), 500)
     return () => clearInterval(interval)
-  }, [])
+  }, [timerState.isRunning])
 
   // Cấu hình chuỗi (local state cho form) - chỉ init SAU khi đã hydrate đúng user
   const hydrated = timerState.hydrated === true

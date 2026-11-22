@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 
-export function ImportBoardModal({ open, onClose, afterImportBoard }) {
+function ImportBoardModal({ open, onClose, afterImportBoard }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const fileInputRef = useRef(null)
