@@ -360,7 +360,7 @@ export default function AiCopilotWidget() {
             transition={{ type: 'spring', stiffness: 320, damping: 22 }}
             style={{
               position: 'fixed',
-              bottom: isMobile ? 'calc(76px + env(safe-area-inset-bottom, 0px))' : 24,
+              bottom: isMobile ? 'calc(76px + env(safe-area-inset-bottom, 0px))' : 48,
               right: isMobile ? 16 : 24,
               zIndex: 1200
             }}

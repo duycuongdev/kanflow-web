@@ -9,6 +9,9 @@ import Tooltip from '@mui/material/Tooltip'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import dayjs from 'dayjs'
+import isoWeekPlugin from 'dayjs/plugin/isoWeek'
+
+dayjs.extend(isoWeekPlugin)
 
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
@@ -60,15 +63,15 @@ export default function Schedule() {
       }
     }
     if (view === 'month') {
-      const gridStart = anchorDate.startOf('month').startOf('week')
-      const gridEnd = anchorDate.endOf('month').endOf('week')
+      const gridStart = anchorDate.startOf('month').startOf('isoWeek')
+      const gridEnd = anchorDate.endOf('month').endOf('isoWeek')
       return { from: gridStart.valueOf(), to: gridEnd.valueOf() + 1 }
     }
     if (view === 'day') {
       return { from: anchorDate.startOf('day').valueOf(), to: anchorDate.endOf('day').valueOf() + 1 }
     }
-    const weekStart = anchorDate.startOf('week')
-    const weekEnd = anchorDate.endOf('week')
+    const weekStart = anchorDate.startOf('isoWeek')
+    const weekEnd = anchorDate.endOf('isoWeek')
     return { from: weekStart.valueOf(), to: weekEnd.valueOf() + 1 }
   }, [anchorDate, view])
 
@@ -177,8 +180,8 @@ export default function Schedule() {
     if (view === 'day') {
       return anchorDate.format('dddd, DD/MM/YYYY')
     }
-    const weekStart = anchorDate.startOf('week')
-    const weekEnd = anchorDate.endOf('week')
+    const weekStart = anchorDate.startOf('isoWeek')
+    const weekEnd = anchorDate.endOf('isoWeek')
     return t('schedule.headerWeek', {
       range: `${weekStart.format('DD/MM')} – ${weekEnd.format('DD/MM/YYYY')}`
     })
@@ -285,7 +288,7 @@ export default function Schedule() {
         {/* Nội dung theo view */}
         {view === 'week' && !isMobile && (
           <WeekGrid
-            weekStart={anchorDate.startOf('week')}
+            weekStart={anchorDate.startOf('isoWeek')}
             entries={entries}
             isLoading={isLoading}
             onSlotClick={(slotStart, anchorEl) => openCreatePopover({ startAt: slotStart.valueOf(), endAt: slotStart.add(1, 'hour').valueOf() }, anchorEl)}

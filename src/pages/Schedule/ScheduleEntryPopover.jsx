@@ -396,6 +396,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           setAttachChain(null)
         }}
         sx={{ mb: 1 }}
+        MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
         renderValue={(value) => {
           if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
           const board = boards.find((b) => b._id === value)
@@ -420,6 +421,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           value={selectedCardId}
           onChange={(e) => handleSelectCard(e.target.value)}
           sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectCard')}</Typography>
             const card = cardOptions.find((c) => c._id === value)
@@ -448,6 +450,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           value={selectedChecklistId}
           onChange={(e) => handleSelectChecklist(e.target.value)}
           sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectChecklist')}</Typography>
             const checklist = selectedCard.checklists.find((cl) => (cl._id || cl.title) === value)
@@ -476,6 +479,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           value={selectedItemId}
           onChange={(e) => handleSelectItem(e.target.value)}
           sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectItem')}</Typography>
             const item = selectedChecklist.items.find((it) => (it._id || it.title) === value)

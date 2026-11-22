@@ -3,6 +3,9 @@ import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import dayjs from 'dayjs'
+import isoWeekPlugin from 'dayjs/plugin/isoWeek'
+
+dayjs.extend(isoWeekPlugin)
 
 import { getHolidaysForYear } from './holidays'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
@@ -14,7 +17,7 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
 
   // Lưới 6 tuần × 7 ngày bao trọn tháng (bắt đầu từ đầu tuần chứa ngày 1)
   const gridDays = useMemo(() => {
-    const gridStart = anchorDate.startOf('month').startOf('week')
+    const gridStart = anchorDate.startOf('month').startOf('isoWeek')
     return Array.from({ length: 42 }, (_, i) => gridStart.add(i, 'day'))
   }, [anchorDate])
 
@@ -31,7 +34,7 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
   const monthStr = anchorDate.format('YYYY-MM')
   const holidayMap = useMemo(() => getHolidaysForYear(anchorDate.year()), [anchorDate])
   const weekDayLabels = useMemo(() => {
-    const monday = dayjs().startOf('week')
+    const monday = dayjs().startOf('isoWeek')
     return Array.from({ length: 7 }, (_, i) => monday.add(i, 'day').format('ddd'))
   }, [])
 
