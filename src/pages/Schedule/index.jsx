@@ -6,8 +6,6 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
-import ToggleButton from '@mui/material/ToggleButton'
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import dayjs from 'dayjs'
@@ -229,18 +227,43 @@ export default function Schedule() {
           <Box sx={{ flex: 1 }} />
 
           {!isMobile && (
-            <ToggleButtonGroup
-              value={view}
-              exclusive
-              onChange={(e, newValue) => newValue && setView(newValue)}
-              size='small'
-            >
-              {viewOptions.map(({ value, label, icon: Icon }) => (
-                <ToggleButton key={value} value={value} aria-label={label}>
-                  <Icon sx={{ fontSize: 18, mr: 0.5 }} /> {label}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+            <Box sx={{
+              display: 'flex', alignItems: 'center', gap: 0.25,
+              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0, 82, 204, 0.06)',
+              borderRadius: '999px', p: '4px'
+            }}>
+              {viewOptions.map(({ value, label, icon: Icon }) => {
+                const isActive = view === value
+                return (
+                  <Box
+                    key={value}
+                    onClick={() => setView(value)}
+                    aria-label={label}
+                    sx={{
+                      display: 'flex', alignItems: 'center', gap: 0.5,
+                      px: 1.75, py: 0.6, borderRadius: '999px',
+                      cursor: 'pointer', userSelect: 'none',
+                      transition: 'all 0.18s ease',
+                      ...(isActive ? {
+                        bgcolor: '#0052cc',
+                        color: '#fff',
+                        boxShadow: '0 3px 10px rgba(0, 82, 204, 0.35)'
+                      } : {
+                        color: 'text.secondary',
+                        '&:hover': { bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0, 82, 204, 0.10)', color: '#0052cc' }
+                      })
+                    }}
+                  >
+                    <Icon sx={{ fontSize: 17 }} />
+                    <Typography sx={{
+                      fontSize: '0.82rem', fontWeight: isActive ? 700 : 600, color: 'inherit', textTransform: 'none'
+                    }}>
+                      {label}
+                    </Typography>
+                  </Box>
+                )
+              })}
+            </Box>
           )}
 
           {/* Mobile: giữ nút thêm (agenda không có slot để bấm); desktop tạo lịch bằng bấm ô giờ */}

@@ -761,6 +761,8 @@
     "roundDoneBreakStarted": "✅ Xong lượt {{round}}/{{repeats}} — tự động {{breakMode}} 5-15 phút rồi làm tiếp",
     "breakDoneNextRound": "☕ Hết giờ nghỉ — bắt đầu lượt {{round}}/{{repeats}}",
     "planStopped": "Đã kết thúc chuỗi tập trung",
-    "todayFocus": "Hôm nay đã tập trung"
+    "todayFocus": "Hôm nay đã tập trung",
+    "fullscreenHint": "Bấm Dừng để thoát khỏi chế độ toàn màn hình",
+    "titleMobile": "Tập trung"
   }
 }

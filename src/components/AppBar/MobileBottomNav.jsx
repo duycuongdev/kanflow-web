@@ -5,6 +5,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
+import SelfImprovementRoundedIcon from '@mui/icons-material/SelfImprovementRounded'
 import useMediaQuery from '@mui/material/useMediaQuery'
 import { useTheme } from '@mui/material/styles'
 import { selectCurrentActiveBoard } from '~/redux/activeBoard/activeBoardSlice'
@@ -31,6 +32,7 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
   const onBoardWithImage = /^\/boards\/[^/]+/.test(location.pathname) && Boolean(activeBoard?.background)
   const isBoardsActive = location.pathname === '/boards' || location.pathname === '/boards/'
   const isScheduleActive = location.pathname.startsWith('/schedule')
+  const isFocusActive = location.pathname.startsWith('/focus')
 
   return (
     <Box sx={{
@@ -63,6 +65,12 @@ function MobileBottomNav({ onOpenTour, onOpenShortcuts }) {
         icon={<CalendarMonthRoundedIcon />}
         label={t('appBar.schedule')}
         active={isScheduleActive}
+      />
+      <TabLink
+        to="/focus"
+        icon={<SelfImprovementRoundedIcon />}
+        label={t('focusPage.titleMobile')}
+        active={isFocusActive}
       />
       <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minWidth: 68, transition: 'transform 0.12s ease', '&:active': { transform: 'scale(0.93)' } }}>
         <Notifications openUpward />

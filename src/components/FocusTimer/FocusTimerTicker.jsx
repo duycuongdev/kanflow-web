@@ -1,18 +1,47 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { selectFocusTimerState, completeFocusSession } from '~/redux/focusTimer/focusTimerSlice'
+import { selectCurrentUser } from '~/redux/user/userSlice'
+import { selectFocusTimerState, hydrateTimerState, completeFocusSession } from '~/redux/focusTimer/focusTimerSlice'
 
 /**
- * Ticker toàn cục cho Focus Timer (mount 1 lần ở App):
+ * Bộ não toàn cục của Focus Timer (mount 1 lần ở App, không render gì ra DOM):
+ * - Hydrate trạng thái từ localStorage khi mount / đổi user + persist trở lại mỗi khi đổi
  * - Tick 500ms, phát hiện timer hết giờ và dispatch completeFocusSession
  *   (log phiên + orchestration chuỗi lặp trong slice)
- * - Tách riêng khỏi widget nổi để trang Focus (/focus) ẩn widget vẫn chạy đúng
- * - Không render gì ra DOM
  */
 export default function FocusTimerTicker() {
   const dispatch = useDispatch()
+  const currentUser = useSelector(selectCurrentUser)
   const timerState = useSelector(selectFocusTimerState)
 
+  // Khóa localStorage cho trạng thái timer theo từng người dùng
+  const timerStorageKey = currentUser?._id
+    ? `kanflow_focus_state_${currentUser._id}`
+    : 'kanflow_focus_state_guest'
+
+  // Persist vào localStorage mỗi khi state đổi (chỉ sau khi đã hydrate cho đúng user)
+  const hydratedKeyRef = useRef(null)
+  useEffect(() => {
+    if (hydratedKeyRef.current !== timerStorageKey) return
+    try {
+      localStorage.setItem(timerStorageKey, JSON.stringify(timerState))
+    } catch {
+      // ignore
+    }
+  }, [timerStorageKey, timerState])
+
+  // Hydrate từ localStorage khi mount / người dùng đổi tài khoản
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(timerStorageKey)
+      dispatch(hydrateTimerState(saved ? JSON.parse(saved) : null))
+    } catch {
+      dispatch(hydrateTimerState(null))
+    }
+    hydratedKeyRef.current = timerStorageKey
+  }, [timerStorageKey, dispatch])
+
+  // Tick 500ms
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 500)

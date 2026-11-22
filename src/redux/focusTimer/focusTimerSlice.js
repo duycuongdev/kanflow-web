@@ -5,7 +5,7 @@ import { createFocusSessionAPI } from '~/apis'
 
 /**
  * Trạng thái Focus Timer dùng chung cho mọi nơi hiển thị:
- * - Widget nổi (FocusTimerWidget) + card sidebar (FocusTimerSidebarCard) + trang Focus (/focus)
+ * - Trang Focus (/focus) + card sidebar (FocusTimerSidebarCard) - FocusTimerTicker điều phối
  * - Widget nổi mount toàn cục ở App: chịu trách nhiệm hydrate từ localStorage + persist trở lại
  * - FocusTimerTicker (mount toàn cục) chịu trách nhiệm tick phát hiện hết giờ và orchestration
  * - task: nhiệm vụ đang focus (card/board - set từ card modal hoặc trang Focus chọn cascade)
@@ -50,7 +50,6 @@ const initialState = {
   focusedMs: 0,
   pomodoroCount: 0,
   customMinutes: 25,
-  isPanelOpen: false,
   // Nhiệm vụ đang focus (log phiên gắn vào card/board này)
   task: { cardId: null, boardId: null, title: null },
   // Chuỗi lặp: tập trung focusMinutes' × repeats lượt, nghỉ breakMode giữa các lượt
@@ -66,7 +65,6 @@ const timerSlice = createSlice({
       const saved = action.payload
       if (!saved || typeof saved !== 'object') return
       Object.keys(initialState).forEach((key) => {
-        if (key === 'isPanelOpen') return // không nạp trạng thái mở panel
         if (saved[key] !== undefined && saved[key] !== null) state[key] = saved[key]
       })
       // Đang chạy nhưng endAt đã qua (tab đóng lâu): coi như phiên đó hoàn thành 1 pomodoro rồi dừng
@@ -155,10 +153,6 @@ const timerSlice = createSlice({
 
     incrementPomodoro: (state) => {
       state.pomodoroCount += 1
-    },
-
-    setPanelOpen: (state, action) => {
-      state.isPanelOpen = Boolean(action.payload)
     },
 
     // Nhiệm vụ đang focus (từ card modal hoặc trang Focus)
@@ -317,13 +311,11 @@ export const {
   setCustomMinutes,
   applyCompleted,
   incrementPomodoro,
-  setPanelOpen,
   setFocusTask,
   setFocusPlan
 } = timerSlice.actions
 
 export const selectFocusTimerState = (state) => state.focusTimer
-export const selectIsFocusPanelOpen = (state) => state.focusTimer.isPanelOpen
 export const selectFocusTask = (state) => state.focusTimer.task
 export const selectFocusPlan = (state) => state.focusTimer.plan
 

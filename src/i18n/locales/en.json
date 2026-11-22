@@ -761,6 +761,8 @@
     "roundDoneBreakStarted": "✅ Round {{round}}/{{repeats}} done — auto {{breakMode}} break starting, then continue",
     "breakDoneNextRound": "☕ Break over — starting round {{round}}/{{repeats}}",
     "planStopped": "Focus chain stopped",
-    "todayFocus": "Focused today"
+    "todayFocus": "Focused today",
+    "fullscreenHint": "Press Stop to exit fullscreen mode",
+    "titleMobile": "Focus"
   }
 }
