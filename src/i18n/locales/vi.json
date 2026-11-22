@@ -655,6 +655,7 @@
     "resend": "Gửi lại",
     "scheduleCreatedSuccess": "📅 Đã tạo lịch \"{{title}}\" vào {{time}}",
     "cardsDueDateUpdated": "📅 Đã đặt hạn chót cho {{count}} card",
+    "boardActionDone": "✅ Đã thực hiện thao tác trên bảng",
     "openSchedule": "Mở bảng lịch",
     "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Assistant. Vui lòng thử lại!",
     "attachFile": "Đính kèm tệp hoặc ảnh (hoặc Ctrl+V)",
