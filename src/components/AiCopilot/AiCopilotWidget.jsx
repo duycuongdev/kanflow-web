@@ -298,7 +298,7 @@ export default function AiCopilotWidget() {
       setMessages(prev => [...prev, botMsg])
 
       // Nếu action là tạo card/column hoặc đặt hạn chót trên board hiện tại, reload lại board
-      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'BOARD_REOPENED'].includes(response.actionResult?.type)) {
+      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'CARD_MEMBER_ADDED', 'CARD_MEMBER_REMOVED', 'BOARD_REOPENED'].includes(response.actionResult?.type)) {
         if (currentBoard?._id) {
           dispatch(fetchBoardDetailsAPI(currentBoard._id))
         }
@@ -652,7 +652,7 @@ export default function AiCopilotWidget() {
                             {msg.actionResult.type === 'CARD_CREATED' && t('copilot.cardCreatedSuccess', { title: msg.actionResult.data?.title })}
                             {msg.actionResult.type === 'SCHEDULE_CREATED' && t('copilot.scheduleCreatedSuccess', { title: msg.actionResult.data?.title, time: msg.actionResult.data?.startAt ? dayjs(msg.actionResult.data.startAt).format('DD/MM/YYYY HH:mm') : '' })}
                             {msg.actionResult.type === 'CARDS_DUE_DATE_UPDATED' && t('copilot.cardsDueDateUpdated', { count: msg.actionResult.data?.updatedCount || 0 })}
-                            {['COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'MEMBER_INVITED', 'BOARD_REOPENED'].includes(msg.actionResult.type) && t('copilot.boardActionDone')}
+                            {['COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'CARD_MEMBER_ADDED', 'CARD_MEMBER_REMOVED', 'MEMBER_INVITED', 'BOARD_REOPENED'].includes(msg.actionResult.type) && t('copilot.boardActionDone')}
                           </Typography>
 
                           {msg.actionResult?.type === 'BOARD_CLOSE_CONFIRMATION' && (
