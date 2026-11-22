@@ -20,7 +20,11 @@ import Divider from '@mui/material/Divider'
 import Avatar from '@mui/material/Avatar'
 import { useTheme } from '@mui/material/styles'
 import dayjs from 'dayjs'
+import dayOfYearPlugin from 'dayjs/plugin/dayOfYear'
 
+dayjs.extend(dayOfYearPlugin)
+
+import LightbulbRoundedIcon from '@mui/icons-material/LightbulbRounded'
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
 import StopRoundedIcon from '@mui/icons-material/StopRounded'
@@ -28,7 +32,6 @@ import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
 import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 import EventNoteRoundedIcon from '@mui/icons-material/EventNoteRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
-import SelfImprovementRoundedIcon from '@mui/icons-material/SelfImprovementRounded'
 
 import AppBar from '~/components/AppBar/AppBar'
 import { selectCurrentUser } from '~/redux/user/userSlice'
@@ -491,6 +494,8 @@ export default function Focus() {
 
   const modeConfig = TIMER_MODES[timerState.mode]
   const progress = timerState.durationMs > 0 ? 1 - remainingMs / timerState.durationMs : 0
+  // Mẹo tập trung đổi theo ngày trong năm
+  const dayOfYear = dayjs().dayOfYear()
   const ringSize = 230
   const ringStroke = 12
   const ringRadius = (ringSize - ringStroke) / 2
@@ -534,18 +539,6 @@ export default function Focus() {
       <AppBar />
 
       <Container maxWidth='xl' sx={{ pt: 2 }}>
-        {/* Header */}
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap',
-          mb: 2.5, bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
-          borderRadius: 3, px: 2.5, py: 1.75, boxShadow: '0 2px 12px rgba(0, 82, 204, 0.08)'
-        }}>
-          <SelfImprovementRoundedIcon sx={{ color: '#0052cc', fontSize: 26 }} />
-          <Typography sx={{ fontWeight: 800, fontSize: '1.2rem' }}>
-            {t('focusPage.title')}
-          </Typography>
-        </Box>
-
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
           {/* TRÁI: vòng tròn tập trung */}
           <Paper elevation={0} sx={{
@@ -691,6 +684,19 @@ export default function Focus() {
                 }}
               />
             )}
+
+            {/* Mẹo tập trung - đổi theo ngày */}
+            <Box sx={{
+              mt: 2, px: 1.5, py: 1.25, borderRadius: 2,
+              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,171,0,0.08)' : 'rgba(255,171,0,0.10)',
+              border: '1px dashed rgba(255,171,0,0.45)',
+              display: 'flex', gap: 1, alignItems: 'flex-start', alignSelf: 'stretch'
+            }}>
+              <LightbulbRoundedIcon sx={{ fontSize: 18, color: '#ffab00', mt: 0.25 }} />
+              <Typography variant='caption' sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
+                {t(`focusPage.tip${(dayOfYear % 6) + 1}`)}
+              </Typography>
+            </Box>
           </Paper>
 
           {/* PHẢI: nhiệm vụ + chế độ lặp + thống kê */}
