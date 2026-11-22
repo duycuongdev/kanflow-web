@@ -17,7 +17,12 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i)
  * Trả về mảng entry kèm { columnIndex, columnCount } để render width/left.
  */
 const layoutEntriesForDay = (dayEntries) => {
-  const sorted = [...dayEntries].sort((a, b) => a.startAt - b.startAt || a.endAt - b.endAt)
+  const sorted = [...dayEntries].sort((a, b) => {
+    const aStart = dayjs(a.startAt).valueOf()
+    const bStart = dayjs(b.startAt).valueOf()
+    if (aStart !== bStart) return aStart - bStart
+    return dayjs(a.endAt).valueOf() - dayjs(b.endAt).valueOf()
+  })
   const result = []
 
   // Tách các cluster (nhóm entry giao nhau liên tiếp)
@@ -26,15 +31,17 @@ const layoutEntriesForDay = (dayEntries) => {
   const flushCluster = () => {
     if (cluster.length === 0) return
     // Gán column index: với mỗi entry, chọn column nhỏ nhất còn trống (theo endAt đã qua)
-    const columnEnds = [] // endAt của entry cuối mỗi column
+    const columnEnds = [] // endAt (ms) của entry cuối mỗi column
     const assigned = []
     for (const entry of cluster) {
-      let col = columnEnds.findIndex((end) => end <= entry.startAt)
+      const eStart = dayjs(entry.startAt).valueOf()
+      const eEnd = dayjs(entry.endAt).valueOf()
+      let col = columnEnds.findIndex((end) => end <= eStart)
       if (col === -1) {
         col = columnEnds.length
-        columnEnds.push(entry.endAt)
+        columnEnds.push(eEnd)
       } else {
-        columnEnds[col] = entry.endAt
+        columnEnds[col] = eEnd
       }
       assigned.push({ ...entry, columnIndex: col })
     }
@@ -45,11 +52,13 @@ const layoutEntriesForDay = (dayEntries) => {
   }
 
   for (const entry of sorted) {
-    if (cluster.length > 0 && entry.startAt >= clusterEnd) {
+    const eStart = dayjs(entry.startAt).valueOf()
+    const eEnd = dayjs(entry.endAt).valueOf()
+    if (cluster.length > 0 && eStart >= clusterEnd) {
       flushCluster()
     }
     cluster.push(entry)
-    clusterEnd = Math.max(clusterEnd, entry.endAt)
+    clusterEnd = Math.max(clusterEnd, eEnd)
   }
   flushCluster()
 
@@ -101,16 +110,21 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     return (nowDayjs.hour() + nowDayjs.minute() / 60) * HOUR_HEIGHT
   })()
 
-  // Tự cuộn tới khung giờ hiện tại (hoặc 8h sáng) khi mở lưới / đổi tuần
+  // Tự cuộn tới khung giờ hiện tại (hoặc 8h sáng) CHỈ khi mở lưới lần đầu hoặc khi đổi sang tuần khác
+  const weekStartKey = weekStart.format('YYYY-MM-DD')
+  const lastScrolledWeekRef = useRef(null)
+
   useEffect(() => {
     const body = scrollBodyRef.current
     if (!body) return
+    if (lastScrolledWeekRef.current === weekStartKey) return
+    lastScrolledWeekRef.current = weekStartKey
+
     const nowDayjs = dayjs()
     const isThisWeek = weekDays.some((d) => d.format('YYYY-MM-DD') === nowDayjs.format('YYYY-MM-DD'))
     const targetHour = isThisWeek ? Math.max(0, nowDayjs.hour() - 2) : 7
     body.scrollTop = targetHour * HOUR_HEIGHT
-    // weekDays đổi theo weekStart - mỗi lần đổi tuần cuộn lại
-  }, [weekDays])
+  }, [weekStartKey, weekDays])
 
   // ==================== Kéo-thả entry để dời giờ/ngày ====================
   // Nhấn giữ entry -> pointermove (window) tính cột ngày + khung giờ mới (snap 30') ->
@@ -118,6 +132,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
 
   const handleEntryMouseDown = (e, entry) => {
     if (e.button !== 0) return
+    setHoveredSlot(null)
     const startMs = dayjs(entry.startAt).valueOf()
     const endMs = dayjs(entry.endAt).valueOf()
     // Chặn kéo entry có thời gian không hợp lệ (tránh sinh NaN khi tính vị trí mới)
@@ -191,8 +206,11 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
   const handleColumnMouseMove = (e, day) => {
     const bodyRect = e.currentTarget.getBoundingClientRect()
     const offsetY = e.clientY - bodyRect.top
-    const hour = Math.max(0, Math.min(23, Math.floor(offsetY / HOUR_HEIGHT)))
-    setHoveredSlot({ dayStr: day.format('YYYY-MM-DD'), hour })
+    // Snap theo 30 phút: 48 slot trong ngày (0..47)
+    const slotIndex = Math.max(0, Math.min(47, Math.floor(offsetY / (HOUR_HEIGHT / 2))))
+    const hour = Math.floor(slotIndex / 2)
+    const minute = (slotIndex % 2) * 30
+    setHoveredSlot({ dayStr: day.format('YYYY-MM-DD'), hour, minute })
   }
 
   const handleColumnLeave = () => {
@@ -204,8 +222,9 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     if (e.defaultPrevented) return
     const bodyRect = e.currentTarget.getBoundingClientRect()
     const offsetY = e.clientY - bodyRect.top
-    // Snap theo 30 phút
-    const slotMinutes = Math.max(0, Math.floor((offsetY / HOUR_HEIGHT) / 0.5)) * 30
+    // Snap theo 30 phút (48 slot trong ngày)
+    const slotIndex = Math.max(0, Math.min(47, Math.floor(offsetY / (HOUR_HEIGHT / 2))))
+    const slotMinutes = slotIndex * 30
     const slotStart = day.startOf('day').add(slotMinutes, 'minute')
     onSlotClick(slotStart, e.currentTarget)
   }
@@ -297,7 +316,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
             const dayStr = day.format('YYYY-MM-DD')
             const isToday = dayStr === todayStr
             const dayEntries = entriesByDay[dayStr] || []
-            const hoveredHour = hoveredSlot?.dayStr === dayStr ? hoveredSlot.hour : null
+            const isSlotHovered = !dragPreview && hoveredSlot?.dayStr === dayStr
             return (
               <Box
                 key={dayStr}
@@ -311,7 +330,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   ...(isToday ? { bgcolor: 'rgba(0, 82, 204, 0.04)' } : {})
                 }}
               >
-                {/* Lưới kẻ giờ */}
+                {/* Lưới kẻ giờ và vạch mờ 30 phút */}
                 {HOURS.map((hour) => (
                   <Box
                     key={hour}
@@ -319,30 +338,45 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                       height: HOUR_HEIGHT,
                       borderBottom: '1px solid',
                       borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+                      position: 'relative',
                       pointerEvents: 'none'
                     }}
-                  />
+                  >
+                    <Box sx={{
+                      position: 'absolute',
+                      top: HOUR_HEIGHT / 2,
+                      left: 0,
+                      right: 0,
+                      borderBottom: '1px dashed',
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'
+                    }} />
+                  </Box>
                 ))}
 
-                {/* Highlight khung giờ đang hover (vd 9:00-10:00) */}
-                {hoveredHour !== null && (
-                  <Box sx={{
-                    position: 'absolute', left: 0, right: 0,
-                    top: hoveredHour * HOUR_HEIGHT, height: HOUR_HEIGHT,
-                    bgcolor: 'rgba(0, 82, 204, 0.10)',
-                    border: '1px dashed rgba(0, 82, 204, 0.35)',
-                    borderRadius: 0.5,
-                    pointerEvents: 'none',
-                    zIndex: 1
-                  }}>
-                    <Typography variant='caption' sx={{
-                      position: 'absolute', top: 2, left: 4,
-                      fontSize: '0.6rem', color: '#0052cc', fontWeight: 600
+                {/* Highlight khung giờ đang hover (snap 30 phút, vd 02:30 - 03:30) */}
+                {isSlotHovered && (() => {
+                  const slotStart = day.startOf('day').add(hoveredSlot.hour * 60 + hoveredSlot.minute, 'minute')
+                  const slotEnd = slotStart.add(1, 'hour')
+                  const top = (hoveredSlot.hour + hoveredSlot.minute / 60) * HOUR_HEIGHT
+                  return (
+                    <Box sx={{
+                      position: 'absolute', left: 0, right: 0,
+                      top, height: HOUR_HEIGHT,
+                      bgcolor: 'rgba(0, 82, 204, 0.10)',
+                      border: '1px dashed rgba(0, 82, 204, 0.35)',
+                      borderRadius: 0.5,
+                      pointerEvents: 'none',
+                      zIndex: 1
                     }}>
-                      {String(hoveredHour).padStart(2, '0')}:00 – {String((hoveredHour + 1) % 24).padStart(2, '0')}:00
-                    </Typography>
-                  </Box>
-                )}
+                      <Typography variant='caption' sx={{
+                        position: 'absolute', top: 2, left: 4,
+                        fontSize: '0.6rem', color: '#0052cc', fontWeight: 600
+                      }}>
+                        {slotStart.format('HH:mm')} – {slotEnd.format('HH:mm')}
+                      </Typography>
+                    </Box>
+                  )
+                })()}
 
                 {/* Ghost của entry đang được kéo tới cột này */}
                 {dragPreview && dragPreview.dayStr === dayStr && (

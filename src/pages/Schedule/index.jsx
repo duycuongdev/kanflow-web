@@ -55,6 +55,8 @@ export default function Schedule() {
 
   // ==================== Range hiển thị ====================
 
+  const weekStart = useMemo(() => anchorDate.startOf('isoWeek'), [anchorDate])
+
   const displayRange = useMemo(() => {
     if (view === 'year') {
       return {
@@ -70,10 +72,9 @@ export default function Schedule() {
     if (view === 'day') {
       return { from: anchorDate.startOf('day').valueOf(), to: anchorDate.endOf('day').valueOf() + 1 }
     }
-    const weekStart = anchorDate.startOf('isoWeek')
     const weekEnd = anchorDate.endOf('isoWeek')
     return { from: weekStart.valueOf(), to: weekEnd.valueOf() + 1 }
-  }, [anchorDate, view])
+  }, [anchorDate, view, weekStart])
 
   // ==================== Load data ====================
 
@@ -322,7 +323,7 @@ export default function Schedule() {
         {/* Nội dung theo view */}
         {view === 'week' && !isMobile && (
           <WeekGrid
-            weekStart={anchorDate.startOf('isoWeek')}
+            weekStart={weekStart}
             entries={entries}
             isLoading={isLoading}
             onSlotClick={(slotStart, anchorEl) => openCreatePopover({ startAt: slotStart.valueOf(), endAt: slotStart.add(1, 'hour').valueOf() }, anchorEl)}
