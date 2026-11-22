@@ -4,6 +4,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import dayjs from 'dayjs'
 
+import { getHolidaysForYear } from './holidays'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
 
 const MAX_CHIPS_PER_CELL = 3
@@ -28,6 +29,7 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
 
   const todayStr = dayjs().format('YYYY-MM-DD')
   const monthStr = anchorDate.format('YYYY-MM')
+  const holidayMap = useMemo(() => getHolidaysForYear(anchorDate.year()), [anchorDate])
   const weekDayLabels = useMemo(() => {
     const monday = dayjs().startOf('week')
     return Array.from({ length: 7 }, (_, i) => monday.add(i, 'day').format('ddd'))
@@ -55,6 +57,7 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
           const dayStr = day.format('YYYY-MM-DD')
           const isToday = dayStr === todayStr
           const inMonth = day.format('YYYY-MM') === monthStr
+          const holiday = holidayMap.get(dayStr)
           const dayEntries = entriesByDay[dayStr] || []
           const visibleEntries = dayEntries.slice(0, MAX_CHIPS_PER_CELL)
           const hiddenCount = dayEntries.length - visibleEntries.length
@@ -80,7 +83,7 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
             >
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Typography sx={{
-                  fontSize: '0.8rem', fontWeight: isToday ? 800 : 600,
+                  fontSize: '0.8rem', fontWeight: isToday ? 800 : 600, color: holiday ? '#ff5630' : undefined,
                   ...(isToday ? {
                     color: '#fff', bgcolor: '#0052cc',
                     width: 22, height: 22, borderRadius: '50%',
@@ -96,6 +99,14 @@ export default function MonthGrid({ anchorDate, entries, onDayClick, onEntryClic
                   </Typography>
                 )}
               </Box>
+              {holiday && (
+                <Typography sx={{
+                  fontSize: '0.6rem', color: '#ff5630', fontWeight: 600, lineHeight: 1.2,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 0.25
+                }}>
+                  {holiday.name}
+                </Typography>
+              )}
 
               {/* Entry chips */}
               {visibleEntries.map((entry) => {

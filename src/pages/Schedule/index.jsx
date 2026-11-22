@@ -17,12 +17,15 @@ import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
 import TodayRoundedIcon from '@mui/icons-material/TodayRounded'
 import CalendarViewMonthRoundedIcon from '@mui/icons-material/CalendarViewMonthRounded'
 import ViewWeekRoundedIcon from '@mui/icons-material/ViewWeekRounded'
+import ViewDayRoundedIcon from '@mui/icons-material/ViewDayRounded'
+import DateRangeRoundedIcon from '@mui/icons-material/DateRangeRounded'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 
 import AppBar from '~/components/AppBar/AppBar'
 import WeekGrid from './WeekGrid'
 import MonthGrid from './MonthGrid'
 import DayAgenda from './DayAgenda'
+import YearView from './YearView'
 import ScheduleEntryPopover from './ScheduleEntryPopover'
 import { socketIoInstance } from '~/socketClient'
 import {
@@ -37,7 +40,7 @@ export default function Schedule() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  const [view, setView] = useState('week') // 'week' | 'month'
+  const [view, setView] = useState(() => (window.innerWidth < theme.breakpoints.values.sm ? 'day' : 'week')) // 'day' | 'week' | 'month' | 'year'
   const [anchorDate, setAnchorDate] = useState(() => dayjs())
 
   const [entries, setEntries] = useState([])
@@ -51,12 +54,20 @@ export default function Schedule() {
 
   // ==================== Range hiển thị ====================
 
-  // Week view: tuần bắt đầu từ thứ 2 (dayjs locale 'vi' weekStart = 1); Month view: cả tháng + đệm các ngày tràn
   const displayRange = useMemo(() => {
+    if (view === 'year') {
+      return {
+        from: anchorDate.startOf('year').valueOf(),
+        to: anchorDate.endOf('year').valueOf() + 1
+      }
+    }
     if (view === 'month') {
       const gridStart = anchorDate.startOf('month').startOf('week')
       const gridEnd = anchorDate.endOf('month').endOf('week')
       return { from: gridStart.valueOf(), to: gridEnd.valueOf() + 1 }
+    }
+    if (view === 'day') {
+      return { from: anchorDate.startOf('day').valueOf(), to: anchorDate.endOf('day').valueOf() + 1 }
     }
     const weekStart = anchorDate.startOf('week')
     const weekEnd = anchorDate.endOf('week')
@@ -142,22 +153,45 @@ export default function Schedule() {
   // ==================== Navigation ====================
 
   const goPrev = () => {
-    setAnchorDate((prev) => (view === 'month' ? prev.subtract(1, 'month') : prev.subtract(1, 'week')))
+    setAnchorDate((prev) => {
+      if (view === 'day') return prev.subtract(1, 'day')
+      if (view === 'month') return prev.subtract(1, 'month')
+      if (view === 'year') return prev.subtract(1, 'year')
+      return prev.subtract(1, 'week')
+    })
   }
   const goNext = () => {
-    setAnchorDate((prev) => (view === 'month' ? prev.add(1, 'month') : prev.add(1, 'week')))
+    setAnchorDate((prev) => {
+      if (view === 'day') return prev.add(1, 'day')
+      if (view === 'month') return prev.add(1, 'month')
+      if (view === 'year') return prev.add(1, 'year')
+      return prev.add(1, 'week')
+    })
   }
   const goToday = () => setAnchorDate(dayjs())
 
+  // Nhãn header rõ ràng theo từng view
   const headerLabel = useMemo(() => {
-    if (view === 'month') return anchorDate.format('MMMM YYYY')
+    if (view === 'year') return String(anchorDate.year())
+    if (view === 'month') {
+      return t('schedule.headerMonth', { month: anchorDate.month() + 1, year: anchorDate.year() })
+    }
+    if (view === 'day') {
+      return anchorDate.format('dddd, DD/MM/YYYY')
+    }
     const weekStart = anchorDate.startOf('week')
     const weekEnd = anchorDate.endOf('week')
-    return `${weekStart.format('MMM D')} – ${weekEnd.format('MMM D, YYYY')}`
-  }, [anchorDate, view])
+    return t('schedule.headerWeek', {
+      range: `${weekStart.format('DD/MM')} – ${weekEnd.format('DD/MM/YYYY')}`
+    })
+  }, [anchorDate, view, t])
 
-  // Mobile: agenda theo ngày
-  const mobileDay = anchorDate
+  const viewOptions = [
+    { value: 'day', label: t('schedule.viewDay'), icon: ViewDayRoundedIcon },
+    { value: 'week', label: t('schedule.viewWeek'), icon: ViewWeekRoundedIcon },
+    { value: 'month', label: t('schedule.viewMonth'), icon: CalendarViewMonthRoundedIcon },
+    { value: 'year', label: t('schedule.viewYear'), icon: DateRangeRoundedIcon }
+  ]
 
   return (
     <Box sx={{
@@ -201,21 +235,20 @@ export default function Schedule() {
               onChange={(e, newValue) => newValue && setView(newValue)}
               size='small'
             >
-              <ToggleButton value='week' aria-label={t('schedule.viewWeek')}>
-                <ViewWeekRoundedIcon sx={{ fontSize: 18, mr: 0.5 }} /> {t('schedule.viewWeek')}
-              </ToggleButton>
-              <ToggleButton value='month' aria-label={t('schedule.viewMonth')}>
-                <CalendarViewMonthRoundedIcon sx={{ fontSize: 18, mr: 0.5 }} /> {t('schedule.viewMonth')}
-              </ToggleButton>
+              {viewOptions.map(({ value, label, icon: Icon }) => (
+                <ToggleButton key={value} value={value} aria-label={label}>
+                  <Icon sx={{ fontSize: 18, mr: 0.5 }} /> {label}
+                </ToggleButton>
+              ))}
             </ToggleButtonGroup>
           )}
 
-          {!isMobile && (
+          {/* Mobile: giữ nút thêm (agenda không có slot để bấm); desktop tạo lịch bằng bấm ô giờ */}
+          {isMobile && (
             <Button
               variant='contained'
               startIcon={<AddRoundedIcon />}
               onClick={(e) => {
-                // Mặc định tạo entry vào khung giờ tròn tiếp theo của hôm nay
                 const start = dayjs().minute(0).second(0).add(1, 'hour')
                 openCreatePopover({ startAt: start.valueOf(), endAt: start.add(1, 'hour').valueOf() }, e.currentTarget)
               }}
@@ -250,9 +283,20 @@ export default function Schedule() {
           />
         )}
 
-        {isMobile && (
+        {view === 'year' && !isMobile && (
+          <YearView
+            anchorDate={anchorDate}
+            entries={entries}
+            onDayClick={(day, targetView) => {
+              setAnchorDate(day)
+              setView(targetView)
+            }}
+          />
+        )}
+
+        {(view === 'day' || isMobile) && (
           <DayAgenda
-            day={mobileDay}
+            day={anchorDate}
             entries={entries}
             onPrev={() => setAnchorDate((prev) => prev.subtract(1, 'day'))}
             onNext={() => setAnchorDate((prev) => prev.add(1, 'day'))}
@@ -260,7 +304,7 @@ export default function Schedule() {
               const start = dayjs().minute(0).second(0).add(1, 'hour')
               openCreatePopover({ startAt: start.valueOf(), endAt: start.add(1, 'hour').valueOf() }, anchorEl)
             }}
-            onEntryClick={(entry, anchorEl) => openEditPopover(entry, anchorEl)}
+            onEntryClick={openEditPopover}
           />
         )}
       </Container>

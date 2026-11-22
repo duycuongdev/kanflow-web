@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
 import dayjs from 'dayjs'
 
+import { getHolidaysForYear } from './holidays'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
 
 const HOUR_HEIGHT = 48 // px cho 1 giờ
@@ -58,6 +59,10 @@ const layoutEntriesForDay = (dayEntries) => {
 export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, onEntryClick }) {
   const { t } = useTranslation()
   const [now, setNow] = useState(Date.now())
+  // Slot đang hover: { dayStr, hour } - highlight đúng 1 khung giờ (vd 9:00-10:00)
+  const [hoveredSlot, setHoveredSlot] = useState(null)
+
+  const scrollBodyRef = useRef(null)
 
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 60 * 1000)
@@ -66,6 +71,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
 
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => weekStart.add(i, 'day')), [weekStart])
   const todayStr = dayjs(now).format('YYYY-MM-DD')
+  const holidayMap = useMemo(() => getHolidaysForYear(weekStart.year()), [weekStart])
 
   // Nhóm entry theo ngày + layout overlap
   const entriesByDay = useMemo(() => {
@@ -89,7 +95,6 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
   })()
 
   // Tự cuộn tới khung giờ hiện tại (hoặc 8h sáng) khi mở lưới / đổi tuần
-  const scrollBodyRef = useRef(null)
   useEffect(() => {
     const body = scrollBodyRef.current
     if (!body) return
@@ -99,6 +104,17 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     body.scrollTop = targetHour * HOUR_HEIGHT
     // weekDays đổi theo weekStart - mỗi lần đổi tuần cuộn lại
   }, [weekDays])
+
+  const handleColumnMouseMove = (e, day) => {
+    const bodyRect = e.currentTarget.getBoundingClientRect()
+    const offsetY = e.clientY - bodyRect.top
+    const hour = Math.max(0, Math.min(23, Math.floor(offsetY / HOUR_HEIGHT)))
+    setHoveredSlot({ dayStr: day.format('YYYY-MM-DD'), hour })
+  }
+
+  const handleColumnLeave = () => {
+    setHoveredSlot(null)
+  }
 
   const handleColumnClick = (e, day) => {
     // Bỏ qua nếu click vào entry (entry tự stopPropagation)
@@ -116,52 +132,69 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       bgcolor: (theme) => theme.palette.mode === 'dark' ? '#101828' : '#fff',
       borderRadius: 2, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
     }}>
-      {/* Header ngày */}
-      <Box sx={{ display: 'flex', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ width: GUTTER_WIDTH, flexShrink: 0 }} />
-        {weekDays.map((day) => {
-          const isToday = day.format('YYYY-MM-DD') === todayStr
-          return (
-            <Box
-              key={day.format('YYYY-MM-DD')}
-              sx={{
-                flex: 1, textAlign: 'center', py: 1,
-                borderLeft: '1px solid', borderColor: 'divider',
-                ...(isToday ? { bgcolor: 'rgba(0, 82, 204, 0.08)' } : {})
-              }}
-            >
-              <Typography variant='caption' sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 600 }}>
-                {day.format('ddd')}
-              </Typography>
-              <Typography sx={{
-                fontWeight: isToday ? 800 : 600,
-                fontSize: '1.05rem',
-                ...(isToday ? {
-                  color: '#fff', bgcolor: '#0052cc',
-                  width: 30, height: 30, borderRadius: '50%',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  ml: 0.5
-                } : {})
-              }}>
-                {day.date()}
-              </Typography>
-            </Box>
-          )
-        })}
-      </Box>
-
-      {/* Body: nhãn giờ + 7 cột */}
-      <Box sx={{ position: 'relative' }}>
+      {/* MỘT scroll container duy nhất chứa header (sticky) + body ⇒ header và 7 cột
+          luôn thẳng hàng (không bị lệch do scrollbar chiếm chỗ) */}
+      <Box ref={scrollBodyRef} sx={{ maxHeight: 'calc(100dvh - 220px)', overflowY: 'auto', position: 'relative' }}>
         {isLoading && (
           <Box sx={{
-            position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center',
+            position: 'absolute', inset: 0, zIndex: 6, display: 'flex', alignItems: 'center',
             justifyContent: 'center', bgcolor: 'rgba(0,0,0,0.06)'
           }}>
             <CircularProgress size={28} />
           </Box>
         )}
 
-        <Box ref={scrollBodyRef} sx={{ display: 'flex', maxHeight: 'calc(100dvh - 220px)', overflowY: 'auto' }}>
+        {/* Header ngày - sticky nằm TRONG scroll container */}
+        <Box sx={{
+          display: 'flex',
+          position: 'sticky', top: 0, zIndex: 4,
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? '#101828' : '#fff',
+          borderBottom: '1px solid', borderColor: 'divider'
+        }}>
+          <Box sx={{ width: GUTTER_WIDTH, flexShrink: 0 }} />
+          {weekDays.map((day) => {
+            const dayStr = day.format('YYYY-MM-DD')
+            const isToday = dayStr === todayStr
+            const holiday = holidayMap.get(dayStr)
+            return (
+              <Box
+                key={dayStr}
+                sx={{
+                  flex: 1, textAlign: 'center', py: 0.75,
+                  borderLeft: '1px solid', borderColor: 'divider',
+                  ...(isToday ? { bgcolor: 'rgba(0, 82, 204, 0.08)' } : {})
+                }}
+              >
+                <Typography variant='caption' sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 600, display: 'block', lineHeight: 1.4 }}>
+                  {day.format('ddd')}
+                </Typography>
+                <Typography sx={{
+                  fontWeight: isToday ? 800 : 600,
+                  fontSize: '1.05rem',
+                  display: 'inline-block',
+                  ...(isToday ? {
+                    color: '#fff', bgcolor: '#0052cc',
+                    width: 30, height: 30, borderRadius: '50%',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                  } : {})
+                }}>
+                  {day.date()}
+                </Typography>
+                {holiday && (
+                  <Typography sx={{
+                    fontSize: '0.6rem', color: '#ff5630', fontWeight: 600,
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', px: 0.5
+                  }}>
+                    {holiday.name}
+                  </Typography>
+                )}
+              </Box>
+            )
+          })}
+        </Box>
+
+        {/* Body: nhãn giờ + 7 cột ngày */}
+        <Box sx={{ display: 'flex' }}>
           {/* Cột nhãn giờ */}
           <Box sx={{ width: GUTTER_WIDTH, flexShrink: 0 }}>
             {HOURS.map((hour) => (
@@ -181,15 +214,17 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
             const dayStr = day.format('YYYY-MM-DD')
             const isToday = dayStr === todayStr
             const dayEntries = entriesByDay[dayStr] || []
+            const hoveredHour = hoveredSlot?.dayStr === dayStr ? hoveredSlot.hour : null
             return (
               <Box
                 key={dayStr}
+                onMouseMove={(e) => handleColumnMouseMove(e, day)}
+                onMouseLeave={handleColumnLeave}
                 onClick={(e) => handleColumnClick(e, day)}
                 sx={{
                   flex: 1, position: 'relative', cursor: 'pointer',
                   borderLeft: '1px solid', borderColor: 'divider',
-                  ...(isToday ? { bgcolor: 'rgba(0, 82, 204, 0.04)' } : {}),
-                  '&:hover': { bgcolor: 'rgba(0, 82, 204, 0.06)' }
+                  ...(isToday ? { bgcolor: 'rgba(0, 82, 204, 0.04)' } : {})
                 }}
               >
                 {/* Lưới kẻ giờ */}
@@ -204,6 +239,26 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                     }}
                   />
                 ))}
+
+                {/* Highlight khung giờ đang hover (vd 9:00-10:00) */}
+                {hoveredHour !== null && (
+                  <Box sx={{
+                    position: 'absolute', left: 0, right: 0,
+                    top: hoveredHour * HOUR_HEIGHT, height: HOUR_HEIGHT,
+                    bgcolor: 'rgba(0, 82, 204, 0.10)',
+                    border: '1px dashed rgba(0, 82, 204, 0.35)',
+                    borderRadius: 0.5,
+                    pointerEvents: 'none',
+                    zIndex: 1
+                  }}>
+                    <Typography variant='caption' sx={{
+                      position: 'absolute', top: 2, left: 4,
+                      fontSize: '0.6rem', color: '#0052cc', fontWeight: 600
+                    }}>
+                      {String(hoveredHour).padStart(2, '0')}:00 – {String((hoveredHour + 1) % 24).padStart(2, '0')}:00
+                    </Typography>
+                  </Box>
+                )}
 
                 {/* Đường "bây giờ" */}
                 {isToday && nowTop !== null && (
@@ -253,18 +308,26 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                         overflow: 'hidden',
                         cursor: 'pointer',
                         transition: 'transform 0.1s ease, box-shadow 0.1s ease',
-                        '&:hover': { transform: 'scale(1.01)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 4 }
+                        '&:hover': { transform: 'scale(1.01)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 5 }
                       }}
                     >
                       <Typography sx={{
                         fontSize: '0.72rem', fontWeight: 700, color,
-                        whiteSpace: height > 30 ? 'nowrap' : 'nowrap',
+                        whiteSpace: 'nowrap',
                         overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3
                       }}>
                         {height > 34 && `${entryStart.format('HH:mm')} `}
                         {entry.title}
                       </Typography>
-                      {height > 48 && entry.cardTitle && (
+                      {height > 48 && entry.itemTitle && (
+                        <Typography sx={{
+                          fontSize: '0.68rem', color: 'text.secondary',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                        }}>
+                          📌 {entry.itemTitle}
+                        </Typography>
+                      )}
+                      {height > 48 && !entry.itemTitle && entry.cardTitle && (
                         <Typography sx={{
                           fontSize: '0.68rem', color: 'text.secondary',
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'

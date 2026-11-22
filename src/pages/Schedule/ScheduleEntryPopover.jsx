@@ -11,14 +11,11 @@ import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Chip from '@mui/material/Chip'
 import Divider from '@mui/material/Divider'
-import Checkbox from '@mui/material/Checkbox'
-import FormControlLabel from '@mui/material/FormControlLabel'
 import CircularProgress from '@mui/material/CircularProgress'
 import dayjs from 'dayjs'
 
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
-import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 
 import ResponsivePopover from '~/components/Common/ResponsivePopover'
 import { fetchBoardsAPI, fetchBoardDetailsAPI } from '~/apis'
@@ -36,7 +33,6 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
 
   // ==================== Form state ====================
   const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
   const [dateStr, setDateStr] = useState('')
   const [startTime, setStartTime] = useState('09:00')
   const [endTime, setEndTime] = useState('10:00')
@@ -44,15 +40,17 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // ==================== Gắn card ====================
+  // ==================== Gắn sâu: board → card → checklist → item ====================
   const [boards, setBoards] = useState([])
   const [selectedBoardId, setSelectedBoardId] = useState('')
   const [selectedCardId, setSelectedCardId] = useState('')
+  const [selectedChecklistId, setSelectedChecklistId] = useState('')
+  const [selectedItemId, setSelectedItemId] = useState('')
   const [cardOptions, setCardOptions] = useState([])
   const [boardDetailsLoading, setBoardDetailsLoading] = useState(false)
-  const [attachedCard, setAttachedCard] = useState(null) // { cardId, boardId, cardTitle, boardTitle }
-  const [attachedBoardTitle, setAttachedBoardTitle] = useState(null)
-  const [cardChecklists, setCardChecklists] = useState(null) // checklist của card khi edit (read-only)
+  // Chuỗi gắn (denormalize để render nhanh, BE lưu kèm entry)
+  const [attachChain, setAttachChain] = useState(null)
+  // { boardId, boardTitle, cardId, cardTitle, checklistId, checklistTitle, checklistItemId, itemTitle }
 
   // Reset form mỗi lần mở popover
   useEffect(() => {
@@ -61,40 +59,43 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
     if (state.mode === 'edit' && state.entry) {
       const entry = state.entry
       setTitle(entry.title || '')
-      setDescription(entry.description || '')
       setDateStr(dayjs(entry.startAt).format('YYYY-MM-DD'))
       setStartTime(dayjs(entry.startAt).format('HH:mm'))
       setEndTime(dayjs(entry.endAt).format('HH:mm'))
       setColorKey(entry.colorKey || 'blue')
       if (entry.cardId) {
-        setAttachedCard({
-          cardId: entry.cardId,
+        setAttachChain({
           boardId: entry.boardId,
+          boardTitle: entry.boardTitle,
+          cardId: entry.cardId,
           cardTitle: entry.cardTitle,
-          boardTitle: entry.boardTitle
+          checklistId: entry.checklistId || null,
+          checklistTitle: entry.checklistTitle || null,
+          checklistItemId: entry.checklistItemId || null,
+          itemTitle: entry.itemTitle || null
         })
         setSelectedBoardId(entry.boardId || '')
         setSelectedCardId(entry.cardId)
-        setAttachedBoardTitle(entry.boardTitle || null)
+        setSelectedChecklistId(entry.checklistId || '')
+        setSelectedItemId(entry.checklistItemId || '')
       } else {
-        setAttachedCard(null)
+        setAttachChain(null)
         setSelectedBoardId('')
         setSelectedCardId('')
-        setAttachedBoardTitle(null)
+        setSelectedChecklistId('')
+        setSelectedItemId('')
       }
-      setCardChecklists(null)
     } else if (state.mode === 'create' && state.draft) {
       setTitle('')
-      setDescription('')
       setDateStr(dayjs(state.draft.startAt).format('YYYY-MM-DD'))
       setStartTime(dayjs(state.draft.startAt).format('HH:mm'))
       setEndTime(dayjs(state.draft.endAt).format('HH:mm'))
       setColorKey('blue')
-      setAttachedCard(null)
+      setAttachChain(null)
       setSelectedBoardId('')
       setSelectedCardId('')
-      setAttachedBoardTitle(null)
-      setCardChecklists(null)
+      setSelectedChecklistId('')
+      setSelectedItemId('')
     }
   }, [isOpen, state])
 
@@ -106,7 +107,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       .catch(() => { /* lỗi đã toast ở interceptor */ })
   }, [isOpen, boards.length])
 
-  // Khi chọn board: fetch chi tiết board để lấy danh sách card (và checklist của card đang gắn)
+  // Khi chọn board: fetch chi tiết board để lấy danh sách card
   useEffect(() => {
     if (!isOpen || !selectedBoardId) {
       setCardOptions([])
@@ -121,22 +122,8 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         // Flatten toàn bộ card trong mọi column
         const cards = (boardDetails.columns || []).flatMap((column) => (column.cards || []))
         setCardOptions(cards)
-        setAttachedBoardTitle(boardDetails.title || null)
-
-        // Nếu đang edit và card gắn thuộc board này: lấy checklist hiển thị read-only
-        const cardIdToInspect = isEditMode ? state?.entry?.cardId : null
-        if (cardIdToInspect) {
-          const card = cards.find((c) => c._id === cardIdToInspect)
-          if (card) {
-            setCardChecklists(card.checklists || [])
-            setAttachedCard({
-              cardId: card._id,
-              boardId: boardDetails._id,
-              cardTitle: card.title,
-              boardTitle: boardDetails.title
-            })
-          }
-        }
+        // Cập nhật boardTitle cho chuỗi gắn khi edit
+        setAttachChain((prev) => (prev && prev.boardId === selectedBoardId ? { ...prev, boardTitle: boardDetails.title } : prev))
       })
       .catch(() => {
         if (!cancelled) setCardOptions([])
@@ -146,32 +133,76 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       })
 
     return () => { cancelled = true }
-  }, [isOpen, selectedBoardId, isEditMode, state?.entry?.cardId])
+  }, [isOpen, selectedBoardId])
 
   const handleSelectCard = (cardId) => {
     setSelectedCardId(cardId)
+    setSelectedChecklistId('')
+    setSelectedItemId('')
     if (!cardId) {
-      setAttachedCard(null)
-      setCardChecklists(null)
+      setAttachChain(null)
       return
     }
     const card = cardOptions.find((c) => c._id === cardId)
     if (card) {
-      setAttachedCard({
-        cardId: card._id,
+      setAttachChain((prev) => ({
+        ...(prev || {}),
         boardId: selectedBoardId,
+        cardId: card._id,
         cardTitle: card.title,
-        boardTitle: attachedBoardTitle
-      })
-      setCardChecklists(card.checklists || [])
+        checklistId: null,
+        checklistTitle: null,
+        checklistItemId: null,
+        itemTitle: null
+      }))
     }
+  }
+
+  const handleSelectChecklist = (checklistId) => {
+    setSelectedChecklistId(checklistId)
+    setSelectedItemId('')
+    const card = cardOptions.find((c) => c._id === selectedCardId)
+    const checklist = card?.checklists?.find((cl) => (cl._id || cl.title) === checklistId)
+    if (!checklistId || !checklist) {
+      setAttachChain((prev) => (prev ? { ...prev, checklistId: null, checklistTitle: null, checklistItemId: null, itemTitle: null } : prev))
+      return
+    }
+    setAttachChain((prev) => ({
+      ...(prev || {}),
+      checklistId: checklist._id || checklist.title,
+      checklistTitle: checklist.title,
+      checklistItemId: null,
+      itemTitle: null
+    }))
+  }
+
+  const handleSelectItem = (itemId) => {
+    setSelectedItemId(itemId)
+    const card = cardOptions.find((c) => c._id === selectedCardId)
+    const checklist = card?.checklists?.find((cl) => (cl._id || cl.title) === selectedChecklistId)
+    const item = checklist?.items?.find((it) => (it._id || it.title) === itemId)
+    if (!itemId || !item) {
+      setAttachChain((prev) => (prev ? { ...prev, checklistItemId: null, itemTitle: null } : prev))
+      return
+    }
+    // Chọn item: tự điền tiêu đề nếu chưa nhập (tiện tạo nhanh)
+    setTitle((prevTitle) => prevTitle || item.title)
+    setAttachChain((prev) => ({
+      ...(prev || {}),
+      checklistItemId: item._id || item.title,
+      itemTitle: item.title
+    }))
   }
 
   const handleDetachCard = () => {
     setSelectedCardId('')
-    setAttachedCard(null)
-    setCardChecklists(null)
+    setSelectedChecklistId('')
+    setSelectedItemId('')
+    setAttachChain(null)
   }
+
+  const selectedCard = cardOptions.find((c) => c._id === selectedCardId)
+  const selectedChecklist = selectedCard?.checklists?.find((cl) => (cl._id || cl.title) === selectedChecklistId)
 
   const buildPayload = () => {
     const startAt = dayjs(`${dateStr}T${startTime}`).valueOf()
@@ -196,14 +227,17 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
 
     return {
       title: title.trim(),
-      description: description.trim(),
       startAt,
       endAt,
       colorKey,
-      cardId: attachedCard?.cardId || null,
-      boardId: attachedCard?.boardId || null,
-      cardTitle: attachedCard?.cardTitle || null,
-      boardTitle: attachedCard?.boardTitle || null
+      cardId: attachChain?.cardId || null,
+      boardId: attachChain?.boardId || null,
+      cardTitle: attachChain?.cardTitle || null,
+      boardTitle: attachChain?.boardTitle || null,
+      checklistId: attachChain?.checklistId || null,
+      checklistItemId: attachChain?.checklistItemId || null,
+      checklistTitle: attachChain?.checklistTitle || null,
+      itemTitle: attachChain?.itemTitle || null
     }
   }
 
@@ -240,14 +274,6 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       }
     }).catch(() => { /* hủy confirm */ })
   }
-
-  const checklistStats = (() => {
-    if (!cardChecklists) return null
-    const allItems = cardChecklists.flatMap((cl) => cl.items || [])
-    if (allItems.length === 0) return null
-    const doneCount = allItems.filter((item) => item.isDone).length
-    return { done: doneCount, total: allItems.length }
-  })()
 
   return (
     <ResponsivePopover
@@ -289,19 +315,6 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         label={t('schedule.titleLabel')}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        sx={{ mb: 1.5 }}
-      />
-
-      {/* Mô tả */}
-      <TextField
-        fullWidth
-        size='small'
-        multiline
-        minRows={2}
-        maxRows={4}
-        label={t('schedule.descriptionLabel')}
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
         sx={{ mb: 1.5 }}
       />
 
@@ -365,7 +378,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
 
       <Divider sx={{ mb: 1.5 }} />
 
-      {/* Gắn card */}
+      {/* Gắn sâu vào card / checklist / item */}
       <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', mb: 1 }}>
         {t('schedule.attachCard')}
       </Typography>
@@ -378,8 +391,9 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         onChange={(e) => {
           setSelectedBoardId(e.target.value)
           setSelectedCardId('')
-          setAttachedCard(null)
-          setCardChecklists(null)
+          setSelectedChecklistId('')
+          setSelectedItemId('')
+          setAttachChain(null)
         }}
         sx={{ mb: 1 }}
         renderValue={(value) => {
@@ -425,68 +439,91 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         </Select>
       )}
 
+      {/* Cascade checklist (chỉ hiện khi đã chọn card có checklist) */}
+      {selectedCardId && (selectedCard?.checklists?.length > 0) && (
+        <Select
+          fullWidth
+          size='small'
+          displayEmpty
+          value={selectedChecklistId}
+          onChange={(e) => handleSelectChecklist(e.target.value)}
+          sx={{ mb: 1 }}
+          renderValue={(value) => {
+            if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectChecklist')}</Typography>
+            const checklist = selectedCard.checklists.find((cl) => (cl._id || cl.title) === value)
+            return checklist?.title || value
+          }}
+        >
+          <MenuItem value=''>
+            <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{t('schedule.noChecklist')}</Typography>
+          </MenuItem>
+          {selectedCard.checklists.map((checklist) => (
+            <MenuItem key={checklist._id || checklist.title} value={checklist._id || checklist.title}>
+              <Typography sx={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 280 }}>
+                {checklist.title}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Select>
+      )}
+
+      {/* Cascade item checklist (chỉ hiện khi đã chọn checklist có items) */}
+      {selectedChecklistId && (selectedChecklist?.items?.length > 0) && (
+        <Select
+          fullWidth
+          size='small'
+          displayEmpty
+          value={selectedItemId}
+          onChange={(e) => handleSelectItem(e.target.value)}
+          sx={{ mb: 1 }}
+          renderValue={(value) => {
+            if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectItem')}</Typography>
+            const item = selectedChecklist.items.find((it) => (it._id || it.title) === value)
+            return item?.title || value
+          }}
+        >
+          <MenuItem value=''>
+            <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{t('schedule.noItem')}</Typography>
+          </MenuItem>
+          {selectedChecklist.items.map((item) => (
+            <MenuItem key={item._id || item.title} value={item._id || item.title}>
+              <Typography sx={{
+                fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 280,
+                textDecoration: item.isDone ? 'line-through' : 'none',
+                color: item.isDone ? 'text.disabled' : 'text.primary'
+              }}>
+                {item.title}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Select>
+      )}
+
       {boardDetailsLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 1 }}>
           <CircularProgress size={20} />
         </Box>
       )}
 
-      {/* Preview card đã gắn + checklist read-only */}
-      {attachedCard && (
+      {/* Breadcrumb chuỗi gắn */}
+      {attachChain && (
         <Box sx={{
           bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0b1220' : '#f8fafc',
           borderRadius: 1.5, p: 1, mb: 1.5
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip
-              size='small'
-              label={`🎯 ${attachedCard.cardTitle}`}
-              sx={{ fontWeight: 600, maxWidth: 'calc(100% - 44px)' }}
-            />
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+            {attachChain.boardTitle && <Chip size='small' label={`🗂 ${attachChain.boardTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+            {attachChain.cardTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+            {attachChain.cardTitle && <Chip size='small' label={`🎯 ${attachChain.cardTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+            {attachChain.checklistTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+            {attachChain.checklistTitle && <Chip size='small' label={`☑ ${attachChain.checklistTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+            {attachChain.itemTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+            {attachChain.itemTitle && <Chip size='small' label={`📌 ${attachChain.itemTitle}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
             <Box sx={{ flex: 1 }} />
             <IconButton size='small' onClick={handleDetachCard} aria-label={t('schedule.detachCard')}>
               <CloseRoundedIcon sx={{ fontSize: 16 }} />
             </IconButton>
           </Box>
-          {attachedBoardTitle && (
-            <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mt: 0.5, px: 0.5 }}>
-              {t('schedule.inBoard')}: {attachedBoardTitle}
-            </Typography>
-          )}
-
-          {checklistStats && (
-            <Box sx={{ mt: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                <TaskAltRoundedIcon sx={{ fontSize: 16, color: '#00875a' }} />
-                <Typography variant='caption' sx={{ fontWeight: 700 }}>
-                  {t('schedule.cardChecklist')}: {checklistStats.done}/{checklistStats.total}
-                </Typography>
-              </Box>
-              {cardChecklists.map((checklist) => (
-                <Box key={checklist._id || checklist.title} sx={{ mb: 0.5 }}>
-                  <Typography variant='caption' sx={{ fontWeight: 700, display: 'block' }}>
-                    {checklist.title}
-                  </Typography>
-                  {(checklist.items || []).map((item, index) => (
-                    <FormControlLabel
-                      key={item._id || index}
-                      disabled
-                      control={<Checkbox checked={Boolean(item.isDone)} size='small' sx={{ py: 0 }} />}
-                      label={
-                        <Typography variant='caption' sx={{
-                          textDecoration: item.isDone ? 'line-through' : 'none',
-                          color: item.isDone ? 'text.disabled' : 'text.primary'
-                        }}>
-                          {item.title}
-                        </Typography>
-                      }
-                      sx={{ display: 'flex', m: 0, alignItems: 'center' }}
-                    />
-                  ))}
-                </Box>
-              ))}
-            </Box>
-          )}
         </Box>
       )}
 

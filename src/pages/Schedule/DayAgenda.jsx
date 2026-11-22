@@ -6,17 +6,20 @@ import IconButton from '@mui/material/IconButton'
 import Chip from '@mui/material/Chip'
 import dayjs from 'dayjs'
 
+import { getHolidaysForYear } from './holidays'
+import { SCHEDULE_COLOR_PALETTE } from './constants'
+
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded'
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
-
-import { SCHEDULE_COLOR_PALETTE } from './constants'
 
 /**
  * View mobile: danh sách entry theo 1 ngày + điều hướng ‹ ›
  */
 export default function DayAgenda({ day, entries, onPrev, onNext, onAddClick, onEntryClick }) {
   const { t } = useTranslation()
+
+  const holiday = getHolidaysForYear(day.year()).get(day.format('YYYY-MM-DD'))
 
   const dayEntries = entries
     .filter((e) => dayjs(e.startAt).format('YYYY-MM-DD') === day.format('YYYY-MM-DD'))
@@ -36,6 +39,19 @@ export default function DayAgenda({ day, entries, onPrev, onNext, onAddClick, on
           <ChevronRightRoundedIcon />
         </IconButton>
       </Box>
+
+      {/* Banner ngày lễ */}
+      {holiday && (
+        <Box sx={{
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,86,48,0.14)' : 'rgba(255,86,48,0.08)',
+          border: '1px solid rgba(255,86,48,0.35)',
+          borderRadius: 2, px: 2, py: 1.25, mb: 1.5
+        }}>
+          <Typography sx={{ color: '#ff5630', fontWeight: 700, fontSize: '0.9rem' }}>
+            🎉 {holiday.name}
+          </Typography>
+        </Box>
+      )}
 
       {/* Danh sách entry */}
       {dayEntries.length === 0 && (
