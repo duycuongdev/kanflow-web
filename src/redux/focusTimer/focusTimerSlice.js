@@ -4,11 +4,12 @@ import i18n from '~/i18n'
 import { createFocusSessionAPI } from '~/apis'
 
 /**
- * Trạng thái Focus Timer dùng chung cho mọi nơi hiển thị (widget nổi + card sidebar).
- * - Widget nổi (FocusTimerWidget) mount toàn cục ở App: chịu trách nhiệm hydrate từ
- *   localStorage, tick đếm ngược, phát hiện hết giờ và persist trở lại localStorage.
- * - Card sidebar (FocusTimerSidebarCard) chỉ đọc state + dispatch action - tự động đồng bộ.
- * - isPanelOpen: điều khiển đóng/mở panel đầy đủ từ bất kỳ đâu (sidebar, FAB).
+ * Trạng thái Focus Timer dùng chung cho mọi nơi hiển thị:
+ * - Widget nổi (FocusTimerWidget) + card sidebar (FocusTimerSidebarCard) + trang Focus (/focus)
+ * - Widget nổi mount toàn cục ở App: chịu trách nhiệm hydrate từ localStorage + persist trở lại
+ * - FocusTimerTicker (mount toàn cục) chịu trách nhiệm tick phát hiện hết giờ và orchestration
+ * - task: nhiệm vụ đang focus (card/board - set từ card modal hoặc trang Focus chọn cascade)
+ * - plan: cấu hình chuỗi lặp (tập trung x phút, lặp n lần, nghỉ giữa các lượt ngắn/dài)
  */
 
 /** Các chế độ timer: tập trung / nghỉ ngắn / nghỉ dài */
@@ -49,7 +50,11 @@ const initialState = {
   focusedMs: 0,
   pomodoroCount: 0,
   customMinutes: 25,
-  isPanelOpen: false
+  isPanelOpen: false,
+  // Nhiệm vụ đang focus (log phiên gắn vào card/board này)
+  task: { cardId: null, boardId: null, title: null },
+  // Chuỗi lặp: tập trung focusMinutes' × repeats lượt, nghỉ breakMode giữa các lượt
+  plan: { active: false, focusMinutes: 25, repeats: 4, breakMode: 'short', round: 1, phase: 'idle' }
 }
 
 const timerSlice = createSlice({
@@ -64,7 +69,7 @@ const timerSlice = createSlice({
         if (key === 'isPanelOpen') return // không nạp trạng thái mở panel
         if (saved[key] !== undefined && saved[key] !== null) state[key] = saved[key]
       })
-      // Đang chạy nhưng endAt đã qua (tab đóng lâu): coi như dừng ở thời điểm còn lại
+      // Đang chạy nhưng endAt đã qua (tab đóng lâu): coi như phiên đó hoàn thành 1 pomodoro rồi dừng
       if (state.isRunning && state.endAt && state.endAt <= Date.now()) {
         if (state.mode === 'focus' && state.durationMs >= 60 * 1000) {
           state.pomodoroCount += 1
@@ -74,7 +79,13 @@ const timerSlice = createSlice({
         state.segStartAt = null
         state.remainingMs = state.durationMs
         state.focusedMs = 0
+        // Chuỗi lặp đang chạy mà mất phiên (đóng tab lâu): hủy chuỗi để tránh flow treo
+        if (state.plan?.active) {
+          state.plan = { ...initialState.plan }
+        }
       }
+      // Task không persist theo user (gắn theo phiên làm việc) - reset về null
+      state.task = { cardId: null, boardId: null, title: null }
     },
 
     startFocusTimer: (state, action) => {
@@ -148,25 +159,47 @@ const timerSlice = createSlice({
 
     setPanelOpen: (state, action) => {
       state.isPanelOpen = Boolean(action.payload)
+    },
+
+    // Nhiệm vụ đang focus (từ card modal hoặc trang Focus)
+    setFocusTask: (state, action) => {
+      const { cardId = null, boardId = null, title = null } = action.payload || {}
+      state.task = { cardId, boardId, title }
+    },
+
+    // Cấu hình chuỗi lặp
+    setFocusPlan: (state, action) => {
+      const { focusMinutes, repeats, breakMode, active, round, phase } = action.payload || {}
+      if (focusMinutes !== undefined) state.plan.focusMinutes = Math.min(180, Math.max(1, Number(focusMinutes) || 1))
+      if (repeats !== undefined) state.plan.repeats = Math.min(12, Math.max(1, Number(repeats) || 1))
+      if (breakMode !== undefined) state.plan.breakMode = breakMode === 'long' ? 'long' : 'short'
+      if (active !== undefined) state.plan.active = Boolean(active)
+      if (round !== undefined) state.plan.round = Math.max(1, Number(round) || 1)
+      if (phase !== undefined) state.plan.phase = phase
     }
   }
 })
 
 /**
- * Phiên hết giờ tự nhiên (widget phát hiện khi tick).
- * - Chỉ log phiên FOCUS (nghỉ ngắn không tính vào thống kê năng suất)
- * - Log "end-anchored": nếu có pause giữa chừng thì window bị nén lại,
- *   nhưng durationMs (thứ stats cộng dồn) vẫn đúng bằng thời gian tập trung thực tế
- * - Trả về mode gợi ý tiếp theo ('shortBreak' | 'focus') để widget hiển thị nút gợi ý
+ * Phiên hết giờ tự nhiên (FocusTimerTicker phát hiện khi tick) + orchestration chuỗi lặp:
+ * - Không plan: giữ hành vi cũ - log (nếu focus ≥1 phút), toast, gợi ý mode tiếp theo
+ * - Có plan active:
+ *     hết lượt focus → nếu còn lượt: tự chuyển sang nghỉ (short/long) + tự start nghỉ
+ *                    → nếu là lượt cuối: kết thúc chuỗi + toast hoàn thành
+ *     hết nghỉ      → tự chuyển sang lượt focus tiếp theo + tự start
+ * Mỗi lượt focus vẫn log 1 phiên riêng (stats/leaderboard giữ nguyên cách tính).
+ * Trả về: 'shortBreak' | 'focus' (gợi ý mode, khi không có plan) | 'planCompleted' | null
  */
 export const completeFocusSession = createAsyncThunk(
   'focusTimer/complete',
-  async ({ cardId = null, boardId = null } = {}, { getState, dispatch }) => {
+  async (arg, { getState, dispatch }) => {
     const timer = getState().focusTimer
     const finishedAt = timer.endAt || Date.now()
-    const isFocusDone = timer.mode === 'focus'
+    const cardId = timer.task?.cardId || null
+    const boardId = timer.task?.boardId || null
+    const isFocusPhase = timer.mode === 'focus'
 
-    if (isFocusDone && timer.durationMs >= 60 * 1000) {
+    if (isFocusPhase && timer.durationMs >= 60 * 1000) {
       try {
         await createFocusSessionAPI({
           startedAt: finishedAt - timer.durationMs,
@@ -182,25 +215,59 @@ export const completeFocusSession = createAsyncThunk(
 
     dispatch(applyCompleted())
 
-    toast.success(isFocusDone
+    const plan = timer.plan
+    if (plan?.active) {
+      if (isFocusPhase) {
+        if (plan.round < plan.repeats) {
+          // Còn lượt: nghỉ ngắn/dài rồi tự làm tiếp
+          const breakModeKey = plan.breakMode === 'long' ? 'longBreak' : 'shortBreak'
+          dispatch(switchTimerMode(breakModeKey))
+          dispatch(setFocusPlan({ phase: 'break', round: plan.round }))
+          dispatch(startFocusTimer({ now: Date.now() }))
+          toast.success(i18n.t('focusPage.roundDoneBreakStarted', {
+            round: plan.round,
+            repeats: plan.repeats,
+            breakMode: i18n.t(`focusTimer.mode.${breakModeKey}`)
+          }))
+          return null
+        }
+        // Lượt cuối: kết thúc chuỗi
+        dispatch(setFocusPlan({ phase: 'idle', round: 1, active: false }))
+        toast.success(i18n.t('focusPage.planCompleted', { repeats: plan.repeats }))
+        return 'planCompleted'
+      }
+      // Hết giờ nghỉ: bắt đầu lượt focus tiếp theo
+      const nextRound = plan.round + 1
+      dispatch(setCustomMinutes(plan.focusMinutes))
+      dispatch(switchTimerMode('focus'))
+      dispatch(setFocusPlan({ phase: 'focus', round: nextRound }))
+      dispatch(startFocusTimer({ now: Date.now() }))
+      toast.success(i18n.t('focusPage.breakDoneNextRound', { round: nextRound, repeats: plan.repeats }))
+      return null
+    }
+
+    // Không có plan: hành vi cũ
+    toast.success(isFocusPhase
       ? i18n.t('focusTimer.focusCompleted', { duration: formatDurationShort(timer.durationMs) })
       : i18n.t('focusTimer.breakCompleted', { mode: i18n.t(`focusTimer.mode.${TIMER_MODES[timer.mode].label}`) })
     )
-
-    return isFocusDone ? 'shortBreak' : 'focus'
+    return isFocusPhase ? 'shortBreak' : 'focus'
   }
 )
 
 /**
- * Dừng sớm (nút Stop): vẫn log nếu đã tập trung được ít nhất 1 phút
+ * Dừng sớm (nút Stop): vẫn log nếu đã tập trung được ít nhất 1 phút.
+ * Đang chạy chuỗi lặp thì hủy chuỗi luôn.
  */
 export const stopFocusSession = createAsyncThunk(
   'focusTimer/stop',
-  async ({ cardId = null, boardId = null } = {}, { getState, dispatch }) => {
+  async (arg, { getState, dispatch }) => {
     const timer = getState().focusTimer
     const now = Date.now()
     const segFocusedMs = timer.mode === 'focus' && timer.segStartAt ? Math.max(0, now - timer.segStartAt) : 0
     const totalFocusedMs = timer.focusedMs + segFocusedMs
+    const cardId = timer.task?.cardId || null
+    const boardId = timer.task?.boardId || null
 
     if (timer.mode === 'focus' && totalFocusedMs >= 60 * 1000) {
       try {
@@ -218,6 +285,24 @@ export const stopFocusSession = createAsyncThunk(
     }
 
     dispatch(resetFocusTimer())
+    if (timer.plan?.active) {
+      dispatch(setFocusPlan({ active: false, round: 1, phase: 'idle' }))
+      toast.info(i18n.t('focusPage.planStopped'))
+    }
+  }
+)
+
+/**
+ * Bắt đầu 1 chuỗi lặp từ trang Focus:
+ * set plan → chuyển mode focus với đúng số phút → start
+ */
+export const startFocusPlan = createAsyncThunk(
+  'focusTimer/startPlan',
+  async ({ focusMinutes, repeats, breakMode } = {}, { dispatch }) => {
+    dispatch(setFocusPlan({ focusMinutes, repeats, breakMode, active: true, round: 1, phase: 'focus' }))
+    dispatch(setCustomMinutes(focusMinutes))
+    dispatch(switchTimerMode('focus'))
+    dispatch(startFocusTimer({ now: Date.now() }))
   }
 )
 
@@ -230,10 +315,14 @@ export const {
   setCustomMinutes,
   applyCompleted,
   incrementPomodoro,
-  setPanelOpen
+  setPanelOpen,
+  setFocusTask,
+  setFocusPlan
 } = timerSlice.actions
 
 export const selectFocusTimerState = (state) => state.focusTimer
 export const selectIsFocusPanelOpen = (state) => state.focusTimer.isPanelOpen
+export const selectFocusTask = (state) => state.focusTimer.task
+export const selectFocusPlan = (state) => state.focusTimer.plan
 
 export const focusTimerReducer = timerSlice.reducer

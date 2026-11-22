@@ -693,7 +693,7 @@
     "leaderboard": "Focus leaderboard",
     "leaderboardEmpty": "Nobody has focused in this period yet. Start now to lead the board!",
     "you": "you",
-    "openFullPanel": "Open full panel"
+    "openFullPanel": "Open focus page"
   },
   "schedule": {
     "prev": "Previous",
@@ -738,5 +738,28 @@
     "entriesTitle": "events",
     "moreEntries": "+{{count}} more - view week",
     "weekHint": "💡 Click an empty slot to schedule something at that hour. Click an event to edit it."
+  },
+  "focusPage": {
+    "title": "Focus",
+    "taskSection": "Focus task",
+    "taskHint": "Optional: pick board > card > checklist > item to attribute focus sessions to that exact task",
+    "planSection": "Repeat plan",
+    "focusMinutes": "Minutes per round",
+    "repeats": "Number of rounds",
+    "breakMode": "Break between rounds",
+    "breakShort": "Short break (5')",
+    "breakLong": "Long break (15')",
+    "breakModeShortText": "short",
+    "breakModeLongText": "long",
+    "summary": "Focus {focus} min × {repeats} rounds with a {breakMode} {breakMinutes}-min break between — total ~{total}",
+    "startPlan": "Start focus chain",
+    "stopPlan": "Stop chain",
+    "roundOf": "Round {round}/{repeats}",
+    "roundChip": "R{n}",
+    "planCompleted": "🎉 All {repeats} focus rounds completed! Great job.",
+    "roundDoneBreakStarted": "✅ Round {round}/{repeats} done — auto {breakMode} break starting, then continue",
+    "breakDoneNextRound": "☕ Break over — starting round {round}/{repeats}",
+    "planStopped": "Focus chain stopped",
+    "todayFocus": "Focused today"
   }
 }

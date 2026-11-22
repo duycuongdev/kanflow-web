@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 import IconButton from '@mui/material/IconButton'
@@ -17,8 +18,7 @@ import {
   formatCountdown,
   selectFocusTimerState,
   startFocusTimer,
-  pauseFocusTimer,
-  setPanelOpen
+  pauseFocusTimer
 } from '~/redux/focusTimer/focusTimerSlice'
 
 /**
@@ -30,6 +30,7 @@ export default function FocusTimerSidebarCard() {
   const { t } = useTranslation()
   const theme = useTheme()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const timerState = useSelector(selectFocusTimerState)
 
@@ -134,7 +135,7 @@ export default function FocusTimerSidebarCard() {
         size='small'
         variant='text'
         startIcon={<OpenInNewRoundedIcon sx={{ fontSize: 16 }} />}
-        onClick={() => dispatch(setPanelOpen(true))}
+        onClick={() => navigate('/focus')}
         sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.78rem', justifyContent: 'flex-start', px: 1 }}
       >
         {t('focusTimer.openFullPanel')}

@@ -8,6 +8,7 @@ import { selectCurrentUser, fetchCurrentUserAPI } from '~/redux/user/userSlice'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import AiCopilotWidget from '~/components/AiCopilot/AiCopilotWidget'
 import FocusTimerWidget from '~/components/FocusTimer/FocusTimerWidget'
+import FocusTimerTicker from '~/components/FocusTimer/FocusTimerTicker'
 import { usePageLoadingSignal } from '~/utils/pageLoadingState'
 
 // Chỉ tải mã của route đang truy cập.
@@ -20,6 +21,7 @@ const ForgotPassword = lazy(() => import('~/pages/Auth/ForgotPassword'))
 const ResetPassword = lazy(() => import('~/pages/Auth/ResetPassword'))
 const Settings = lazy(() => import('~/pages/Settings/Settings'))
 const Schedule = lazy(() => import('~/pages/Schedule/index.jsx'))
+const Focus = lazy(() => import('~/pages/Focus/index.jsx'))
 const NotFound = lazy(() => import('~/pages/404/NotFound'))
 
 // Giữ nền theo theme trong lúc tải route để tránh lóe màu.
@@ -140,6 +142,8 @@ function App() {
 
           {/* Schedule (bảng lịch cá nhân) */}
           <Route path='schedule' element={<PageFade><Schedule /></PageFade>} />
+          {/* Focus (trang tập trung với chuỗi lặp) */}
+          <Route path='focus' element={<PageFade><Focus /></PageFade>} />
 
           {/* User Settings */}
           <Route path='settings/account' element={<PageFade><Settings /></PageFade>} />
@@ -158,6 +162,7 @@ function App() {
       </Routes>
       <AiCopilotWidget />
       <FocusTimerWidget />
+      <FocusTimerTicker />
     </Suspense>
   )
 }

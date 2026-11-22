@@ -693,7 +693,7 @@
     "leaderboard": "Bảng xếp hạng focus",
     "leaderboardEmpty": "Chưa có ai focus trong kỳ này. Bắt đầu ngay để dẫn đầu nhé!",
     "you": "bạn",
-    "openFullPanel": "Mở panel đầy đủ"
+    "openFullPanel": "Trang tập trung"
   },
   "schedule": {
     "prev": "Trước",
@@ -738,5 +738,28 @@
     "entriesTitle": "lịch",
     "moreEntries": "+{{count}} lịch khác - xem tuần",
     "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Bấm vào lịch để sửa."
+  },
+  "focusPage": {
+    "title": "Trang tập trung",
+    "taskSection": "Nhiệm vụ tập trung",
+    "taskHint": "Tuỳ chọn: chọn bảng → thẻ → checklist → từng việc để ghi nhận phiên focus vào đúng việc đó",
+    "planSection": "Chế độ lặp",
+    "focusMinutes": "Phút tập trung/lượt",
+    "repeats": "Số lượt lặp",
+    "breakMode": "Nghỉ giữa các lượt",
+    "breakShort": "Nghỉ ngắn (5')",
+    "breakLong": "Nghỉ dài (15')",
+    "breakModeShortText": "ngắn",
+    "breakModeLongText": "dài",
+    "summary": "Tập trung {focus} phút × {repeats} lượt, nghỉ {breakMode} {breakMinutes} phút giữa các lượt — tổng ~{total}",
+    "startPlan": "Bắt đầu chuỗi tập trung",
+    "stopPlan": "Kết thúc chuỗi",
+    "roundOf": "Lượt {round}/{repeats}",
+    "roundChip": "Lượt {n}",
+    "planCompleted": "🎉 Hoàn thành cả {repeats} lượt tập trung! Xuất sắc.",
+    "roundDoneBreakStarted": "✅ Xong lượt {round}/{repeats} — tự động {breakMode} 5-15 phút rồi làm tiếp",
+    "breakDoneNextRound": "☕ Hết giờ nghỉ — bắt đầu lượt {round}/{repeats}",
+    "planStopped": "Đã kết thúc chuỗi tập trung",
+    "todayFocus": "Hôm nay đã tập trung"
   }
 }

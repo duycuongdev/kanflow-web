@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -36,6 +37,7 @@ import {
   formatCountdown,
   selectFocusTimerState,
   selectIsFocusPanelOpen,
+  selectFocusTask,
   hydrateTimerState,
   startFocusTimer,
   pauseFocusTimer,
@@ -43,7 +45,7 @@ import {
   switchTimerMode,
   setCustomMinutes,
   setPanelOpen,
-  completeFocusSession,
+  setFocusTask,
   stopFocusSession
 } from '~/redux/focusTimer/focusTimerSlice'
 import { getFocusStatsAPI, getFocusLeaderboardAPI } from '~/apis'
@@ -57,12 +59,16 @@ export default function FocusTimerWidget() {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
   const dispatch = useDispatch()
+  const location = useLocation()
+  // Trang Focus (/focus) có giao diện tập trung riêng -> ẩn widget nổi để không đè nhau
+  const isFocusPage = location.pathname.startsWith('/focus')
 
   const currentUser = useSelector(selectCurrentUser)
   const currentActiveCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
   const timerState = useSelector(selectFocusTimerState)
   const isOpen = useSelector(selectIsFocusPanelOpen)
+  const focusTask = useSelector(selectFocusTask)
 
   const [isPageLoading, setIsPageLoading] = useState(getPageLoading())
   useEffect(() => {
@@ -103,7 +109,6 @@ export default function FocusTimerWidget() {
   }, [timerStorageKey, dispatch])
 
   const [now, setNow] = useState(Date.now())
-  const [showSuggestion, setShowSuggestion] = useState(null) // 'shortBreak' | 'focus' sau khi phiên xong
 
   // Thống kê & bảng xếp hạng (tab Insights)
   const [stats, setStats] = useState(null) // { day, week, month } mỗi cái { totalMs, sessionCount }
@@ -112,15 +117,21 @@ export default function FocusTimerWidget() {
   const [leaderboard, setLeaderboard] = useState(null)
   const [leaderboardLoading, setLeaderboardLoading] = useState(false)
 
-  // Ref giữ card đang được focus (không persist - chỉ theo phiên đăng nhập)
-  const focusedCardRef = useRef(null)
+  // Đồng bộ nhiệm vụ đang focus từ card modal:
+  // mở modal card = gắn task; đóng modal = gỡ task (trang Focus tự set task riêng không bị ảnh hưởng)
+  const prevModalCardIdRef = useRef(null)
   useEffect(() => {
     if (isShowModalActiveCard && currentActiveCard) {
-      focusedCardRef.current = { _id: currentActiveCard._id, title: currentActiveCard.title, boardId: currentActiveCard.boardId }
+      prevModalCardIdRef.current = currentActiveCard._id
+      dispatch(setFocusTask({ cardId: currentActiveCard._id, boardId: currentActiveCard.boardId, title: currentActiveCard.title }))
+    } else if (!isShowModalActiveCard && prevModalCardIdRef.current) {
+      prevModalCardIdRef.current = null
+      dispatch(setFocusTask({ cardId: null, boardId: null, title: null }))
     }
-  }, [isShowModalActiveCard, currentActiveCard])
+  }, [isShowModalActiveCard, currentActiveCard, dispatch])
 
   // Tick mỗi 500ms để cập nhật đếm ngược
+  // (phát hiện hết giờ + orchestration do FocusTimerTicker đảm nhiệm - mount ở App)
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 500)
     return () => clearInterval(interval)
@@ -129,19 +140,6 @@ export default function FocusTimerWidget() {
   const remainingMs = timerState.isRunning && timerState.endAt
     ? Math.max(0, timerState.endAt - now)
     : timerState.remainingMs
-
-  // Tự động hoàn thành khi hết thời gian đếm ngược
-  // (thunk completeFocusSession: log API + toast + reset state, trả về mode gợi ý tiếp theo)
-  useEffect(() => {
-    if (timerState.isRunning && timerState.endAt && now >= timerState.endAt) {
-      dispatch(completeFocusSession({
-        cardId: focusedCardRef.current?._id || null,
-        boardId: focusedCardRef.current?.boardId || null
-      })).then((res) => {
-        setShowSuggestion(res.payload || null)
-      })
-    }
-  }, [now, timerState.isRunning, timerState.endAt, dispatch])
 
   const startTimer = () => {
     dispatch(startFocusTimer({ now: Date.now() }))
@@ -152,21 +150,15 @@ export default function FocusTimerWidget() {
   }
 
   const stopTimer = () => {
-    dispatch(stopFocusSession({
-      cardId: focusedCardRef.current?._id || null,
-      boardId: focusedCardRef.current?.boardId || null
-    }))
-    setShowSuggestion(null)
+    dispatch(stopFocusSession())
   }
 
   const resetTimer = () => {
     dispatch(resetFocusTimer())
-    setShowSuggestion(null)
   }
 
   const switchMode = (modeKey) => {
     dispatch(switchTimerMode(modeKey))
-    setShowSuggestion(null)
   }
 
   const handleSetCustomMinutes = (minutes) => {
@@ -232,11 +224,7 @@ export default function FocusTimerWidget() {
   const ringRadius = (ringSize - ringStroke) / 2
   const ringCircumference = 2 * Math.PI * ringRadius
 
-  if (!currentUser) return null
-
-  const activeCardChip = focusedCardRef.current
-    ? focusedCardRef.current
-    : (isShowModalActiveCard && currentActiveCard ? { _id: currentActiveCard._id, title: currentActiveCard.title } : null)
+  if (!currentUser || isFocusPage) return null
 
   const renderStatRow = (label, data) => (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.75 }}>
@@ -457,23 +445,11 @@ export default function FocusTimerWidget() {
                     )}
                   </Box>
 
-                  {/* Gợi ý chuyển mode sau khi hoàn thành */}
-                  {showSuggestion && !timerState.isRunning && (
-                    <Button
-                      variant='outlined'
-                      size='small'
-                      sx={{ mt: 1.5, textTransform: 'none', fontWeight: 600 }}
-                      onClick={() => switchMode(showSuggestion)}
-                    >
-                      {t('focusTimer.suggestion', { mode: t(`focusTimer.mode.${TIMER_MODES[showSuggestion].label}`) })}
-                    </Button>
-                  )}
-
-                  {/* Card đang focus */}
-                  {activeCardChip && (
+                  {/* Nhiệm vụ đang focus (từ card modal hoặc trang Focus) */}
+                  {focusTask?.title && (
                     <Chip
                       size='small'
-                      label={`🎯 ${t('focusTimer.focusingOn')}: ${activeCardChip.title}`}
+                      label={`🎯 ${t('focusTimer.focusingOn')}: ${focusTask.title}`}
                       sx={{ mt: 1.5, maxWidth: '100%', bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1e293b' : '#f1f3f5' }}
                     />
                   )}
