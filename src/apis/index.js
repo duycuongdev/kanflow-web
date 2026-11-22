@@ -190,3 +190,27 @@ export const deleteBoardDetailsAPI = async (boardId) => {
   const response = await authorizedAxiosInstance.delete(`${API_ROOT}/v1/boards/${boardId}`)
   return response.data
 }
+
+/** ================= Focus Sessions (đếm ngược tập trung + thống kê + bảng xếp hạng) ================= */
+
+// Log 1 phiên focus khi kết thúc (server tự tính durationMs và validate 1 phút - 4 giờ)
+export const createFocusSessionAPI = async (sessionData) => {
+  const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/focus-sessions`, sessionData)
+  return response.data
+}
+
+// Tổng thời gian focus + số phiên của user trong khoảng from/to (epoch ms, tính theo giờ máy client)
+export const getFocusStatsAPI = async (from, to) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/focus-sessions/stats`, {
+    params: { from, to }
+  })
+  return response.data
+}
+
+// Bảng xếp hạng focus toàn bộ user trong khoảng from/to (top 10 + hạng của user hiện tại)
+export const getFocusLeaderboardAPI = async (from, to) => {
+  const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/focus-sessions/leaderboard`, {
+    params: { from, to }
+  })
+  return response.data
+}

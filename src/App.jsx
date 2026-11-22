@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { selectCurrentUser, fetchCurrentUserAPI } from '~/redux/user/userSlice'
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import AiCopilotWidget from '~/components/AiCopilot/AiCopilotWidget'
+import FocusTimerWidget from '~/components/FocusTimer/FocusTimerWidget'
 import { usePageLoadingSignal } from '~/utils/pageLoadingState'
 
 // Chỉ tải mã của route đang truy cập.
@@ -152,6 +153,7 @@ function App() {
         <Route path='*' element={<PageFade><NotFound /></PageFade>} />
       </Routes>
       <AiCopilotWidget />
+      <FocusTimerWidget />
     </Suspense>
   )
 }

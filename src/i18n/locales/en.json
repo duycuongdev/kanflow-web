@@ -656,5 +656,39 @@
     "defaultAttachmentPrompt": "Please review and analyze this attached file/image.",
     "maxFilesExceeded": "You can only attach up to 5 files at a time.",
     "fileTooLarge": "File {{name}} exceeds maximum allowed size (max 5MB)."
+  },
+  "focusTimer": {
+    "title": "Focus Timer",
+    "tabTimer": "Timer",
+    "tabInsights": "Insights",
+    "mode": {
+      "focus": "Focus",
+      "shortBreak": "Short break",
+      "longBreak": "Long break"
+    },
+    "customMinutes": "Custom minutes",
+    "start": "Start",
+    "resume": "Resume",
+    "pause": "Pause",
+    "stopHint": "Stop and save session",
+    "reset": "Reset",
+    "suggestion": "Up next: {{mode}} →",
+    "focusingOn": "Focusing on",
+    "focusCompleted": "🎉 Completed {{duration}} of focus! Time to take a break.",
+    "breakCompleted": "✅ {{mode}} is over! Let's get back to focus.",
+    "sessionLogged": "Focus session of {{duration}} saved",
+    "sessionLogFailed": "Could not save the focus session. Please try again!",
+    "myStats": "Your stats",
+    "period": {
+      "today": "Today",
+      "thisWeek": "This week",
+      "thisMonth": "This month",
+      "thisWeekShort": "Week",
+      "thisMonthShort": "Month"
+    },
+    "sessionsUnit": "sessions",
+    "leaderboard": "Focus leaderboard",
+    "leaderboardEmpty": "Nobody has focused in this period yet. Start now to lead the board!",
+    "you": "you"
   }
 }

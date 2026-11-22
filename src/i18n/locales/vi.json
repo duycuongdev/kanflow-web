@@ -656,5 +656,39 @@
     "defaultAttachmentPrompt": "Hãy xem và phân tích tệp/ảnh đính kèm này.",
     "maxFilesExceeded": "Chỉ có thể đính kèm tối đa 5 tệp cùng lúc.",
     "fileTooLarge": "Tệp {{name}} vượt quá kích thước cho phép (tối đa 5MB)."
+  },
+  "focusTimer": {
+    "title": "Focus Timer",
+    "tabTimer": "Đếm ngược",
+    "tabInsights": "Thống kê",
+    "mode": {
+      "focus": "Tập trung",
+      "shortBreak": "Nghỉ ngắn",
+      "longBreak": "Nghỉ dài"
+    },
+    "customMinutes": "Số phút tùy chỉnh",
+    "start": "Bắt đầu",
+    "resume": "Tiếp tục",
+    "pause": "Tạm dừng",
+    "stopHint": "Dừng và lưu phiên",
+    "reset": "Đặt lại",
+    "suggestion": "Giờ nên: {{mode}} →",
+    "focusingOn": "Đang tập trung vào",
+    "focusCompleted": "🎉 Hoàn thành {{duration}} tập trung! Giờ nghỉ ngơi nhé.",
+    "breakCompleted": "✅ Hết {{mode}}! Tiếp tục tập trung nào.",
+    "sessionLogged": "Đã lưu phiên focus {{duration}}",
+    "sessionLogFailed": "Không lưu được phiên focus. Vui lòng thử lại!",
+    "myStats": "Thống kê của bạn",
+    "period": {
+      "today": "Hôm nay",
+      "thisWeek": "Tuần này",
+      "thisMonth": "Tháng này",
+      "thisWeekShort": "Tuần",
+      "thisMonthShort": "Tháng"
+    },
+    "sessionsUnit": "phiên",
+    "leaderboard": "Bảng xếp hạng focus",
+    "leaderboardEmpty": "Chưa có ai focus trong kỳ này. Bắt đầu ngay để dẫn đầu nhé!",
+    "you": "bạn"
   }
 }
