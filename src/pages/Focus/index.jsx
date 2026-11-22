@@ -144,6 +144,7 @@ function TaskCascade({ onChainChange }) {
         value={boardId}
         onChange={(e) => setBoardId(e.target.value)}
         sx={{ mb: 1 }}
+        MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
         renderValue={(value) => {
           if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
           const board = boards.find((b) => b._id === value)
@@ -168,6 +169,7 @@ function TaskCascade({ onChainChange }) {
           value={cardId}
           onChange={(e) => handleCard(e.target.value)}
           sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectCard')}</Typography>
             const card = cardOptions.find((c) => c._id === value)
@@ -195,6 +197,7 @@ function TaskCascade({ onChainChange }) {
           value={checklistId}
           onChange={(e) => handleChecklist(e.target.value)}
           sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectChecklist')}</Typography>
             const checklist = selectedCard.checklists.find((cl) => (cl._id || cl.title) === value)
@@ -221,6 +224,7 @@ function TaskCascade({ onChainChange }) {
           displayEmpty
           value={itemId}
           onChange={(e) => handleItem(e.target.value)}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
           renderValue={(value) => {
             if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectItem')}</Typography>
             const item = selectedChecklist.items.find((it) => (it._id || it.title) === value)
@@ -540,14 +544,6 @@ export default function Focus() {
           <Typography sx={{ fontWeight: 800, fontSize: '1.2rem' }}>
             {t('focusPage.title')}
           </Typography>
-          <Box sx={{ flex: 1 }} />
-          {stats && (
-            <Chip
-              size='small'
-              label={`${t('focusPage.todayFocus')}: ${formatDurationShort(stats.day?.totalMs || 0)}`}
-              sx={{ fontWeight: 700, bgcolor: 'rgba(0,82,204,0.10)', color: '#0052cc' }}
-            />
-          )}
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
@@ -682,6 +678,19 @@ export default function Focus() {
                 </Tooltip>
               )}
             </Box>
+
+            {/* Tổng focus hôm nay - lấp khoảng trống dưới card */}
+            {stats && (
+              <Chip
+                label={`${t('focusPage.todayFocus')}: ${formatDurationShort(stats.day?.totalMs || 0)}`}
+                sx={{
+                  mt: 2,
+                  fontWeight: 700,
+                  bgcolor: 'rgba(0,82,204,0.10)',
+                  color: '#0052cc'
+                }}
+              />
+            )}
           </Paper>
 
           {/* PHẢI: nhiệm vụ + chế độ lặp + thống kê */}
@@ -755,6 +764,7 @@ export default function Focus() {
                     onChange={(e, v) => v && setBreakMode(v)}
                     size='small'
                     disabled={plan.active}
+                    sx={{ gap: 0.75 }}
                   >
                     <ToggleButton value='short'>{t('focusPage.breakShort')}</ToggleButton>
                     <ToggleButton value='long'>{t('focusPage.breakLong')}</ToggleButton>
