@@ -3,6 +3,7 @@ import { activeBoardReducer } from './activeBoard/activeBoardSlice'
 import { userReducer } from './user/userSlice'
 import { activeCardReducer } from './activeCard/activeCardSlice'
 import { notificationsReducer } from './notifications/notificationsSlice'
+import { focusTimerReducer } from './focusTimer/focusTimerSlice'
 
 
 /**
@@ -28,7 +29,8 @@ const reducers = combineReducers({
   activeBoard: activeBoardReducer,
   activeCard: activeCardReducer,
   notifications: notificationsReducer,
-  user: userReducer
+  user: userReducer,
+  focusTimer: focusTimerReducer
 })
 
 // thực hiện persist reducer

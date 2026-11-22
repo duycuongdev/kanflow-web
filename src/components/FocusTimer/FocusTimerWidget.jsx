@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'react-toastify'
 import Box from '@mui/material/Box'
 import Paper from '@mui/material/Paper'
 import Typography from '@mui/material/Typography'
@@ -31,48 +30,39 @@ import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
 
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { selectCurrentActiveCard, selectIsShowModalActiveCard } from '~/redux/activeCard/activeCardSlice'
-import { createFocusSessionAPI, getFocusStatsAPI, getFocusLeaderboardAPI } from '~/apis'
+import {
+  TIMER_MODES,
+  formatDurationShort,
+  formatCountdown,
+  selectFocusTimerState,
+  selectIsFocusPanelOpen,
+  hydrateTimerState,
+  startFocusTimer,
+  pauseFocusTimer,
+  resetFocusTimer,
+  switchTimerMode,
+  setCustomMinutes,
+  setPanelOpen,
+  completeFocusSession,
+  stopFocusSession
+} from '~/redux/focusTimer/focusTimerSlice'
+import { getFocusStatsAPI, getFocusLeaderboardAPI } from '~/apis'
 import { getPageLoading, subscribePageLoading } from '~/utils/pageLoadingState'
-
-/** Các chế độ timer: tập trung / nghỉ ngắn / nghỉ dài */
-const TIMER_MODES = {
-  focus: { label: 'focus', defaultMs: 25 * 60 * 1000, color: '#0052cc' },
-  shortBreak: { label: 'shortBreak', defaultMs: 5 * 60 * 1000, color: '#00875a' },
-  longBreak: { label: 'longBreak', defaultMs: 15 * 60 * 1000, color: '#6554c0' }
-}
 
 /** Màu hiển thị cho từng màu hạng trong bảng xếp hạng */
 const RANK_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
-
-/** Định dạng ms thành "1h 23m" (dùng cho thống kê) */
-const formatDurationShort = (ms) => {
-  const totalMinutes = Math.floor(ms / 60000)
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-  if (hours > 0) return `${hours}h ${minutes}m`
-  return `${minutes}m`
-}
-
-/** Định dạng ms thành "25:00" / "1:05:30" (dùng cho đếm ngược) */
-const formatCountdown = (ms) => {
-  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
-  const hours = Math.floor(totalSeconds / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  const mm = String(minutes).padStart(2, '0')
-  const ss = String(seconds).padStart(2, '0')
-  if (hours > 0) return `${hours}:${mm}:${ss}`
-  return `${mm}:${ss}`
-}
 
 export default function FocusTimerWidget() {
   const { t } = useTranslation()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const dispatch = useDispatch()
 
   const currentUser = useSelector(selectCurrentUser)
   const currentActiveCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
+  const timerState = useSelector(selectFocusTimerState)
+  const isOpen = useSelector(selectIsFocusPanelOpen)
 
   const [isPageLoading, setIsPageLoading] = useState(getPageLoading())
   useEffect(() => {
@@ -85,52 +75,35 @@ export default function FocusTimerWidget() {
     ? `kanflow_focus_state_${currentUser._id}`
     : 'kanflow_focus_state_guest'
 
-  const [isOpen, setIsOpen] = useState(false)
   const [tab, setTab] = useState('timer')
 
-  // Trạng thái timer (persist localStorage để refresh trang không mất phiên đang chạy)
-  const [timerState, setTimerState] = useState(() => {
-    const initial = {
-      mode: 'focus',
-      durationMs: TIMER_MODES.focus.defaultMs,
-      remainingMs: TIMER_MODES.focus.defaultMs,
-      isRunning: false,
-      endAt: null,
-      segStartAt: null,
-      focusedMs: 0,
-      pomodoroCount: 0,
-      customMinutes: 25
-    }
-    try {
-      const saved = localStorage.getItem(timerStorageKey)
-      if (saved) return { ...initial, ...JSON.parse(saved) }
-    } catch {
-      // ignore storage load error
-    }
-    return initial
-  })
-
-  // Đồng bộ trạng thái khi người dùng đổi tài khoản
+  // Lưu trạng thái vào localStorage mỗi khi thay đổi.
+  // Chỉ persist sau khi đã hydrate cho đúng user (tránh ghi đè dữ liệu cũ bằng state mặc định)
+  const hydratedKeyRef = useRef(null)
   useEffect(() => {
+    if (hydratedKeyRef.current !== timerStorageKey) return
     try {
-      const saved = localStorage.getItem(timerStorageKey)
-      if (saved) setTimerState((prev) => ({ ...prev, ...JSON.parse(saved) }))
-    } catch {
-      // ignore
-    }
-  }, [timerStorageKey])
-
-  // Lưu trạng thái vào localStorage mỗi khi thay đổi
-  useEffect(() => {
-    try {
-      localStorage.setItem(timerStorageKey, JSON.stringify(timerState))
+      const persistable = { ...timerState }
+      delete persistable.isPanelOpen // trạng thái mở panel là UI cục bộ, không persist
+      localStorage.setItem(timerStorageKey, JSON.stringify(persistable))
     } catch {
       // ignore
     }
   }, [timerStorageKey, timerState])
 
+  // Hydrate trạng thái từ localStorage khi mount / người dùng đổi tài khoản
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(timerStorageKey)
+      dispatch(hydrateTimerState(saved ? JSON.parse(saved) : null))
+    } catch {
+      dispatch(hydrateTimerState(null))
+    }
+    hydratedKeyRef.current = timerStorageKey
+  }, [timerStorageKey, dispatch])
+
   const [now, setNow] = useState(Date.now())
-  const [showSuggestion, setShowSuggestion] = useState(null) // 'shortBreak' | 'longBreak' sau khi focus xong
+  const [showSuggestion, setShowSuggestion] = useState(null) // 'shortBreak' | 'focus' sau khi phiên xong
 
   // Thống kê & bảng xếp hạng (tab Insights)
   const [stats, setStats] = useState(null) // { day, week, month } mỗi cái { totalMs, sessionCount }
@@ -147,7 +120,7 @@ export default function FocusTimerWidget() {
     }
   }, [isShowModalActiveCard, currentActiveCard])
 
-  // Tick mỗi 500ms khi timer đang chạy (hoặc khi panel mở để cập nhật đồng hồ hiện tại)
+  // Tick mỗi 500ms để cập nhật đếm ngược
   useEffect(() => {
     const interval = setInterval(() => setNow(Date.now()), 500)
     return () => clearInterval(interval)
@@ -158,145 +131,46 @@ export default function FocusTimerWidget() {
     : timerState.remainingMs
 
   // Tự động hoàn thành khi hết thời gian đếm ngược
-  const completeTimer = useCallback((finishedState) => {
-    const modeConfig = TIMER_MODES[finishedState.mode]
-    const finishedAt = finishedState.endAt
-
-    // Chỉ log phiên FOCUS (nghỉ ngắn không tính vào thống kê năng suất)
-    if (finishedState.mode === 'focus' && finishedState.durationMs >= 60 * 1000) {
-      // Log "end-anchored": nếu có pause giữa chừng thì window bị nén lại,
-      // nhưng durationMs (thứ stats cộng dồn) vẫn đúng bằng thời gian tập trung thực tế
-      createFocusSessionAPI({
-        startedAt: finishedAt - finishedState.durationMs,
-        endedAt: finishedAt,
-        cardId: focusedCardRef.current?._id || null,
-        boardId: focusedCardRef.current?.boardId || null
-      }).then(() => {
-        toast.success(t('focusTimer.sessionLogged', { duration: formatDurationShort(finishedState.durationMs) }))
-      }).catch(() => {
-        toast.error(t('focusTimer.sessionLogFailed'))
-      })
-    }
-
-    const isFocusDone = finishedState.mode === 'focus'
-    setTimerState((prev) => ({
-      ...prev,
-      isRunning: false,
-      endAt: null,
-      segStartAt: null,
-      focusedMs: 0,
-      remainingMs: finishedState.durationMs,
-      pomodoroCount: isFocusDone ? prev.pomodoroCount + 1 : prev.pomodoroCount
-    }))
-    setShowSuggestion(isFocusDone ? 'shortBreak' : 'focus')
-
-    toast.success(isFocusDone
-      ? t('focusTimer.focusCompleted', { duration: formatDurationShort(finishedState.durationMs) })
-      : t('focusTimer.breakCompleted', { mode: t(`focusTimer.mode.${modeConfig.label}`) })
-    )
-  }, [t])
-
-  // Vòng lặp đếm ngược - kiểm tra hết giờ
+  // (thunk completeFocusSession: log API + toast + reset state, trả về mode gợi ý tiếp theo)
   useEffect(() => {
     if (timerState.isRunning && timerState.endAt && now >= timerState.endAt) {
-      completeTimer(timerState)
+      dispatch(completeFocusSession({
+        cardId: focusedCardRef.current?._id || null,
+        boardId: focusedCardRef.current?.boardId || null
+      })).then((res) => {
+        setShowSuggestion(res.payload || null)
+      })
     }
-  }, [now, timerState, completeTimer])
+  }, [now, timerState.isRunning, timerState.endAt, dispatch])
 
   const startTimer = () => {
-    const segStart = Date.now()
-    setTimerState((prev) => ({
-      ...prev,
-      isRunning: true,
-      endAt: segStart + prev.remainingMs,
-      segStartAt: segStart
-    }))
+    dispatch(startFocusTimer({ now: Date.now() }))
   }
 
   const pauseTimer = () => {
-    setTimerState((prev) => {
-      const segFocused = prev.endAt ? Math.max(0, prev.endAt - Date.now()) : 0
-      // focusedMs chỉ cộng cho mode focus (thống kê năng suất)
-      const gained = prev.mode === 'focus' ? Math.max(0, prev.segStartAt ? Date.now() - prev.segStartAt : 0) : 0
-      return {
-        ...prev,
-        isRunning: false,
-        endAt: null,
-        segStartAt: null,
-        remainingMs: Math.max(0, segFocused > 0 ? prev.endAt - Date.now() : prev.remainingMs),
-        focusedMs: prev.focusedMs + gained
-      }
-    })
+    dispatch(pauseFocusTimer({ now: Date.now() }))
   }
 
   const stopTimer = () => {
-    setTimerState((prev) => {
-      const segFocusedMs = prev.mode === 'focus' && prev.segStartAt ? Math.max(0, Date.now() - prev.segStartAt) : 0
-      const totalFocusedMs = prev.focusedMs + segFocusedMs
-
-      // Dừng sớm: vẫn log nếu đã tập trung được ít nhất 1 phút
-      if (prev.mode === 'focus' && totalFocusedMs >= 60 * 1000) {
-        const stoppedAt = Date.now()
-        createFocusSessionAPI({
-          startedAt: stoppedAt - totalFocusedMs,
-          endedAt: stoppedAt,
-          cardId: focusedCardRef.current?._id || null,
-          boardId: focusedCardRef.current?.boardId || null
-        }).then(() => {
-          toast.success(t('focusTimer.sessionLogged', { duration: formatDurationShort(totalFocusedMs) }))
-        }).catch(() => {
-          toast.error(t('focusTimer.sessionLogFailed'))
-        })
-        setTimerState((latest) => ({ ...latest, pomodoroCount: latest.pomodoroCount + 1 }))
-      }
-
-      return {
-        ...prev,
-        isRunning: false,
-        endAt: null,
-        segStartAt: null,
-        focusedMs: 0,
-        remainingMs: prev.durationMs
-      }
-    })
+    dispatch(stopFocusSession({
+      cardId: focusedCardRef.current?._id || null,
+      boardId: focusedCardRef.current?.boardId || null
+    }))
     setShowSuggestion(null)
   }
 
   const resetTimer = () => {
-    setTimerState((prev) => ({
-      ...prev,
-      isRunning: false,
-      endAt: null,
-      segStartAt: null,
-      focusedMs: 0,
-      remainingMs: prev.durationMs
-    }))
+    dispatch(resetFocusTimer())
     setShowSuggestion(null)
   }
 
   const switchMode = (modeKey) => {
-    setTimerState((prev) => ({
-      ...prev,
-      mode: modeKey,
-      durationMs: modeKey === 'focus' ? Math.max(1, prev.customMinutes) * 60 * 1000 : TIMER_MODES[modeKey].defaultMs,
-      isRunning: false,
-      endAt: null,
-      segStartAt: null,
-      focusedMs: 0,
-      remainingMs: modeKey === 'focus' ? Math.max(1, prev.customMinutes) * 60 * 1000 : TIMER_MODES[modeKey].defaultMs
-    }))
+    dispatch(switchTimerMode(modeKey))
     setShowSuggestion(null)
   }
 
-  const setCustomMinutes = (minutes) => {
-    const clamped = Math.min(180, Math.max(1, Number(minutes) || 1))
-    setTimerState((prev) => ({
-      ...prev,
-      customMinutes: clamped,
-      ...(prev.mode === 'focus' && !prev.isRunning
-        ? { durationMs: clamped * 60 * 1000, remainingMs: clamped * 60 * 1000 }
-        : {})
-    }))
+  const handleSetCustomMinutes = (minutes) => {
+    dispatch(setCustomMinutes(minutes))
   }
 
   // ==================== Insights: thống kê + bảng xếp hạng ====================
@@ -399,7 +273,7 @@ export default function FocusTimerWidget() {
             <Tooltip title={t('focusTimer.title')}>
               <Fab
                 aria-label={t('focusTimer.title')}
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={() => dispatch(setPanelOpen(!isOpen))}
                 sx={{
                   bgcolor: timerState.isRunning ? ringColor : (theme) => theme.palette.mode === 'dark' ? '#1e293b' : '#fff',
                   color: timerState.isRunning ? '#fff' : (theme) => theme.palette.mode === 'dark' ? '#e2e8f0' : ringColor,
@@ -458,7 +332,7 @@ export default function FocusTimerWidget() {
                 <Typography sx={{ fontWeight: 700, fontSize: '1rem', flex: 1 }}>
                   {t('focusTimer.title')}
                 </Typography>
-                <IconButton size='small' onClick={() => setIsOpen(false)} aria-label={t('common.close')}>
+                <IconButton size='small' onClick={() => dispatch(setPanelOpen(false))} aria-label={t('common.close')}>
                   <CloseRoundedIcon sx={{ fontSize: 20 }} />
                 </IconButton>
               </Box>
@@ -537,7 +411,7 @@ export default function FocusTimerWidget() {
                       size='small'
                       label={t('focusTimer.customMinutes')}
                       value={timerState.customMinutes}
-                      onChange={(e) => setCustomMinutes(e.target.value)}
+                      onChange={(e) => handleSetCustomMinutes(e.target.value)}
                       InputProps={{ inputProps: { min: 1, max: 180 } }}
                       sx={{ width: 140, mb: 1, '& input': { textAlign: 'center' } }}
                     />

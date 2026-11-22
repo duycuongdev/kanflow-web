@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
+import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import FolderOffOutlinedIcon from '@mui/icons-material/FolderOffOutlined'
 import UndoIcon from '@mui/icons-material/Undo'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
@@ -28,6 +29,7 @@ import { useConfirm } from 'material-ui-confirm'
 import { toast } from 'react-toastify'
 import { slugify } from '~/utils/formatter'
 import { useTranslation } from 'react-i18next'
+import FocusTimerSidebarCard from '~/components/FocusTimer/FocusTimerSidebarCard'
 
 // Styles của các Sidebar item menu - nền trong suốt, chỉ highlight khi hover/active
 const SidebarItem = styled(Box)(({ theme }) => ({
@@ -245,6 +247,17 @@ function Boards() {
                 {t('boards.sidebarClosedBoards')}
               </SidebarItem>
 
+              {/* Bảng lịch (Schedule) - xem giờ nào làm cái nào */}
+              <SidebarItem
+                component={Link}
+                to="/schedule"
+                className={location.pathname.startsWith('/schedule') ? 'active' : ''}
+                sx={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <CalendarMonthRoundedIcon fontSize="small" />
+                {t('appBar.schedule')}
+              </SidebarItem>
+
               <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
 
               <Button
@@ -287,6 +300,10 @@ function Boards() {
               >
                 {t('boards.importBoardBtn')}
               </Button>
+
+              {/* Focus Timer mini - đếm ngược dùng chung state với widget nổi */}
+              <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+              <FocusTimerSidebarCard />
             </Stack>
           </Box>
 

@@ -690,7 +690,8 @@
     "sessionsUnit": "phiên",
     "leaderboard": "Bảng xếp hạng focus",
     "leaderboardEmpty": "Chưa có ai focus trong kỳ này. Bắt đầu ngay để dẫn đầu nhé!",
-    "you": "bạn"
+    "you": "bạn",
+    "openFullPanel": "Mở panel đầy đủ"
   },
   "schedule": {
     "prev": "Trước",
