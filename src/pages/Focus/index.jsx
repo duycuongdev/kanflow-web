@@ -46,6 +46,8 @@ import {
   pauseFocusTimer,
   stopFocusSession,
   resetFocusTimer,
+  switchTimerMode,
+  setCustomMinutes,
   setFocusTask,
   startFocusPlan
 } from '~/redux/focusTimer/focusTimerSlice'
@@ -746,7 +748,15 @@ export default function Focus() {
                   label={t('focusPage.focusMinutes')}
                   value={focusMinutes}
                   disabled={plan.active}
-                  onChange={(e) => setFocusMinutes(e.target.value)}
+                  onChange={(e) => {
+                    setFocusMinutes(e.target.value)
+                    // Đồng bộ ngay vào timer state để vòng đếm bên trái đổi theo
+                    dispatch(setCustomMinutes(e.target.value))
+                    // Đang idle ở mode nghỉ mà sửa số phút tập trung -> quay về mode Focus
+                    if (!timerState.isRunning && timerState.mode !== 'focus') {
+                      dispatch(switchTimerMode('focus'))
+                    }
+                  }}
                   InputProps={{ inputProps: { min: 1, max: 180 } }}
                   sx={{ width: 150, '& input': { textAlign: 'center' } }}
                 />
@@ -772,8 +782,8 @@ export default function Focus() {
                     disabled={plan.active}
                     sx={{ gap: 0.75 }}
                   >
-                    <ToggleButton value='short'>{t('focusPage.breakShort')}</ToggleButton>
-                    <ToggleButton value='long'>{t('focusPage.breakLong')}</ToggleButton>
+                    <ToggleButton value='short' sx={{ textTransform: 'none' }}>{t('focusPage.breakShort')}</ToggleButton>
+                    <ToggleButton value='long' sx={{ textTransform: 'none' }}>{t('focusPage.breakLong')}</ToggleButton>
                   </ToggleButtonGroup>
                 </Box>
               </Box>
