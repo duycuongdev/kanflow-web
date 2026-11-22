@@ -217,6 +217,14 @@ export const getFocusLeaderboardAPI = async (from, to) => {
 
 /** ================= Schedule (bảng lịch cá nhân) ================= */
 
+// Chuẩn hóa entry: API trả startAt/endAt dạng ISO string (JSON serialize Date)
+// -> đổi thành epoch ms NUMBER để mọi phép tính thời gian phía FE chính xác
+const normalizeScheduleEntry = (entry) => ({
+  ...entry,
+  startAt: Date.parse(entry.startAt),
+  endAt: Date.parse(entry.endAt)
+})
+
 // Chi tiết 1 board (columns + cards) - dùng khi gắn card vào entry lịch
 export const fetchBoardDetailsAPI = async (boardId) => {
   const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/boards/${boardId}`)
@@ -228,19 +236,19 @@ export const getScheduleEntriesAPI = async (from, to) => {
   const response = await authorizedAxiosInstance.get(`${API_ROOT}/v1/schedules`, {
     params: { from, to }
   })
-  return response.data
+  return (response.data || []).map(normalizeScheduleEntry)
 }
 
 // Tạo entry lịch mới (title, startAt, endAt, colorKey, gắn được card)
 export const createScheduleEntryAPI = async (entryData) => {
   const response = await authorizedAxiosInstance.post(`${API_ROOT}/v1/schedules`, entryData)
-  return response.data
+  return normalizeScheduleEntry(response.data)
 }
 
 // Sửa entry lịch (chỉ chủ nhân)
 export const updateScheduleEntryAPI = async (entryId, updateData) => {
   const response = await authorizedAxiosInstance.put(`${API_ROOT}/v1/schedules/${entryId}`, updateData)
-  return response.data
+  return normalizeScheduleEntry(response.data)
 }
 
 // Xóa entry lịch (soft delete, chỉ chủ nhân)

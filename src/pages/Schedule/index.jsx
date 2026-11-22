@@ -146,6 +146,8 @@ export default function Schedule() {
   // Kéo-thả entry trong view Tuần: dời startAt (giữ nguyên độ dài) + lưu API
   const handleEntryDrop = async (entry, newStartMs) => {
     const durationMs = entry.endAt - entry.startAt
+    // Chặn giá trị không hợp lệ (không bao giờ gửi NaN lên API)
+    if (!Number.isFinite(newStartMs) || !Number.isFinite(durationMs) || durationMs <= 0) return
     const payload = {
       title: entry.title,
       startAt: newStartMs,
@@ -166,7 +168,8 @@ export default function Schedule() {
       const updated = await updateScheduleEntryAPI(entry._id, payload)
       setEntries((prev) => prev.map((e) => (e._id === entry._id ? updated : e)))
     } catch {
-      // lỗi đã toast ở interceptor - trạng thái sẽ khớp lại khi server phản hồi qua socket
+      // API lỗi: hoàn tác optimistic để entry quay lại vị trí cũ (không bao giờ để state chứa NaN)
+      setEntries((prev) => prev.map((e) => (e._id === entry._id ? { ...e, startAt: entry.startAt, endAt: entry.endAt } : e)))
     }
   }
 

@@ -118,6 +118,8 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
 
   const handleEntryMouseDown = (e, entry) => {
     if (e.button !== 0) return
+    // Chặn kéo entry có thời gian không hợp lệ (tránh sinh NaN khi tính vị trí mới)
+    if (!Number.isFinite(entry.startAt) || !Number.isFinite(entry.endAt)) return
     // Không kéo khi bấm vào phần tử con tương tác (nếu có)
     const rect = e.currentTarget.getBoundingClientRect()
     const grabOffsetMin = Math.max(0, ((e.clientY - rect.top) / HOUR_HEIGHT) * 60)
@@ -143,6 +145,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       const dayStr = col.getAttribute('data-day-col')
       const colRect = col.getBoundingClientRect()
       const durationMin = Math.max(1, Math.round((session.entry.endAt - session.entry.startAt) / 60000))
+      if (!Number.isFinite(durationMin)) return
       const rawMinutes = ((e.clientY - colRect.top) / HOUR_HEIGHT) * 60 - session.grabOffsetMin
       const snapped = Math.max(0, Math.min(24 * 60 - durationMin, Math.round(rawMinutes / 30) * 30))
       setDragPreview({ entryId: session.entry._id, dayStr, topMin: snapped, durationMin })
@@ -161,8 +164,8 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
         if (preview) {
           const dayStr = preview.dayStr
           const day = weekDays.find((d) => d.format('YYYY-MM-DD') === dayStr)
-          if (day) {
-            const newStartMs = day.startOf('day').valueOf() + preview.topMin * 60000
+          const newStartMs = day ? day.startOf('day').valueOf() + preview.topMin * 60000 : NaN
+          if (day && Number.isFinite(newStartMs)) {
             onEntryDrop(session.entry, newStartMs)
           }
         }
