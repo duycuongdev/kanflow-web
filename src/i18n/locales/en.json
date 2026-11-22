@@ -654,6 +654,7 @@
     "cardCreatedSuccess": "✅ Created card: {{title}}",
     "resend": "Resend",
     "scheduleCreatedSuccess": "📅 Schedule \"{{title}}\" created at {{time}}",
+    "cardsDueDateUpdated": "📅 Due dates set for {{count}} cards",
     "openSchedule": "Open schedule",
     "errorOccurred": "An error occurred while chatting with Assistant. Please try again!",
     "attachFile": "Attach file or image (or Ctrl+V)",

@@ -297,8 +297,8 @@ export default function AiCopilotWidget() {
 
       setMessages(prev => [...prev, botMsg])
 
-      // Nếu action là tạo card hoặc column trên board hiện tại, reload lại board
-      if (response.actionResult?.type === 'CARD_CREATED' || response.actionResult?.type === 'COLUMN_CREATED') {
+      // Nếu action là tạo card/column hoặc đặt hạn chót trên board hiện tại, reload lại board
+      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED'].includes(response.actionResult?.type)) {
         if (currentBoard?._id) {
           dispatch(fetchBoardDetailsAPI(currentBoard._id))
         }
@@ -651,6 +651,7 @@ export default function AiCopilotWidget() {
                             {msg.actionResult.type === 'COLUMN_CREATED' && t('copilot.columnCreatedSuccess', { title: msg.actionResult.data?.title })}
                             {msg.actionResult.type === 'CARD_CREATED' && t('copilot.cardCreatedSuccess', { title: msg.actionResult.data?.title })}
                             {msg.actionResult.type === 'SCHEDULE_CREATED' && t('copilot.scheduleCreatedSuccess', { title: msg.actionResult.data?.title, time: msg.actionResult.data?.startAt ? dayjs(msg.actionResult.data.startAt).format('DD/MM/YYYY HH:mm') : '' })}
+                            {msg.actionResult.type === 'CARDS_DUE_DATE_UPDATED' && t('copilot.cardsDueDateUpdated', { count: msg.actionResult.data?.updatedCount || 0 })}
                           </Typography>
                         </Box>
 
