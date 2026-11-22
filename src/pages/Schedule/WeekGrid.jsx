@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
@@ -88,6 +88,18 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     return (nowDayjs.hour() + nowDayjs.minute() / 60) * HOUR_HEIGHT
   })()
 
+  // Tự cuộn tới khung giờ hiện tại (hoặc 8h sáng) khi mở lưới / đổi tuần
+  const scrollBodyRef = useRef(null)
+  useEffect(() => {
+    const body = scrollBodyRef.current
+    if (!body) return
+    const nowDayjs = dayjs()
+    const isThisWeek = weekDays.some((d) => d.format('YYYY-MM-DD') === nowDayjs.format('YYYY-MM-DD'))
+    const targetHour = isThisWeek ? Math.max(0, nowDayjs.hour() - 2) : 7
+    body.scrollTop = targetHour * HOUR_HEIGHT
+    // weekDays đổi theo weekStart - mỗi lần đổi tuần cuộn lại
+  }, [weekDays])
+
   const handleColumnClick = (e, day) => {
     // Bỏ qua nếu click vào entry (entry tự stopPropagation)
     if (e.defaultPrevented) return
@@ -149,7 +161,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
           </Box>
         )}
 
-        <Box sx={{ display: 'flex', maxHeight: 'calc(100dvh - 220px)', overflowY: 'auto' }}>
+        <Box ref={scrollBodyRef} sx={{ display: 'flex', maxHeight: 'calc(100dvh - 220px)', overflowY: 'auto' }}>
           {/* Cột nhãn giờ */}
           <Box sx={{ width: GUTTER_WIDTH, flexShrink: 0 }}>
             {HOURS.map((hour) => (
