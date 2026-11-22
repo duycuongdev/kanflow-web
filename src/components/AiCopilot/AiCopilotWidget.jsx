@@ -32,7 +32,7 @@ import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRound
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import { selectCurrentActiveBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
-import { chatWithAiCopilotAPI } from '~/apis'
+import { chatWithAiCopilotAPI, closeBoardAPI } from '~/apis'
 import { getPageLoading, subscribePageLoading } from '~/utils/pageLoadingState'
 
 const MAX_ATTACHMENTS = 5
@@ -298,7 +298,7 @@ export default function AiCopilotWidget() {
       setMessages(prev => [...prev, botMsg])
 
       // Nếu action là tạo card/column hoặc đặt hạn chót trên board hiện tại, reload lại board
-      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'BOARD_CLOSED', 'BOARD_REOPENED'].includes(response.actionResult?.type)) {
+      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'BOARD_REOPENED'].includes(response.actionResult?.type)) {
         if (currentBoard?._id) {
           dispatch(fetchBoardDetailsAPI(currentBoard._id))
         }
@@ -652,8 +652,51 @@ export default function AiCopilotWidget() {
                             {msg.actionResult.type === 'CARD_CREATED' && t('copilot.cardCreatedSuccess', { title: msg.actionResult.data?.title })}
                             {msg.actionResult.type === 'SCHEDULE_CREATED' && t('copilot.scheduleCreatedSuccess', { title: msg.actionResult.data?.title, time: msg.actionResult.data?.startAt ? dayjs(msg.actionResult.data.startAt).format('DD/MM/YYYY HH:mm') : '' })}
                             {msg.actionResult.type === 'CARDS_DUE_DATE_UPDATED' && t('copilot.cardsDueDateUpdated', { count: msg.actionResult.data?.updatedCount || 0 })}
-                            {['COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'MEMBER_INVITED', 'BOARD_CLOSED', 'BOARD_REOPENED'].includes(msg.actionResult.type) && t('copilot.boardActionDone')}
+                            {['COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'MEMBER_INVITED', 'BOARD_REOPENED'].includes(msg.actionResult.type) && t('copilot.boardActionDone')}
                           </Typography>
+
+                          {msg.actionResult?.type === 'BOARD_CLOSE_CONFIRMATION' && (
+                            <Box
+                              sx={{
+                                mt: 1.5,
+                                p: 1.25,
+                                borderRadius: 2,
+                                bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255, 86, 48, 0.12)' : 'rgba(255, 86, 48, 0.08)',
+                                border: '1px solid rgba(255, 86, 48, 0.35)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 1
+                              }}
+                            >
+                              <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#ff5630' }}>
+                                {t('copilot.boardCloseConfirmation', { title: msg.actionResult.data?.title })}
+                              </Typography>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                color="error"
+                                onClick={async () => {
+                                  try {
+                                    await closeBoardAPI(msg.actionResult.data._id)
+                                    toast.success(t('copilot.boardClosedDone', { title: msg.actionResult.data?.title }))
+                                    if (currentBoard?._id === msg.actionResult.data._id) {
+                                      navigate('/boards/')
+                                    }
+                                    setMessages(prev => prev.map(m => (m.id === msg.id ? { ...m, actionResult: { ...m.actionResult, type: 'BOARD_CLOSED', data: m.actionResult.data } } : m)))
+                                  } catch { /* lỗi đã toast ở interceptor */ }
+                                }}
+                                sx={{
+                                  textTransform: 'none',
+                                  fontSize: '0.775rem',
+                                  fontWeight: 700,
+                                  py: 0.5,
+                                  borderRadius: 1.5
+                                }}
+                              >
+                                {t('copilot.confirmCloseBoard')}
+                              </Button>
+                            </Box>
+                          )}
                         </Box>
 
                         {msg.actionResult.type === 'BOARD_CREATED' && msg.actionResult.data?._id && (
