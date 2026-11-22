@@ -24,7 +24,6 @@ import dayOfYearPlugin from 'dayjs/plugin/dayOfYear'
 
 dayjs.extend(dayOfYearPlugin)
 
-import LightbulbRoundedIcon from '@mui/icons-material/LightbulbRounded'
 import PlayArrowRoundedIcon from '@mui/icons-material/PlayArrowRounded'
 import PauseRoundedIcon from '@mui/icons-material/PauseRounded'
 import StopRoundedIcon from '@mui/icons-material/StopRounded'
@@ -518,8 +517,6 @@ export default function Focus() {
 
   const modeConfig = TIMER_MODES[timerState.mode]
   const progress = timerState.durationMs > 0 ? 1 - remainingMs / timerState.durationMs : 0
-  // Mẹo tập trung đổi theo ngày trong năm
-  const dayOfYear = dayjs().dayOfYear()
   const ringSize = 230
   const ringStroke = 12
   const ringRadius = (ringSize - ringStroke) / 2
@@ -709,18 +706,6 @@ export default function Focus() {
               />
             )}
 
-            {/* Mẹo tập trung - đổi theo ngày */}
-            <Box sx={{
-              mt: 2, px: 1.5, py: 1.25, borderRadius: 2,
-              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,171,0,0.08)' : 'rgba(255,171,0,0.10)',
-              border: '1px dashed rgba(255,171,0,0.45)',
-              display: 'flex', gap: 1, alignItems: 'flex-start', alignSelf: 'stretch'
-            }}>
-              <LightbulbRoundedIcon sx={{ fontSize: 18, color: '#ffab00', mt: 0.25 }} />
-              <Typography variant='caption' sx={{ color: 'text.secondary', lineHeight: 1.5 }}>
-                {t(`focusPage.tip${(dayOfYear % 6) + 1}`)}
-              </Typography>
-            </Box>
 
             {/* Phần setup: nhiệm vụ + chế độ lặp - nằm cùng cột với vòng đếm */}
             <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
@@ -868,9 +853,16 @@ export default function Focus() {
                 <Divider />
                 {renderStatRow(t('focusTimer.period.thisMonth'), stats?.month)}
               </Box>
+            </Paper>
 
-              {/* Bảng xếp hạng */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2, mb: 1 }}>
+            {/* Bảng xếp hạng - card riêng */}
+            <Paper elevation={0} sx={{
+              p: { xs: 2, md: 2.5 }, borderRadius: 4,
+              border: '1px solid', borderColor: 'divider',
+              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
+              boxShadow: '0 4px 18px rgba(0, 82, 204, 0.07)'
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <EmojiEventsRoundedIcon sx={{ fontSize: 20, color: '#ffab00' }} />
                   <Typography sx={{ fontWeight: 700 }}>
