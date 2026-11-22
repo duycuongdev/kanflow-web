@@ -722,6 +722,7 @@
     "selectChecklist": "Select checklist...",
     "noChecklist": "No checklist",
     "selectItem": "Select checklist item...",
+    "changeTask": "Change task",
     "noItem": "No item",
     "noCard": "No card",
     "noBoards": "You have no boards yet",
@@ -742,6 +743,7 @@
   "focusPage": {
     "title": "Focus",
     "taskSection": "Focus task",
+    "syncToBoard": "syncs to board",
     "taskHint": "Optional: pick board > card > checklist > item to attribute focus sessions to that exact task",
     "planSection": "Repeat plan",
     "focusMinutes": "Minutes per round",

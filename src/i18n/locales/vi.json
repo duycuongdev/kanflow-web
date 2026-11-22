@@ -722,6 +722,7 @@
     "selectChecklist": "Chọn checklist...",
     "noChecklist": "Không gắn checklist",
     "selectItem": "Chọn việc trong checklist...",
+    "changeTask": "Đổi nhiệm vụ",
     "noItem": "Không gắn việc",
     "noCard": "Không gắn card",
     "noBoards": "Bạn chưa có bảng nào",
@@ -742,6 +743,7 @@
   "focusPage": {
     "title": "Trang tập trung",
     "taskSection": "Nhiệm vụ tập trung",
+    "syncToBoard": "đồng bộ bảng",
     "taskHint": "Tuỳ chọn: chọn bảng → thẻ → checklist → từng việc để ghi nhận phiên focus vào đúng việc đó",
     "planSection": "Chế độ lặp",
     "focusMinutes": "Phút tập trung/lượt",

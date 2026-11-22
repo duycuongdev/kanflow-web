@@ -52,7 +52,9 @@ import {
 } from '~/redux/focusTimer/focusTimerSlice'
 import Pagination from '@mui/material/Pagination'
 
-import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI } from '~/apis'
+import Checkbox from '@mui/material/Checkbox'
+import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI, updateCardDetailsAPI } from '~/apis'
 
 /** Cascade chọn nhiệm vụ: Bảng → Card → Checklist → Item (tái dùng pattern của Schedule popover) */
 function TaskCascade({ onChainChange }) {
@@ -64,6 +66,45 @@ function TaskCascade({ onChainChange }) {
   const [itemId, setItemId] = useState('')
   const [cardOptions, setCardOptions] = useState([])
   const [loadingBoard, setLoadingBoard] = useState(false)
+  // false = đã chọn xong nhiệm vụ (thu gọn chỉ hiện nhiệm vụ); true = đang mở lại các ô chọn
+  const [editingAttach, setEditingAttach] = useState(false)
+  const [savingComplete, setSavingComplete] = useState(false)
+
+  const selectedCardLocal = cardOptions.find((c) => c._id === cardId)
+  const selectedChecklistLocal = selectedCardLocal?.checklists?.find((cl) => (cl._id || cl.title) === checklistId)
+  const selectedItemLocal = selectedChecklistLocal?.items?.find((it) => (it._id || it.title) === itemId)
+  // Thu gọn cascade khi đã chọn xong item (trừ khi user bấm "Đổi nhiệm vụ")
+  const cascadeCollapsed = Boolean(itemId) && !editingAttach
+
+  /**
+   * Đánh dấu hoàn thành/xóa hoàn thành của item checklist được chọn.
+   * Cập nhật cả card (PUT /v1/cards) => board của card đồng bộ theo (socket BE_BOARD_UPDATED)
+   */
+  const handleToggleItemDone = async (checked) => {
+    if (!selectedCardLocal || !selectedChecklistLocal || !selectedItemLocal) return
+    setSavingComplete(true)
+    try {
+      const newChecklists = selectedCardLocal.checklists.map((cl) =>
+        (cl._id || cl.title) === (selectedChecklistLocal._id || selectedChecklistLocal.title)
+          ? {
+            ...cl,
+            items: cl.items.map((it) =>
+              (it._id || it.title) === (selectedItemLocal._id || selectedItemLocal.title)
+                ? { ...it, isDone: checked }
+                : it
+            )
+          }
+          : cl
+      )
+      await updateCardDetailsAPI(selectedCardLocal._id, { checklists: newChecklists })
+      // Cập nhật local để checkbox + preview phản ánh ngay
+      setCardOptions((prev) => prev.map((c) => (c._id === selectedCardLocal._id ? { ...c, checklists: newChecklists } : c)))
+    } catch {
+      // lỗi đã toast ở interceptor
+    } finally {
+      setSavingComplete(false)
+    }
+  }
 
   useEffect(() => {
     fetchBoardsAPI('?page=1&itemsPerPage=100')
@@ -139,35 +180,39 @@ function TaskCascade({ onChainChange }) {
       checklistItemId: value || null,
       itemTitle: item?.title || null
     })
+    // Chọn xong nhiệm vụ -> thu gọn các ô chọn, chỉ hiện nhiệm vụ đã chọn
+    if (value) setEditingAttach(false)
   }
 
   return (
     <Box>
-      <Select
-        fullWidth
-        size='small'
-        displayEmpty
-        value={boardId}
-        onChange={(e) => setBoardId(e.target.value)}
-        sx={{ mb: 1 }}
-        MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
-        renderValue={(value) => {
-          if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
-          const board = boards.find((b) => b._id === value)
-          return board?.title || value
-        }}
-      >
-        {boards.map((board) => (
-          <MenuItem key={board._id} value={board._id}>{board.title}</MenuItem>
-        ))}
-        {boards.length === 0 && (
-          <MenuItem disabled value=''>
-            <Typography sx={{ fontSize: '0.85rem' }}>{t('schedule.noBoards')}</Typography>
-          </MenuItem>
-        )}
-      </Select>
+      {!cascadeCollapsed && (
+        <Select
+          fullWidth
+          size='small'
+          displayEmpty
+          value={boardId}
+          onChange={(e) => setBoardId(e.target.value)}
+          sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+          renderValue={(value) => {
+            if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
+            const board = boards.find((b) => b._id === value)
+            return board?.title || value
+          }}
+        >
+          {boards.map((board) => (
+            <MenuItem key={board._id} value={board._id}>{board.title}</MenuItem>
+          ))}
+          {boards.length === 0 && (
+            <MenuItem disabled value=''>
+              <Typography sx={{ fontSize: '0.85rem' }}>{t('schedule.noBoards')}</Typography>
+            </MenuItem>
+          )}
+        </Select>
+      )}
 
-      {boardId && (
+      {(editingAttach || !cardId) && boardId && (
         <Select
           fullWidth
           size='small'
@@ -195,7 +240,7 @@ function TaskCascade({ onChainChange }) {
         </Select>
       )}
 
-      {cardId && selectedCard?.checklists?.length > 0 && (
+      {cardId && !cascadeCollapsed && selectedCard?.checklists?.length > 0 && (
         <Select
           fullWidth
           size='small'
@@ -223,7 +268,7 @@ function TaskCascade({ onChainChange }) {
         </Select>
       )}
 
-      {checklistId && selectedChecklist?.items?.length > 0 && (
+      {checklistId && !cascadeCollapsed && selectedChecklist?.items?.length > 0 && (
         <Select
           fullWidth
           size='small'
@@ -252,6 +297,60 @@ function TaskCascade({ onChainChange }) {
             </MenuItem>
           ))}
         </Select>
+      )}
+
+      {/* Đã chọn xong nhiệm vụ: thu gọn chỉ hiện chuỗi đã chọn + nút đổi */}
+      {cascadeCollapsed && cardId && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap',
+          bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,82,204,0.05)',
+          borderRadius: 1.5, p: 1, mb: 1
+        }}>
+          <Chip size='small' label={`🗂 ${boards.find((b) => b._id === boardId)?.title || ''}`} sx={{ height: 22, fontSize: '0.7rem' }} />
+          {selectedCardLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {selectedCardLocal && <Chip size='small' label={`🎯 ${selectedCardLocal.title}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+          {selectedChecklistLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {selectedChecklistLocal && <Chip size='small' label={`☑ ${selectedChecklistLocal.title}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+          {selectedItemLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {selectedItemLocal && <Chip size='small' label={`📌 ${selectedItemLocal.title}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
+          <Box sx={{ flex: 1 }} />
+          <Button
+            size='small'
+            variant='text'
+            startIcon={<EditRoundedIcon sx={{ fontSize: 15 }} />}
+            onClick={() => setEditingAttach(true)}
+            sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, minWidth: 0, px: 0.75 }}
+          >
+            {t('schedule.changeTask')}
+          </Button>
+        </Box>
+      )}
+
+      {/* Dấu tích hoàn thành - đồng bộ lên card của board */}
+      {selectedItemLocal && (
+        <Box sx={{
+          display: 'flex', alignItems: 'center', gap: 1,
+          bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(0,135,90,0.08)' : 'rgba(0,135,90,0.06)',
+          borderRadius: 1.5, px: 1, py: 0.5, mb: 1
+        }}>
+          <Checkbox
+            checked={Boolean(selectedItemLocal.isDone)}
+            onChange={(e) => handleToggleItemDone(e.target.checked)}
+            disabled={savingComplete}
+            size='small'
+            sx={{ p: 0.25, color: '#00875a', '&.Mui-checked': { color: '#00875a' } }}
+          />
+          <Typography sx={{
+            fontSize: '0.85rem', fontWeight: 600, flex: 1,
+            textDecoration: selectedItemLocal.isDone ? 'line-through' : 'none',
+            color: selectedItemLocal.isDone ? 'text.disabled' : 'text.primary'
+          }}>
+            {selectedItemLocal.title}
+          </Typography>
+          <Typography variant='caption' sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+            {t('focusPage.syncToBoard')}
+          </Typography>
+        </Box>
       )}
 
       {loadingBoard && <LinearProgress sx={{ mt: 1 }} />}

@@ -39,6 +39,8 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
   const [colorKey, setColorKey] = useState('blue')
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  // false = đã chọn xong nhiệm vụ (thu gọn chỉ hiện nhiệm vụ); true = đang mở lại các ô chọn
+  const [editingAttach, setEditingAttach] = useState(false)
 
   // ==================== Gắn sâu: board → card → checklist → item ====================
   const [boards, setBoards] = useState([])
@@ -78,6 +80,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         setSelectedCardId(entry.cardId)
         setSelectedChecklistId(entry.checklistId || '')
         setSelectedItemId(entry.checklistItemId || '')
+        setEditingAttach(false)
       } else {
         setAttachChain(null)
         setSelectedBoardId('')
@@ -96,6 +99,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       setSelectedCardId('')
       setSelectedChecklistId('')
       setSelectedItemId('')
+      setEditingAttach(false)
     }
   }, [isOpen, state])
 
@@ -192,6 +196,8 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       checklistItemId: item._id || item.title,
       itemTitle: item.title
     }))
+    // Chọn xong nhiệm vụ -> thu gọn các ô chọn, chỉ hiện nhiệm vụ đã chọn
+    setEditingAttach(false)
   }
 
   const handleDetachCard = () => {
@@ -383,37 +389,39 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         {t('schedule.attachCard')}
       </Typography>
 
-      <Select
-        fullWidth
-        size='small'
-        displayEmpty
-        value={selectedBoardId}
-        onChange={(e) => {
-          setSelectedBoardId(e.target.value)
-          setSelectedCardId('')
-          setSelectedChecklistId('')
-          setSelectedItemId('')
-          setAttachChain(null)
-        }}
-        sx={{ mb: 1 }}
-        MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
-        renderValue={(value) => {
-          if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
-          const board = boards.find((b) => b._id === value)
-          return board?.title || value
-        }}
-      >
-        {boards.map((board) => (
-          <MenuItem key={board._id} value={board._id}>{board.title}</MenuItem>
-        ))}
-        {boards.length === 0 && (
-          <MenuItem disabled value=''>
-            <Typography sx={{ fontSize: '0.85rem' }}>{t('schedule.noBoards')}</Typography>
-          </MenuItem>
-        )}
-      </Select>
+      {(editingAttach || !attachChain) && (
+        <Select
+          fullWidth
+          size='small'
+          displayEmpty
+          value={selectedBoardId}
+          onChange={(e) => {
+            setSelectedBoardId(e.target.value)
+            setSelectedCardId('')
+            setSelectedChecklistId('')
+            setSelectedItemId('')
+            setAttachChain(null)
+          }}
+          sx={{ mb: 1 }}
+          MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+          renderValue={(value) => {
+            if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>{t('schedule.selectBoard')}</Typography>
+            const board = boards.find((b) => b._id === value)
+            return board?.title || value
+          }}
+        >
+          {boards.map((board) => (
+            <MenuItem key={board._id} value={board._id}>{board.title}</MenuItem>
+          ))}
+          {boards.length === 0 && (
+            <MenuItem disabled value=''>
+              <Typography sx={{ fontSize: '0.85rem' }}>{t('schedule.noBoards')}</Typography>
+            </MenuItem>
+          )}
+        </Select>
+      )}
 
-      {selectedBoardId && (
+      {(editingAttach || !attachChain) && selectedBoardId && (
         <Select
           fullWidth
           size='small'
@@ -442,7 +450,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       )}
 
       {/* Cascade checklist (chỉ hiện khi đã chọn card có checklist) */}
-      {selectedCardId && (selectedCard?.checklists?.length > 0) && (
+      {editingAttach && selectedCardId && (selectedCard?.checklists?.length > 0) && (
         <Select
           fullWidth
           size='small'
@@ -471,7 +479,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       )}
 
       {/* Cascade item checklist (chỉ hiện khi đã chọn checklist có items) */}
-      {selectedChecklistId && (selectedChecklist?.items?.length > 0) && (
+      {editingAttach && selectedChecklistId && (selectedChecklist?.items?.length > 0) && (
         <Select
           fullWidth
           size='small'
@@ -524,6 +532,14 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
             {attachChain.itemTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
             {attachChain.itemTitle && <Chip size='small' label={`📌 ${attachChain.itemTitle}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
             <Box sx={{ flex: 1 }} />
+            <Button
+              size='small'
+              variant='text'
+              onClick={() => setEditingAttach(true)}
+              sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, minWidth: 0, px: 0.75 }}
+            >
+              {t('schedule.changeTask')}
+            </Button>
             <IconButton size='small' onClick={handleDetachCard} aria-label={t('schedule.detachCard')}>
               <CloseRoundedIcon sx={{ fontSize: 16 }} />
             </IconButton>
