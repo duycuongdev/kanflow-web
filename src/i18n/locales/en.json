@@ -659,7 +659,7 @@
     "boardCloseConfirmation": "🔒 Do you want to close the board \"{{title}}\"?",
     "confirmCloseBoard": "Close board",
     "boardClosedDone": "🔒 Board \"{{title}}\" closed",
-    "cardsDueDateUpdated": "📅 Due dates set for {{count}} cards",
+    "cardsDueDateUpdated": "📅 Due dates / reminders set for {{count}} cards",
     "boardActionDone": "✅ Board action completed",
     "openSchedule": "Open schedule",
     "errorOccurred": "An error occurred while chatting with Assistant. Please try again!",

@@ -659,7 +659,7 @@
     "boardCloseConfirmation": "🔒 Bạn muốn đóng bảng \"{{title}}\"?",
     "confirmCloseBoard": "Đóng bảng",
     "boardClosedDone": "🔒 Đã đóng bảng \"{{title}}\"",
-    "cardsDueDateUpdated": "📅 Đã đặt hạn chót cho {{count}} card",
+    "cardsDueDateUpdated": "📅 Đã đặt hạn chót / nhắc nhở cho {{count}} card",
     "boardActionDone": "✅ Đã thực hiện thao tác trên bảng",
     "openSchedule": "Mở bảng lịch",
     "errorOccurred": "Có lỗi xảy ra khi trò chuyện với Assistant. Vui lòng thử lại!",
