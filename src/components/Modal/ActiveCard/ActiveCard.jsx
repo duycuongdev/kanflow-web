@@ -1,5 +1,5 @@
 import { useState, lazy, Suspense } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import CircularProgress from '@mui/material/CircularProgress'
 import Box from '@mui/material/Box'
 import Chip from '@mui/material/Chip'
@@ -18,6 +18,8 @@ import TaskAltOutlinedIcon from '@mui/icons-material/TaskAltOutlined'
 import WatchLaterOutlinedIcon from '@mui/icons-material/WatchLaterOutlined'
 import AttachFileOutlinedIcon from '@mui/icons-material/AttachFileOutlined'
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined'
+import EventNoteOutlinedIcon from '@mui/icons-material/EventNoteOutlined'
+import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined'
 import ArrowForwardOutlinedIcon from '@mui/icons-material/ArrowForwardOutlined'
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
@@ -43,6 +45,8 @@ import CardDueDatePopover from './CardDueDatePopover'
 import CardAttachmentSection from './CardAttachmentSection'
 import CardMovePopover from './CardMovePopover'
 import CardCopyPopover from './CardCopyPopover'
+import ScheduleEntryPopover from '~/pages/Schedule/ScheduleEntryPopover'
+import { setFocusTask } from '~/redux/focusTimer/focusTimerSlice'
 import { useDispatch, useSelector } from 'react-redux'
 import {
   clearAndHideCurrentActiveCard,
@@ -58,6 +62,7 @@ import {
   updateCardDetailsAPI,
   deleteCardAPI,
   addCardAttachmentAPI,
+  createScheduleEntryAPI,
   deleteCardAttachmentAPI,
   updateCardCommentAPI,
   deleteCardCommentAPI,
@@ -119,6 +124,7 @@ function SidebarItem({ onClick, component, ...props }) {
 function ActiveCard() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const currentUser = useSelector(selectCurrentUser)
   const activeCard = useSelector(selectCurrentActiveCard)
   const isShowModalActiveCard = useSelector(selectIsShowModalActiveCard)
@@ -150,6 +156,41 @@ function ActiveCard() {
   const isCopyOpen = Boolean(copyAnchorEl)
   const handleOpenCopyPopover = (event) => setCopyAnchorEl(event.currentTarget)
   const handleCloseCopyPopover = () => setCopyAnchorEl(null)
+
+  const [schedulePopoverState, setSchedulePopoverState] = useState(null)
+
+  const handleOpenSchedulePopover = (e) => {
+    const start = dayjs().minute(0).second(0).add(1, 'hour')
+    setSchedulePopoverState({
+      mode: 'create',
+      anchorEl: e.currentTarget,
+      draft: {
+        startAt: start.valueOf(),
+        endAt: start.add(1, 'hour').valueOf(),
+        title: activeCard?.title || '',
+        boardId: activeBoard?._id || null,
+        boardTitle: activeBoard?.title || null,
+        cardId: activeCard?._id || null,
+        cardTitle: activeCard?.title || null
+      }
+    })
+  }
+
+  const handleSaveScheduleEntry = async (entryId, payload) => {
+    const created = await createScheduleEntryAPI(payload)
+    toast.success(t('schedule.scheduledSuccess'))
+    return created
+  }
+
+  const handleStartFocus = () => {
+    dispatch(setFocusTask({
+      cardId: activeCard?._id || null,
+      boardId: activeBoard?._id || null,
+      title: activeCard?.title || ''
+    }))
+    handleCloseModal()
+    navigate('/focus')
+  }
 
   const handleUpdateCardLabels = (newLabels) => {
     callApiUpdateCard({ labels: newLabels })
@@ -819,6 +860,18 @@ function ActiveCard() {
                   reminderMinutes={activeCard?.reminderMinutes}
                   onUpdateDueDate={handleUpdateDueDate}
                 />
+
+                {/* Lên lịch Schedule */}
+                <SidebarItem className="active" onClick={handleOpenSchedulePopover}>
+                  <EventNoteOutlinedIcon fontSize="small" sx={{ color: '#0052cc' }} />
+                  {t('cardModal.schedule')}
+                </SidebarItem>
+
+                {/* Bắt đầu Focus */}
+                <SidebarItem className="active" onClick={handleStartFocus}>
+                  <TimerOutlinedIcon fontSize="small" sx={{ color: '#ef4444' }} />
+                  {t('cardModal.startFocus')}
+                </SidebarItem>
               </Stack>
 
               <Divider sx={{ my: 2 }} />
@@ -890,6 +943,13 @@ function ActiveCard() {
           </Grid>
         </Box>
       </Box>
+
+      {/* Popover lên lịch làm việc cho thẻ này */}
+      <ScheduleEntryPopover
+        state={schedulePopoverState}
+        onClose={() => setSchedulePopoverState(null)}
+        onSave={handleSaveScheduleEntry}
+      />
     </Modal>
   )
 }

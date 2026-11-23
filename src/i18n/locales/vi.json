@@ -337,6 +337,8 @@
     "cover": "Ảnh bìa",
     "generalAttachment": "Tệp đính kèm chung",
     "dates": "Ngày",
+    "schedule": "Lên lịch",
+    "startFocus": "Tập trung",
     "move": "Di chuyển",
     "copy": "Sao chép",
     "archive": "Lưu trữ",
@@ -749,7 +751,8 @@
     "openBoard": "Mở bảng này",
     "startFocus": "Bắt đầu Focus",
     "startFocusHint": "Tập trung làm nhiệm vụ này với đồng hồ Focus",
-    "nextDayHint": "Kết thúc vào ngày hôm sau (+1 ngày)"
+    "nextDayHint": "Kết thúc vào ngày hôm sau (+1 ngày)",
+    "scheduledSuccess": "Đã lên lịch thành công!"
   },
   "focusPage": {
     "title": "Trang tập trung",

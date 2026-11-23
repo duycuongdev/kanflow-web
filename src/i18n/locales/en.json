@@ -337,6 +337,8 @@
     "cover": "Cover",
     "generalAttachment": "General Attachment",
     "dates": "Dates",
+    "schedule": "Schedule",
+    "startFocus": "Focus",
     "move": "Move",
     "copy": "Copy",
     "archive": "Archive",
@@ -749,7 +751,8 @@
     "openBoard": "Open this board",
     "startFocus": "Start Focus",
     "startFocusHint": "Focus on this task with Focus Timer",
-    "nextDayHint": "Ends on the next day (+1 day)"
+    "nextDayHint": "Ends on the next day (+1 day)",
+    "scheduledSuccess": "Scheduled successfully!"
   },
   "focusPage": {
     "title": "Focus",

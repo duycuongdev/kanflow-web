@@ -97,17 +97,35 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         setSelectedItemId('')
       }
     } else if (state.mode === 'create' && state.draft) {
-      setTitle('')
+      setTitle(state.draft.title || '')
       setDateStr(dayjs(state.draft.startAt).format('YYYY-MM-DD'))
       setStartTime(dayjs(state.draft.startAt).format('HH:mm'))
       setEndTime(dayjs(state.draft.endAt).format('HH:mm'))
-      setColorKey('blue')
-      setAttachChain(null)
-      setSelectedBoardId('')
-      setSelectedCardId('')
-      setSelectedChecklistId('')
-      setSelectedItemId('')
-      setEditingAttach(false)
+      setColorKey(state.draft.colorKey || 'blue')
+      if (state.draft.cardId && state.draft.boardId) {
+        setAttachChain({
+          boardId: state.draft.boardId,
+          boardTitle: state.draft.boardTitle || null,
+          cardId: state.draft.cardId,
+          cardTitle: state.draft.cardTitle || null,
+          checklistId: state.draft.checklistId || null,
+          checklistTitle: state.draft.checklistTitle || null,
+          checklistItemId: state.draft.checklistItemId || null,
+          itemTitle: state.draft.itemTitle || null
+        })
+        setSelectedBoardId(state.draft.boardId)
+        setSelectedCardId(state.draft.cardId)
+        setSelectedChecklistId(state.draft.checklistId || '')
+        setSelectedItemId(state.draft.checklistItemId || '')
+        setEditingAttach(false)
+      } else {
+        setAttachChain(null)
+        setSelectedBoardId('')
+        setSelectedCardId('')
+        setSelectedChecklistId('')
+        setSelectedItemId('')
+        setEditingAttach(false)
+      }
     }
   }, [isOpen, state])
 
