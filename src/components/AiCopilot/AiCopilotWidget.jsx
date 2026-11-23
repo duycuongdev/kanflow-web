@@ -297,8 +297,15 @@ export default function AiCopilotWidget() {
 
       setMessages(prev => [...prev, botMsg])
 
-      // Nếu action là tạo card/column hoặc đặt hạn chót trên board hiện tại, reload lại board
-      if (['CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED', 'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'CARD_UPDATED', 'CARD_ARCHIVED', 'CARD_RESTORED', 'CARD_MEMBER_ADDED', 'CARD_MEMBER_REMOVED', 'BOARD_REOPENED'].includes(response.actionResult?.type)) {
+      // Nếu action là tạo/sửa/xóa/di chuyển card, column, board trên board hiện tại, reload lại board
+      if ([
+        'CARD_CREATED', 'COLUMN_CREATED', 'CARDS_DUE_DATE_UPDATED', 'COLUMN_UPDATED',
+        'COLUMN_ARCHIVED', 'COLUMN_RESTORED', 'COLUMN_DELETED', 'CARD_UPDATED',
+        'CARD_ARCHIVED', 'CARD_RESTORED', 'CARD_DELETED', 'CARD_MOVED',
+        'CARD_LABEL_ADDED', 'CHECKLIST_ADDED', 'CHECKLIST_ITEM_UPDATED',
+        'CARD_COMMENT_ADDED', 'CARD_MEMBER_ADDED', 'CARD_MEMBER_REMOVED',
+        'BOARD_UPDATED', 'BOARD_REOPENED'
+      ].includes(response.actionResult?.type)) {
         if (currentBoard?._id) {
           dispatch(fetchBoardDetailsAPI(currentBoard._id))
         }
