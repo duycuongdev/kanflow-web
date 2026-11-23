@@ -89,7 +89,7 @@ class ErrorBoundary extends React.Component {
               </Button>
             </Box>
 
-            {process.env.BUILD_MODE === 'dev' && this.state.error && (
+            {this.state.error && (
               <Box
                 sx={{
                   width: '100%',

@@ -110,7 +110,7 @@ export const activeBoardSlice = createSlice({
       let board = action.payload
 
       // user include ownerIds and members
-      board.FE_allUsers = board.owners.concat(board.members)
+      board.FE_allUsers = (board.owners || []).concat(board.members || [])
 
       // xử lý dữ liệu cần thiết
       // sắp xếp column xong đưa xuống component con

@@ -178,6 +178,8 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
         const rSession = resizeSessionRef.current
         if (!rSession.moved && Math.abs(e.clientY - rSession.startClientY) < 4) return
         rSession.moved = true
+        document.body.style.cursor = 'ns-resize'
+        document.body.style.userSelect = 'none'
 
         const deltaPx = e.clientY - rSession.startClientY
         const deltaMin = (deltaPx / HOUR_HEIGHT) * 60
@@ -201,6 +203,8 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       if (!session) return
       if (!session.moved && Math.hypot(e.clientX - session.startClientX, e.clientY - session.startClientY) < 4) return
       session.moved = true
+      document.body.style.cursor = 'grabbing'
+      document.body.style.userSelect = 'none'
 
       const el = document.elementFromPoint(e.clientX, e.clientY)
       const col = el?.closest('[data-day-col]')
@@ -217,6 +221,9 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     }
 
     const onPointerUp = () => {
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+
       // 1. Thả kết thúc phiên Resize
       if (resizeSessionRef.current) {
         const rSession = resizeSessionRef.current
@@ -446,28 +453,48 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   )
                 })()}
 
-                {/* Ghost của entry đang được kéo hoặc dãn thời lượng */}
-                {dragPreview && dragPreview.dayStr === dayStr && (() => {
+                {/* Thẻ đang được kéo tới vị trí này (chuẩn Google Calendar: thẻ thật nổi lên với đổ bóng cao, không dùng khung viền nét đứt) */}
+                {dragPreview && !dragPreview.isResize && dragPreview.dayStr === dayStr && (() => {
+                  const draggingEntry = entries.find((e) => e._id === dragPreview.entryId)
+                  if (!draggingEntry) return null
+                  const color = SCHEDULE_COLOR_PALETTE[draggingEntry.colorKey] || SCHEDULE_COLOR_PALETTE.blue
                   const previewStart = day.startOf('day').add(dragPreview.topMin, 'minute')
                   const previewEnd = previewStart.add(dragPreview.durationMin, 'minute')
+                  const previewHeight = Math.max(24, (dragPreview.durationMin / 60) * HOUR_HEIGHT)
                   return (
                     <Box sx={{
                       position: 'absolute',
                       top: (dragPreview.topMin / 60) * HOUR_HEIGHT,
-                      height: (dragPreview.durationMin / 60) * HOUR_HEIGHT,
+                      height: previewHeight,
                       left: '2%', width: '96%',
-                      zIndex: 3, pointerEvents: 'none',
-                      border: '2px dashed rgba(0, 82, 204, 0.65)',
+                      zIndex: 10, pointerEvents: 'none',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? `${color}3d` : `${color}28`,
+                      borderLeft: `4px solid ${color}`,
                       borderRadius: 1,
-                      bgcolor: 'rgba(0, 82, 204, 0.12)',
-                      px: 0.75, py: 0.25
+                      px: 0.75, py: 0.25,
+                      overflow: 'hidden',
+                      boxShadow: (theme) => theme.palette.mode === 'dark'
+                        ? '0 8px 24px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12)'
+                        : '0 8px 24px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+                      opacity: 0.95
                     }}>
-                      <Typography variant='caption' sx={{
-                        position: 'absolute', top: 2, left: 4,
-                        fontSize: '0.65rem', color: '#0052cc', fontWeight: 700
+                      <Typography sx={{
+                        fontSize: '0.72rem', fontWeight: 700, color,
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3
                       }}>
-                        {previewStart.format('HH:mm')} – {previewEnd.format('HH:mm')}
+                        <Typography component='span' sx={{ fontWeight: 800, mr: 0.5, fontSize: '0.72rem' }}>
+                          {previewStart.format('HH:mm')} – {previewEnd.format('HH:mm')}
+                        </Typography>
+                        {draggingEntry.title}
                       </Typography>
+                      {previewHeight > 48 && (draggingEntry.itemTitle || draggingEntry.cardTitle) && (
+                        <Typography sx={{
+                          fontSize: '0.68rem', color: 'text.secondary',
+                          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+                        }}>
+                          {draggingEntry.itemTitle ? `📌 ${draggingEntry.itemTitle}` : `🎯 ${draggingEntry.cardTitle}`}
+                        </Typography>
+                      )}
                     </Box>
                   )
                 })()}
@@ -502,6 +529,16 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   const widthPct = 100 / (entry.columnCount || 1)
                   const leftPct = widthPct * (entry.columnIndex || 0)
 
+                  // Khi đang resize: thẻ tự dãn dài trực tiếp (chuẩn Google Calendar, không hiện bóng tách rời)
+                  const isCurrentResizing = dragPreview?.isResize && dragPreview?.entryId === entry._id
+                  const isCurrentMoving = dragPreview && !dragPreview.isResize && dragPreview.entryId === entry._id
+                  const currentHeight = isCurrentResizing
+                    ? Math.max(22, (dragPreview.durationMin / 60) * HOUR_HEIGHT)
+                    : height
+                  const currentEndFormatted = isCurrentResizing
+                    ? day.startOf('day').add(dragPreview.topMin + dragPreview.durationMin, 'minute').format('HH:mm')
+                    : entryEnd.format('HH:mm')
+
                   return (
                     <Box
                       key={entry._id}
@@ -513,17 +550,25 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                       }}
                       sx={{
                         position: 'absolute',
-                        top, height, left: `${leftPct + 1}%`, width: `calc(${widthPct}% - 4px)`,
-                        zIndex: dragPreview?.entryId === entry._id ? 1 : 2,
-                        opacity: dragPreview?.entryId === entry._id ? 0.3 : 1,
+                        top,
+                        height: currentHeight,
+                        left: `${leftPct + 1}%`,
+                        width: `calc(${widthPct}% - 4px)`,
+                        zIndex: isCurrentResizing ? 10 : (isCurrentMoving ? 1 : 2),
+                        opacity: isCurrentMoving ? 0.35 : 1,
                         bgcolor: `${color}1f`,
                         borderLeft: `3px solid ${color}`,
                         borderRadius: 1,
                         px: 0.75, py: 0.25,
                         overflow: 'hidden',
-                        cursor: 'pointer',
-                        transition: 'transform 0.1s ease, box-shadow 0.1s ease',
-                        '&:hover': { transform: 'scale(1.01)', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', zIndex: 5 }
+                        cursor: isCurrentResizing ? 'ns-resize' : 'pointer',
+                        boxShadow: isCurrentResizing ? '0 4px 16px rgba(0, 82, 204, 0.28)' : 'none',
+                        transition: isCurrentResizing ? 'none' : 'transform 0.1s ease, box-shadow 0.1s ease',
+                        '&:hover': {
+                          transform: isCurrentResizing ? 'none' : 'scale(1.01)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          zIndex: 5
+                        }
                       }}
                     >
                       <Typography sx={{
@@ -531,10 +576,14 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                         whiteSpace: 'nowrap',
                         overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.3
                       }}>
-                        {height > 34 && `${entryStart.format('HH:mm')} `}
+                        {currentHeight > 34 && (
+                          <Typography component='span' sx={{ fontWeight: 800, mr: 0.5, fontSize: '0.72rem' }}>
+                            {isCurrentResizing ? `${entryStart.format('HH:mm')} – ${currentEndFormatted}` : entryStart.format('HH:mm')}
+                          </Typography>
+                        )}
                         {entry.title}
                       </Typography>
-                      {height > 48 && entry.itemTitle && (
+                      {currentHeight > 48 && entry.itemTitle && (
                         <Typography sx={{
                           fontSize: '0.68rem', color: 'text.secondary',
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
@@ -542,7 +591,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                           📌 {entry.itemTitle}
                         </Typography>
                       )}
-                      {height > 48 && !entry.itemTitle && entry.cardTitle && (
+                      {currentHeight > 48 && !entry.itemTitle && entry.cardTitle && (
                         <Typography sx={{
                           fontSize: '0.68rem', color: 'text.secondary',
                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'

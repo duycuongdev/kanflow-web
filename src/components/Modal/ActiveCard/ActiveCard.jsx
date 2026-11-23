@@ -497,7 +497,8 @@ function ActiveCard() {
   }
 
   return (
-    <Modal
+    <>
+      <Modal
       disableScrollLock
       open={isShowModalActiveCard}
       onClose={handleCloseModal}
@@ -943,14 +944,15 @@ function ActiveCard() {
           </Grid>
         </Box>
       </Box>
-
-      {/* Popover lên lịch làm việc cho thẻ này */}
-      <ScheduleEntryPopover
-        state={schedulePopoverState}
-        onClose={() => setSchedulePopoverState(null)}
-        onSave={handleSaveScheduleEntry}
-      />
     </Modal>
+
+    {/* Popover lên lịch làm việc cho thẻ này */}
+    <ScheduleEntryPopover
+      state={schedulePopoverState}
+      onClose={() => setSchedulePopoverState(null)}
+      onSave={handleSaveScheduleEntry}
+    />
+  </>
   )
 }
 
