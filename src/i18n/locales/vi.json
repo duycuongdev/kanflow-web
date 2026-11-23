@@ -759,6 +759,8 @@
   "focusPage": {
     "title": "Trang tập trung",
     "taskSection": "Nhiệm vụ tập trung",
+    "cardChecklists": "Danh sách việc cần làm (Checklist)",
+    "allCompleted": "Đã hoàn thành toàn bộ checklist!",
     "syncToBoard": "đồng bộ bảng",
     "taskHint": "Tuỳ chọn: chọn bảng → thẻ → checklist → từng việc để ghi nhận phiên focus vào đúng việc đó",
     "planSection": "Chế độ lặp",

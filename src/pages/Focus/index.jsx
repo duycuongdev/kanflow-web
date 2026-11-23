@@ -13,6 +13,7 @@ import Chip from '@mui/material/Chip'
 import TextField from '@mui/material/TextField'
 import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
+import Collapse from '@mui/material/Collapse'
 import ToggleButton from '@mui/material/ToggleButton'
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
 import LinearProgress from '@mui/material/LinearProgress'
@@ -31,9 +32,13 @@ import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded'
 import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 import EventNoteRoundedIcon from '@mui/icons-material/EventNoteRounded'
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 
 import AppBar from '~/components/AppBar/AppBar'
 import { selectCurrentUser } from '~/redux/user/userSlice'
+import { updateCardInBoard } from '~/redux/activeBoard/activeBoardSlice'
+import { updateCurrentActiveCard } from '~/redux/activeCard/activeCardSlice'
 import {
   TIMER_MODES,
   formatCountdown,
@@ -60,8 +65,204 @@ import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderb
 // Cache danh sách boards ở tầng module để tránh fetch lại mỗi lần component TaskCascade mount
 let cachedBoards = null
 
+/** Danh sách việc cần làm (Checklists) của thẻ với hộp kiểm hoàn thành và thanh tiến độ */
+function CardChecklistPanel({
+  checklists = [],
+  onToggleItemDone,
+  isGlassmorphic = false,
+  collapsible = false,
+  defaultExpanded = true,
+  maxHeight = 220
+}) {
+  const { t } = useTranslation()
+  const [expanded, setExpanded] = useState(defaultExpanded)
+
+  const allItems = (checklists || []).flatMap(cl => (cl.items || []).map(it => ({ ...it, checklistId: cl._id || cl.title, checklistTitle: cl.title })))
+  const totalItems = allItems.length
+  const completedItems = allItems.filter(it => it.isDone).length
+  const progressPercent = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0
+
+  if (totalItems === 0) return null
+
+  return (
+    <Box
+      sx={{
+        borderRadius: 2.5,
+        p: 1.5,
+        border: '1px solid',
+        ...(isGlassmorphic ? {
+          bgcolor: 'rgba(15, 23, 42, 0.72)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          borderColor: 'rgba(255, 255, 255, 0.16)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
+        } : {
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,82,204,0.03)',
+          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,82,204,0.12)'
+        })
+      }}
+    >
+      {/* Header với tiến độ */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography sx={{
+            fontWeight: 700,
+            fontSize: isGlassmorphic ? '0.85rem' : '0.9rem',
+            color: isGlassmorphic ? 'rgba(255,255,255,0.95)' : 'text.primary'
+          }}>
+            📋 {t('focusPage.cardChecklists')}
+          </Typography>
+          <Chip
+            size='small'
+            label={`${completedItems}/${totalItems} (${progressPercent}%)`}
+            sx={{
+              height: 20,
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              ...(isGlassmorphic ? {
+                bgcolor: progressPercent === 100 ? 'rgba(0,135,90,0.85)' : 'rgba(0,82,204,0.7)',
+                color: '#fff'
+              } : {
+                bgcolor: progressPercent === 100 ? '#00875a' : '#0052cc',
+                color: '#fff'
+              })
+            }}
+          />
+        </Box>
+        {collapsible && (
+          <IconButton
+            size='small'
+            onClick={() => setExpanded(!expanded)}
+            sx={{ color: isGlassmorphic ? 'rgba(255,255,255,0.7)' : 'text.secondary', p: 0.25 }}
+          >
+            {expanded ? <ExpandLessIcon sx={{ fontSize: 18 }} /> : <ExpandMoreIcon sx={{ fontSize: 18 }} />}
+          </IconButton>
+        )}
+      </Box>
+
+      {/* Thanh tiến độ */}
+      <LinearProgress
+        variant='determinate'
+        value={progressPercent}
+        sx={{
+          height: 5,
+          borderRadius: 2.5,
+          mb: expanded ? 1 : 0,
+          bgcolor: isGlassmorphic ? 'rgba(255,255,255,0.12)' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,82,204,0.1)',
+          '& .MuiLinearProgress-bar': {
+            borderRadius: 2.5,
+            bgcolor: progressPercent === 100 ? '#36b37e' : (isGlassmorphic ? '#4c9aff' : '#0052cc')
+          }
+        }}
+      />
+
+      {/* Danh sách các checklist items */}
+      <Collapse in={expanded}>
+        <Box sx={{
+          maxHeight,
+          overflowY: 'auto',
+          pr: 0.5,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 0.5,
+          '&::-webkit-scrollbar': { width: 5 },
+          '&::-webkit-scrollbar-thumb': {
+            borderRadius: 2.5,
+            bgcolor: isGlassmorphic ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'
+          }
+        }}>
+          {(checklists || []).map((cl) => {
+            const clId = cl._id || cl.title
+            return (
+              <Box key={clId}>
+                {checklists.length > 1 && (
+                  <Typography sx={{
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: isGlassmorphic ? 'rgba(255,255,255,0.55)' : 'text.secondary',
+                    mt: 0.5,
+                    mb: 0.25
+                  }}>
+                    {cl.title}
+                  </Typography>
+                )}
+                {(cl.items || []).map((it) => {
+                  const itId = it._id || it.title
+                  return (
+                    <Box
+                      key={itId}
+                      onClick={() => onToggleItemDone && onToggleItemDone(clId, itId, !it.isDone)}
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        px: 1,
+                        py: 0.6,
+                        borderRadius: 1.5,
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        border: '1px solid',
+                        ...(isGlassmorphic ? {
+                          bgcolor: it.isDone ? 'rgba(0,135,90,0.22)' : 'rgba(255,255,255,0.04)',
+                          borderColor: it.isDone ? 'rgba(54,179,126,0.35)' : 'rgba(255,255,255,0.06)',
+                          '&:hover': {
+                            bgcolor: it.isDone ? 'rgba(0,135,90,0.3)' : 'rgba(255,255,255,0.08)'
+                          }
+                        } : {
+                          bgcolor: (theme) => it.isDone
+                            ? (theme.palette.mode === 'dark' ? 'rgba(0,135,90,0.12)' : 'rgba(0,135,90,0.07)')
+                            : (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)'),
+                          borderColor: it.isDone ? 'rgba(0,135,90,0.3)' : 'transparent',
+                          '&:hover': {
+                            bgcolor: (theme) => it.isDone
+                              ? (theme.palette.mode === 'dark' ? 'rgba(0,135,90,0.16)' : 'rgba(0,135,90,0.1)')
+                              : (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)')
+                          }
+                        })
+                      }}
+                    >
+                      <Checkbox
+                        checked={Boolean(it.isDone)}
+                        size='small'
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          onToggleItemDone && onToggleItemDone(clId, itId, e.target.checked)
+                        }}
+                        sx={{
+                          p: 0,
+                          color: isGlassmorphic ? 'rgba(255,255,255,0.45)' : '#00875a',
+                          '&.Mui-checked': { color: '#36b37e' }
+                        }}
+                      />
+                      <Typography
+                        sx={{
+                          flex: 1,
+                          fontSize: '0.82rem',
+                          fontWeight: it.isDone ? 500 : 600,
+                          textDecoration: it.isDone ? 'line-through' : 'none',
+                          color: isGlassmorphic
+                            ? (it.isDone ? 'rgba(255,255,255,0.45)' : '#fff')
+                            : (it.isDone ? 'text.disabled' : 'text.primary'),
+                          lineHeight: 1.35,
+                          userSelect: 'none'
+                        }}
+                      >
+                        {it.title}
+                      </Typography>
+                    </Box>
+                  )
+                })}
+              </Box>
+            )
+          })}
+        </Box>
+      </Collapse>
+    </Box>
+  )
+}
+
 /** Cascade chọn nhiệm vụ: Bảng → Card → Checklist → Item (tái dùng pattern của Schedule popover) */
-function TaskCascade({ onChainChange, initialTask, onClearTask }) {
+function TaskCascade({ onChainChange, initialTask, onClearTask, onActiveCardChange, activeCardChecklists, onToggleChecklistItem }) {
   const { t } = useTranslation()
   const [boards, setBoards] = useState(() => cachedBoards || [])
   const [boardId, setBoardId] = useState(() => initialTask?.boardId || '')
@@ -171,6 +372,9 @@ function TaskCascade({ onChainChange, initialTask, onClearTask }) {
           if (cardId !== matchedCard._id) {
             setCardId(matchedCard._id)
           }
+          if (onActiveCardChange) {
+            onActiveCardChange(matchedCard)
+          }
           const targetClId = checklistId || initialTask?.checklistId
           const matchedCl = matchedCard.checklists?.find((cl) => (cl._id || cl.title) === targetClId)
           if (matchedCl && checklistId !== (matchedCl._id || matchedCl.title)) {
@@ -186,6 +390,7 @@ function TaskCascade({ onChainChange, initialTask, onClearTask }) {
           setCardId('')
           setChecklistId('')
           setItemId('')
+          if (onActiveCardChange) onActiveCardChange(null)
         }
       })
       .catch(() => { /* lỗi đã toast ở interceptor */ })
@@ -203,6 +408,7 @@ function TaskCascade({ onChainChange, initialTask, onClearTask }) {
     setItemId('')
     const card = cardOptions.find((c) => c._id === value)
     const board = boards.find((b) => b._id === boardId)
+    if (onActiveCardChange) onActiveCardChange(card || null)
     onChainChange({
       boardId,
       boardTitle: board?.title || boardTitleDisplay || null,
@@ -257,6 +463,7 @@ function TaskCascade({ onChainChange, initialTask, onClearTask }) {
     setChecklistId('')
     setItemId('')
     setEditingAttach(false)
+    if (onActiveCardChange) onActiveCardChange(null)
     if (onClearTask) onClearTask()
     onChainChange({ boardId: null, boardTitle: null, cardId: null, cardTitle: null, checklistId: null, checklistTitle: null, checklistItemId: null, itemTitle: null })
   }
@@ -412,78 +619,16 @@ function TaskCascade({ onChainChange, initialTask, onClearTask }) {
         </Box>
       )}
 
-      {/* Tùy chọn gắn subtask từ checklist của thẻ khi đã thu gọn */}
-      {cascadeCollapsed && cardId && (selectedCardLocal?.checklists?.length > 0 || cardOptions.length > 0) && (
-        (() => {
-          const allItems = (selectedCardLocal?.checklists || []).flatMap(cl => (cl.items || []).map(it => ({ ...it, checklistTitle: cl.title })))
-          if (allItems.length === 0) return null
-          return (
-            <Box sx={{ mb: 1.25 }}>
-              <Select
-                fullWidth
-                size='small'
-                displayEmpty
-                value={itemId}
-                onChange={(e) => handleItem(e.target.value)}
-                MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
-                renderValue={(val) => {
-                  if (!val) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectSubtaskOptional')}</Typography>
-                  const itm = allItems.find((it) => (it._id || it.title) === val)
-                  return itm?.title || val
-                }}
-                sx={{
-                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,82,204,0.02)',
-                  borderRadius: 1.5
-                }}
-              >
-                <MenuItem value=''>
-                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{t('schedule.noItem')}</Typography>
-                </MenuItem>
-                {allItems.map((it) => (
-                  <MenuItem key={it._id || it.title} value={it._id || it.title}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
-                      <Chip size='small' label={it.checklistTitle} sx={{ height: 18, fontSize: '0.65rem' }} />
-                      <Typography sx={{
-                        fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240,
-                        textDecoration: it.isDone ? 'line-through' : 'none',
-                        color: it.isDone ? 'text.disabled' : 'text.primary'
-                      }}>
-                        {it.title}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </Box>
-          )
-        })()
-      )}
-
-      {/* Dấu tích hoàn thành - đồng bộ lên card của board */}
-      {selectedItemLocal && (
-        <Box sx={{
-          display: 'flex', alignItems: 'center', gap: 1,
-          bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(0,135,90,0.08)' : 'rgba(0,135,90,0.06)',
-          border: '1px solid', borderColor: 'rgba(0,135,90,0.2)',
-          borderRadius: 1.5, px: 1.25, py: 0.75, mb: 1
-        }}>
-          <Checkbox
-            checked={Boolean(selectedItemLocal.isDone)}
-            onChange={(e) => handleToggleItemDone(e.target.checked)}
-            disabled={savingComplete}
-            size='small'
-            sx={{ p: 0.25, color: '#00875a', '&.Mui-checked': { color: '#00875a' } }}
+      {/* Danh sách toàn bộ việc cần làm (Checklists) của thẻ */}
+      {cascadeCollapsed && cardId && (
+        <Box sx={{ mt: 1.25 }}>
+          <CardChecklistPanel
+            checklists={activeCardChecklists?.length > 0 ? activeCardChecklists : (selectedCardLocal?.checklists || [])}
+            onToggleItemDone={onToggleChecklistItem || handleToggleItemDone}
+            collapsible
+            defaultExpanded
+            maxHeight={240}
           />
-          <Typography sx={{
-            fontSize: '0.85rem', fontWeight: 600, flex: 1,
-            textDecoration: selectedItemLocal.isDone ? 'line-through' : 'none',
-            color: selectedItemLocal.isDone ? 'text.disabled' : 'text.primary'
-          }}>
-            {selectedItemLocal.title}
-          </Typography>
-          <Typography variant='caption' sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
-            {t('focusPage.syncToBoard')}
-          </Typography>
         </Box>
       )}
 
@@ -498,7 +643,16 @@ const RANK_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
  * Chế độ TOÀN MÀN HÌNH: hiện khi timer đang chạy / đang nghỉ / tạm dừng giữa chừng.
  * Chỉ thoát khi bấm Dừng (hoặc chuỗi hoàn thành tự nhiên).
  */
-function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig, progress }) {
+function FocusFullscreen({
+  timerState,
+  plan,
+  focusTask,
+  remainingMs,
+  modeConfig,
+  progress,
+  cardChecklists = [],
+  onToggleChecklistItem
+}) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const ringSize = 200
@@ -506,6 +660,7 @@ function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig,
   const ringRadius = (ringSize - ringStroke) / 2
   const ringCircumference = 2 * Math.PI * ringRadius
 
+  const hasChecklists = (cardChecklists || []).length > 0
   const isBreak = timerState.mode !== 'focus'
   const phaseLabel = plan.active
     ? (isBreak
@@ -528,7 +683,7 @@ function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig,
           : 'radial-gradient(circle at 50% 25%, #1e3a8a 0%, #0b1220 60%)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        gap: 2, overflow: 'hidden'
+        gap: hasChecklists ? 1.5 : 2, overflow: 'hidden'
       }}>
         {/* Chip vòng lặp */}
         {plan.active && (
@@ -560,7 +715,11 @@ function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig,
           animate={{ scale: [1, 1.025, 1] }}
           transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
         >
-          <Box sx={{ position: 'relative', width: 'min(74vmin, 460px)', aspectRatio: '1/1' }}>
+          <Box sx={{
+            position: 'relative',
+            width: hasChecklists ? 'min(42vmin, 260px)' : 'min(74vmin, 460px)',
+            aspectRatio: '1/1'
+          }}>
             <svg viewBox='0 0 200 200' style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
               <circle
                 cx='100' cy='100' r={ringRadius}
@@ -581,7 +740,8 @@ function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig,
               alignItems: 'center', justifyContent: 'center', gap: 0.5
             }}>
               <Typography sx={{
-                fontSize: 'clamp(56px, 11vmin, 120px)', fontWeight: 800, letterSpacing: 2,
+                fontSize: hasChecklists ? 'clamp(36px, 7.5vmin, 62px)' : 'clamp(56px, 11vmin, 120px)',
+                fontWeight: 800, letterSpacing: 2,
                 color: '#fff', textShadow: '0 4px 30px rgba(0,0,0,0.35)', lineHeight: 1
               }}>
                 {formatCountdown(remainingMs)}
@@ -614,6 +774,26 @@ function FocusFullscreen({ timerState, plan, focusTask, remainingMs, modeConfig,
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Danh sách việc cần làm (Checklists) của thẻ ngay trong chế độ toàn màn hình */}
+        {hasChecklists && (
+          <Box sx={{
+            width: 'min(92vw, 460px)',
+            zIndex: 2,
+            maxHeight: 'min(36vh, 230px)',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <CardChecklistPanel
+              checklists={cardChecklists}
+              onToggleItemDone={onToggleChecklistItem}
+              isGlassmorphic
+              collapsible
+              defaultExpanded
+              maxHeight={160}
+            />
+          </Box>
+        )}
 
         {/* Điều khiển: chỉ Pause/Resume + Stop - thoát toàn màn hình bằng Dừng */}
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 1 }}>
@@ -675,6 +855,64 @@ export default function Focus() {
   const plan = useSelector(selectFocusPlan)
   const focusTask = useSelector(selectFocusTask)
   const currentUser = useSelector(selectCurrentUser)
+
+  // Quản lý dữ liệu Thẻ đang được chọn (để hiển thị và tương tác Checklist cả trong và ngoài Fullscreen)
+  const [activeCardData, setActiveCardData] = useState(null)
+
+  // Tự động tải dữ liệu thẻ khi focusTask có cardId & boardId (ví dụ khi từ ActiveCard nhảy sang hoặc hydrate lại)
+  useEffect(() => {
+    if (!focusTask?.cardId || !focusTask?.boardId) {
+      if (!focusTask?.cardId) setActiveCardData(null)
+      return
+    }
+    if (activeCardData?._id === focusTask.cardId) return
+
+    let isMounted = true
+    fetchBoardDetailsAPI(focusTask.boardId)
+      .then((boardDetails) => {
+        if (!isMounted) return
+        const card = (boardDetails?.columns || []).flatMap((col) => col.cards || []).find((c) => c._id === focusTask.cardId)
+        if (card) {
+          setActiveCardData(card)
+        }
+      })
+      .catch(() => {})
+
+    return () => { isMounted = false }
+  }, [focusTask?.cardId, focusTask?.boardId, activeCardData?._id])
+
+  // Handler toggle checklist item: cập nhật optimistic, lưu DB qua API và đồng bộ Redux store
+  const handleToggleChecklistItem = useCallback(async (checklistId, itemId, checked) => {
+    const currentCard = activeCardData
+    if (!currentCard?._id) return
+
+    const updatedChecklists = (currentCard.checklists || []).map((cl) => {
+      const matchCl = (cl._id || cl.title) === checklistId || cl.items?.some((it) => (it._id || it.title) === itemId)
+      if (!matchCl) return cl
+      return {
+        ...cl,
+        items: (cl.items || []).map((it) =>
+          (it._id || it.title) === itemId
+            ? { ...it, isDone: checked }
+            : it
+        )
+      }
+    })
+
+    const optimisticCard = { ...currentCard, checklists: updatedChecklists }
+    setActiveCardData(optimisticCard)
+
+    try {
+      const updatedCard = await updateCardDetailsAPI(currentCard._id, { checklists: updatedChecklists })
+      if (updatedCard) {
+        setActiveCardData(updatedCard)
+        dispatch(updateCardInBoard(updatedCard))
+        dispatch(updateCurrentActiveCard(updatedCard))
+      }
+    } catch {
+      setActiveCardData(currentCard)
+    }
+  }, [activeCardData, dispatch])
 
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
@@ -953,6 +1191,9 @@ export default function Focus() {
               </Box>
               <TaskCascade
                 initialTask={focusTask}
+                activeCardChecklists={activeCardData?.checklists || []}
+                onActiveCardChange={(card) => setActiveCardData(card)}
+                onToggleChecklistItem={handleToggleChecklistItem}
                 onChainChange={(chain) => {
                   dispatch(setFocusTask({
                     cardId: chain.cardId || null,
@@ -967,6 +1208,7 @@ export default function Focus() {
                   }))
                 }}
                 onClearTask={() => {
+                  setActiveCardData(null)
                   dispatch(setFocusTask(null))
                 }}
               />
@@ -1214,6 +1456,8 @@ export default function Focus() {
             remainingMs={remainingMs}
             modeConfig={modeConfig}
             progress={progress}
+            cardChecklists={activeCardData?.checklists || []}
+            onToggleChecklistItem={handleToggleChecklistItem}
           />
         )}
       </AnimatePresence>

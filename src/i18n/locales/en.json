@@ -759,6 +759,8 @@
   "focusPage": {
     "title": "Focus",
     "taskSection": "Focus task",
+    "cardChecklists": "Checklist & Tasks",
+    "allCompleted": "All tasks completed!",
     "syncToBoard": "syncs to board",
     "taskHint": "Optional: pick board > card > checklist > item to attribute focus sessions to that exact task",
     "planSection": "Repeat plan",
