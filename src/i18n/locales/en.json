@@ -746,7 +746,7 @@
     "noEntries": "No events scheduled for this day",
     "entriesTitle": "events",
     "moreEntries": "+{{count}} more - view week",
-    "weekHint": "💡 Click an empty slot to schedule something at that hour. Drag an event to move it. Click an event to edit it.",
+    "weekHint": "💡 Click an empty slot to schedule. Drag to move. Drag bottom edge to extend duration. Click to edit.",
     "openCard": "Open this card on board",
     "openBoard": "Open this board",
     "startFocus": "Start Focus",

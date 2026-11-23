@@ -337,7 +337,7 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       onClose={onClose}
       slotProps={{
         paper: {
-          sx: { width: 380, maxWidth: '100%', p: 2, overflowY: 'auto' }
+          sx: { width: 420, maxWidth: 'calc(100vw - 32px)', p: 2.25, overflowY: 'auto' }
         }
       }}
     >
@@ -586,9 +586,11 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
       {attachChain && (
         <Box sx={{
           bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0b1220' : '#f8fafc',
-          borderRadius: 1.5, p: 1, mb: 1.5
+          border: '1px solid', borderColor: 'divider',
+          borderRadius: 1.5, p: 1.25, mb: 1.5
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+          {/* Hàng 1: các thẻ breadcrumb */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap', mb: 1 }}>
             {attachChain.boardTitle && <Chip size='small' label={`🗂 ${attachChain.boardTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
             {attachChain.cardTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
             {attachChain.cardTitle && <Chip size='small' label={`🎯 ${attachChain.cardTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
@@ -596,36 +598,41 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
             {attachChain.checklistTitle && <Chip size='small' label={`☑ ${attachChain.checklistTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
             {attachChain.itemTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
             {attachChain.itemTitle && <Chip size='small' label={`📌 ${attachChain.itemTitle}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
-            {attachChain.boardId && (
-              <Tooltip title={attachChain.cardId ? t('schedule.openCard') : t('schedule.openBoard')}>
-                <IconButton
-                  size='small'
-                  onClick={handleOpenAttachedCard}
-                  sx={{ color: '#0052cc', p: 0.5 }}
-                  aria-label={attachChain.cardId ? t('schedule.openCard') : t('schedule.openBoard')}
-                >
-                  <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Box sx={{ flex: 1 }} />
-            <Button
-              size='small'
-              variant='text'
-              onClick={() => setEditingAttach(true)}
-              sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, minWidth: 0, px: 0.75 }}
-            >
-              {t('schedule.changeTask')}
-            </Button>
-            <IconButton size='small' onClick={handleDetachCard} aria-label={t('schedule.detachCard')}>
-              <CloseRoundedIcon sx={{ fontSize: 16 }} />
-            </IconButton>
+          </Box>
+
+          {/* Hàng 2: thao tác mở thẻ, đổi việc, gỡ gắn */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.75, borderTop: '1px dashed', borderColor: 'divider' }}>
+            {attachChain.boardId ? (
+              <Button
+                size='small'
+                variant='text'
+                startIcon={<OpenInNewRoundedIcon sx={{ fontSize: 15 }} />}
+                onClick={handleOpenAttachedCard}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, color: '#0052cc', p: 0, minWidth: 0 }}
+              >
+                {attachChain.cardId ? t('schedule.openCard') : t('schedule.openBoard')}
+              </Button>
+            ) : <Box />}
+
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Button
+                size='small'
+                variant='text'
+                onClick={() => setEditingAttach(true)}
+                sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, minWidth: 0, px: 0.75 }}
+              >
+                {t('schedule.changeTask')}
+              </Button>
+              <IconButton size='small' onClick={handleDetachCard} aria-label={t('schedule.detachCard')} sx={{ p: 0.25 }}>
+                <CloseRoundedIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Box>
           </Box>
         </Box>
       )}
 
       {/* Actions: Save + Focus */}
-      <Box sx={{ display: 'flex', gap: 1 }}>
+      <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
         <Button
           fullWidth
           variant='contained'
@@ -635,16 +642,18 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         >
           {isSaving ? <CircularProgress size={20} color='inherit' /> : (isEditMode ? t('common.save') : t('schedule.createButton'))}
         </Button>
-        <Tooltip title={t('schedule.startFocusHint')}>
-          <Button
-            variant='outlined'
-            onClick={handleStartFocus}
-            startIcon={<TimerRoundedIcon sx={{ fontSize: 18 }} />}
-            sx={{ textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap', px: 1.5 }}
-          >
-            {t('schedule.startFocus')}
-          </Button>
-        </Tooltip>
+        {isEditMode && (
+          <Tooltip title={t('schedule.startFocusHint')}>
+            <Button
+              variant='outlined'
+              onClick={handleStartFocus}
+              startIcon={<TimerRoundedIcon sx={{ fontSize: 18 }} />}
+              sx={{ textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap', px: 1.5, flexShrink: 0 }}
+            >
+              {t('schedule.startFocus')}
+            </Button>
+          </Tooltip>
+        )}
       </Box>
     </ResponsivePopover>
   )

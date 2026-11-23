@@ -178,6 +178,34 @@ export default function Schedule() {
     }
   }
 
+  // Kéo dãn cạnh dưới entry trong view Tuần: thay đổi endAt (giữ nguyên startAt) + lưu API
+  const handleEntryResize = async (entry, newEndMs) => {
+    const startMs = dayjs(entry.startAt).valueOf()
+    if (!Number.isFinite(startMs) || !Number.isFinite(newEndMs) || newEndMs <= startMs) return
+    const payload = {
+      title: entry.title,
+      startAt: startMs,
+      endAt: newEndMs,
+      colorKey: entry.colorKey,
+      cardId: entry.cardId || null,
+      boardId: entry.boardId || null,
+      cardTitle: entry.cardTitle || null,
+      boardTitle: entry.boardTitle || null,
+      checklistId: entry.checklistId || null,
+      checklistItemId: entry.checklistItemId || null,
+      checklistTitle: entry.checklistTitle || null,
+      itemTitle: entry.itemTitle || null
+    }
+    // Optimistic: cập nhật ngay để entry dãn tới độ dài mới
+    setEntries((prev) => prev.map((e) => (e._id === entry._id ? { ...e, ...payload } : e)))
+    try {
+      const updated = await updateScheduleEntryAPI(entry._id, payload)
+      setEntries((prev) => prev.map((e) => (e._id === entry._id ? updated : e)))
+    } catch {
+      setEntries((prev) => prev.map((e) => (e._id === entry._id ? { ...e, startAt: entry.startAt, endAt: entry.endAt } : e)))
+    }
+  }
+
   const openCreatePopover = (draft, anchorEl = null) => {
     setPopoverState({ mode: 'create', draft, anchorEl })
   }
@@ -329,6 +357,7 @@ export default function Schedule() {
             onSlotClick={(slotStart, anchorEl) => openCreatePopover({ startAt: slotStart.valueOf(), endAt: slotStart.add(1, 'hour').valueOf() }, anchorEl)}
             onEntryClick={openEditPopover}
             onEntryDrop={handleEntryDrop}
+            onEntryResize={handleEntryResize}
           />
         )}
 

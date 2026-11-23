@@ -65,14 +65,15 @@ const layoutEntriesForDay = (dayEntries) => {
   return result
 }
 
-export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, onEntryClick, onEntryDrop }) {
+export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, onEntryClick, onEntryDrop, onEntryResize }) {
   const { t } = useTranslation()
   const [now, setNow] = useState(Date.now())
   // Slot đang hover: { dayStr, hour } - highlight đúng 1 khung giờ (vd 9:00-10:00)
   const [hoveredSlot, setHoveredSlot] = useState(null)
-  // Phiên kéo entry: ghost hiển thị ở { dayStr, topMin }; moved = đã kéo thật
+  // Phiên kéo entry: ghost hiển thị ở { dayStr, topMin, durationMin, isResize }; moved = đã kéo thật
   const [dragPreview, setDragPreview] = useState(null)
   const dragSessionRef = useRef(null)
+  const resizeSessionRef = useRef(null)
   const suppressClickRef = useRef(false)
 
   const scrollBodyRef = useRef(null)
@@ -126,9 +127,30 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
     body.scrollTop = targetHour * HOUR_HEIGHT
   }, [weekStartKey, weekDays])
 
-  // ==================== Kéo-thả entry để dời giờ/ngày ====================
-  // Nhấn giữ entry -> pointermove (window) tính cột ngày + khung giờ mới (snap 30') ->
-  // thả ra -> onEntryDrop(entry, newStartMs) để parent gọi API lưu.
+  // ==================== Kéo-thả entry để dời giờ/ngày & Kéo dãn thời lượng ====================
+  // 1. Nhấn giữ cạnh dưới entry -> resizeSessionRef -> thay đổi endAt (snap 30')
+  // 2. Nhấn giữ thân entry -> dragSessionRef -> dời giờ/ngày (snap 30')
+
+  const handleResizeMouseDown = (e, entry) => {
+    e.stopPropagation() // Không kích hoạt kéo dời thân thẻ
+    if (e.button !== 0) return
+    setHoveredSlot(null)
+    const startMs = dayjs(entry.startAt).valueOf()
+    const endMs = dayjs(entry.endAt).valueOf()
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) return
+    const dayStr = dayjs(entry.startAt).format('YYYY-MM-DD')
+    const topMin = dayjs(entry.startAt).hour() * 60 + dayjs(entry.startAt).minute()
+    const initialDurationMin = Math.max(30, Math.round((endMs - startMs) / 60000))
+
+    resizeSessionRef.current = {
+      entry,
+      dayStr,
+      topMin,
+      startClientY: e.clientY,
+      initialDurationMin,
+      moved: false
+    }
+  }
 
   const handleEntryMouseDown = (e, entry) => {
     if (e.button !== 0) return
@@ -151,6 +173,30 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
 
   useEffect(() => {
     const onPointerMove = (e) => {
+      // 1. Xử lý kéo dãn cạnh dưới (Resize)
+      if (resizeSessionRef.current) {
+        const rSession = resizeSessionRef.current
+        if (!rSession.moved && Math.abs(e.clientY - rSession.startClientY) < 4) return
+        rSession.moved = true
+
+        const deltaPx = e.clientY - rSession.startClientY
+        const deltaMin = (deltaPx / HOUR_HEIGHT) * 60
+        const rawDurationMin = rSession.initialDurationMin + deltaMin
+        // Snap 30 phút, tối thiểu 30 phút, tối đa không quá 24h từ start
+        const maxDurationMin = 24 * 60 - rSession.topMin
+        const snappedDurationMin = Math.max(30, Math.min(maxDurationMin, Math.round(rawDurationMin / 30) * 30))
+
+        setDragPreview({
+          entryId: rSession.entry._id,
+          dayStr: rSession.dayStr,
+          topMin: rSession.topMin,
+          durationMin: snappedDurationMin,
+          isResize: true
+        })
+        return
+      }
+
+      // 2. Xử lý kéo dời vị trí (Move)
       const session = dragSessionRef.current
       if (!session) return
       if (!session.moved && Math.hypot(e.clientX - session.startClientX, e.clientY - session.startClientY) < 4) return
@@ -167,10 +213,32 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       if (!Number.isFinite(durationMin)) return
       const rawMinutes = ((e.clientY - colRect.top) / HOUR_HEIGHT) * 60 - session.grabOffsetMin
       const snapped = Math.max(0, Math.min(24 * 60 - durationMin, Math.round(rawMinutes / 30) * 30))
-      setDragPreview({ entryId: session.entry._id, dayStr, topMin: snapped, durationMin })
+      setDragPreview({ entryId: session.entry._id, dayStr, topMin: snapped, durationMin, isResize: false })
     }
 
     const onPointerUp = () => {
+      // 1. Thả kết thúc phiên Resize
+      if (resizeSessionRef.current) {
+        const rSession = resizeSessionRef.current
+        resizeSessionRef.current = null
+
+        if (rSession.moved) {
+          suppressClickRef.current = true
+          setTimeout(() => { suppressClickRef.current = false }, 50)
+          const preview = dragPreviewStateRef.current
+          if (preview && preview.isResize && onEntryResize) {
+            const newEndMs = dayjs(rSession.entry.startAt).valueOf() + preview.durationMin * 60000
+            if (Number.isFinite(newEndMs)) {
+              onEntryResize(rSession.entry, newEndMs)
+            }
+          }
+        }
+        setDragPreview(null)
+        setHoveredSlot(null)
+        return
+      }
+
+      // 2. Thả kết thúc phiên Move
       const session = dragSessionRef.current
       if (!session) return
       dragSessionRef.current = null
@@ -201,7 +269,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
       window.removeEventListener('pointerup', onPointerUp)
       window.removeEventListener('pointercancel', onPointerUp)
     }
-  }, [weekDays, dragPreviewStateRef, onEntryDrop])
+  }, [weekDays, dragPreviewStateRef, onEntryDrop, onEntryResize])
 
   const handleColumnMouseMove = (e, day) => {
     const bodyRect = e.currentTarget.getBoundingClientRect()
@@ -321,7 +389,7 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
               <Box
                 key={dayStr}
                 data-day-col={dayStr}
-                onMouseMove={(e) => { if (!dragSessionRef.current) handleColumnMouseMove(e, day) }}
+                onMouseMove={(e) => { if (!dragSessionRef.current && !resizeSessionRef.current) handleColumnMouseMove(e, day) }}
                 onMouseLeave={handleColumnLeave}
                 onClick={(e) => { if (!suppressClickRef.current) handleColumnClick(e, day) }}
                 sx={{
@@ -378,26 +446,31 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   )
                 })()}
 
-                {/* Ghost của entry đang được kéo tới cột này */}
-                {dragPreview && dragPreview.dayStr === dayStr && (
-                  <Box sx={{
-                    position: 'absolute',
-                    top: dragPreview.topMin / 60 * HOUR_HEIGHT,
-                    height: dragPreview.durationMin / 60 * HOUR_HEIGHT,
-                    left: '2%', width: '96%',
-                    zIndex: 3, pointerEvents: 'none',
-                    border: '2px dashed rgba(0, 82, 204, 0.6)',
-                    borderRadius: 1,
-                    bgcolor: 'rgba(0, 82, 204, 0.10)'
-                  }}>
-                    <Typography variant='caption' sx={{
-                      position: 'absolute', top: 2, left: 4,
-                      fontSize: '0.65rem', color: '#0052cc', fontWeight: 700
+                {/* Ghost của entry đang được kéo hoặc dãn thời lượng */}
+                {dragPreview && dragPreview.dayStr === dayStr && (() => {
+                  const previewStart = day.startOf('day').add(dragPreview.topMin, 'minute')
+                  const previewEnd = previewStart.add(dragPreview.durationMin, 'minute')
+                  return (
+                    <Box sx={{
+                      position: 'absolute',
+                      top: (dragPreview.topMin / 60) * HOUR_HEIGHT,
+                      height: (dragPreview.durationMin / 60) * HOUR_HEIGHT,
+                      left: '2%', width: '96%',
+                      zIndex: 3, pointerEvents: 'none',
+                      border: '2px dashed rgba(0, 82, 204, 0.65)',
+                      borderRadius: 1,
+                      bgcolor: 'rgba(0, 82, 204, 0.12)',
+                      px: 0.75, py: 0.25
                     }}>
-                      {dayjs(day.startOf('day').valueOf() + dragPreview.topMin * 60000).format('HH:mm')}
-                    </Typography>
-                  </Box>
-                )}
+                      <Typography variant='caption' sx={{
+                        position: 'absolute', top: 2, left: 4,
+                        fontSize: '0.65rem', color: '#0052cc', fontWeight: 700
+                      }}>
+                        {previewStart.format('HH:mm')} – {previewEnd.format('HH:mm')}
+                      </Typography>
+                    </Box>
+                  )
+                })()}
 
                 {/* Đường "bây giờ" */}
                 {isToday && nowTop !== null && (
@@ -477,6 +550,37 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                           🎯 {entry.cardTitle}
                         </Typography>
                       )}
+
+                      {/* Cạnh dưới kéo dãn thời lượng (resize) */}
+                      <Box
+                        onMouseDown={(e) => handleResizeMouseDown(e, entry)}
+                        sx={{
+                          position: 'absolute',
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          height: 8,
+                          cursor: 'ns-resize',
+                          zIndex: 3,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transition: 'background-color 0.15s ease',
+                          '&:hover': {
+                            bgcolor: `${color}40`,
+                            '&::after': { opacity: 1 }
+                          },
+                          '&::after': {
+                            content: '""',
+                            width: 18,
+                            height: 2,
+                            borderRadius: 1,
+                            bgcolor: color,
+                            opacity: 0.55,
+                            transition: 'opacity 0.15s ease'
+                          }
+                        }}
+                      />
                     </Box>
                   )
                 })}

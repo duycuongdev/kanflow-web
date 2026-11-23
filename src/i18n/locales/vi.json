@@ -746,7 +746,7 @@
     "noEntries": "Chưa có lịch nào trong ngày này",
     "entriesTitle": "lịch",
     "moreEntries": "+{{count}} lịch khác - xem tuần",
-    "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Kéo giữ entry để dời lịch. Bấm entry để sửa.",
+    "weekHint": "💡 Bấm vào ô trống để thêm lịch. Kéo giữ để dời lịch. Kéo cạnh dưới để dãn thời gian. Bấm để sửa.",
     "openCard": "Mở thẻ này trên bảng",
     "openBoard": "Mở bảng này",
     "startFocus": "Bắt đầu Focus",
