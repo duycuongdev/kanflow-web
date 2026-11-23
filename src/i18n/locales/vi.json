@@ -744,7 +744,12 @@
     "noEntries": "Chưa có lịch nào trong ngày này",
     "entriesTitle": "lịch",
     "moreEntries": "+{{count}} lịch khác - xem tuần",
-    "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Kéo giữ entry để dời lịch. Bấm entry để sửa."
+    "weekHint": "💡 Bấm vào ô trống để thêm lịch vào khung giờ đó. Kéo giữ entry để dời lịch. Bấm entry để sửa.",
+    "openCard": "Mở thẻ này trên bảng",
+    "openBoard": "Mở bảng này",
+    "startFocus": "Bắt đầu Focus",
+    "startFocusHint": "Tập trung làm nhiệm vụ này với đồng hồ Focus",
+    "nextDayHint": "Kết thúc vào ngày hôm sau (+1 ngày)"
   },
   "focusPage": {
     "title": "Trang tập trung",

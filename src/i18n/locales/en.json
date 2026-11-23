@@ -744,7 +744,12 @@
     "noEntries": "No events scheduled for this day",
     "entriesTitle": "events",
     "moreEntries": "+{{count}} more - view week",
-    "weekHint": "💡 Click an empty slot to schedule something at that hour. Drag an event to move it. Click an event to edit it."
+    "weekHint": "💡 Click an empty slot to schedule something at that hour. Drag an event to move it. Click an event to edit it.",
+    "openCard": "Open this card on board",
+    "openBoard": "Open this board",
+    "startFocus": "Start Focus",
+    "startFocusHint": "Focus on this task with Focus Timer",
+    "nextDayHint": "Ends on the next day (+1 day)"
   },
   "focusPage": {
     "title": "Focus",

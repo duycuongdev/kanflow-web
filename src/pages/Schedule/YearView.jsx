@@ -7,14 +7,17 @@ import dayjs from 'dayjs'
 import { getHolidaysForYear } from './holidays'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
 
-const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
-
 /**
  * Mini month cho Year view: lưới ngày nhỏ, ngày lễ tô đỏ, ngày có lịch = chấm màu
  */
 function MiniMonth({ monthDate, entries, holidayMap, onDayClick }) {
   const { t } = useTranslation()
   const todayStr = dayjs().format('YYYY-MM-DD')
+
+  const weekDayLabels = useMemo(() => {
+    const monday = dayjs().startOf('isoWeek')
+    return Array.from({ length: 7 }, (_, i) => monday.add(i, 'day').format('dd'))
+  }, [])
 
   // Ô trống đầu tuần (tuần bắt đầu thứ 2) + các ngày trong tháng
   const cells = useMemo(() => {
@@ -51,8 +54,8 @@ function MiniMonth({ monthDate, entries, holidayMap, onDayClick }) {
         {monthDate.format('MMMM')}
       </Typography>
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', mb: 0.25 }}>
-        {WEEKDAY_LABELS.map((label) => (
-          <Typography key={label} sx={{ fontSize: '0.58rem', color: 'text.secondary', textAlign: 'center', fontWeight: 600 }}>
+        {weekDayLabels.map((label, idx) => (
+          <Typography key={idx} sx={{ fontSize: '0.58rem', color: 'text.secondary', textAlign: 'center', fontWeight: 600 }}>
             {label}
           </Typography>
         ))}

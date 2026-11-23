@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
 import { useTranslation } from 'react-i18next'
 import { useConfirm } from 'material-ui-confirm'
 import { toast } from 'react-toastify'
@@ -10,15 +12,19 @@ import Select from '@mui/material/Select'
 import Button from '@mui/material/Button'
 import IconButton from '@mui/material/IconButton'
 import Chip from '@mui/material/Chip'
+import Tooltip from '@mui/material/Tooltip'
 import Divider from '@mui/material/Divider'
 import CircularProgress from '@mui/material/CircularProgress'
 import dayjs from 'dayjs'
 
 import DeleteRoundedIcon from '@mui/icons-material/DeleteRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded'
+import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 
 import ResponsivePopover from '~/components/Common/ResponsivePopover'
 import { fetchBoardsAPI, fetchBoardDetailsAPI } from '~/apis'
+import { setFocusTask } from '~/redux/focusTimer/focusTimerSlice'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
 
 /** Màu entry lịch - map với SCHEDULE_ENTRY_COLORS của backend */
@@ -27,6 +33,8 @@ const COLOR_KEYS = Object.keys(SCHEDULE_COLOR_PALETTE)
 export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete }) {
   const { t } = useTranslation()
   const confirm = useConfirm()
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
 
   const isOpen = Boolean(state)
   const isEditMode = state?.mode === 'edit'
@@ -210,9 +218,32 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
   const selectedCard = cardOptions.find((c) => c._id === selectedCardId)
   const selectedChecklist = selectedCard?.checklists?.find((cl) => (cl._id || cl.title) === selectedChecklistId)
 
+  const handleOpenAttachedCard = () => {
+    if (!attachChain?.boardId) return
+    const path = attachChain.cardId
+      ? `/boards/${attachChain.boardId}?cardId=${attachChain.cardId}`
+      : `/boards/${attachChain.boardId}`
+    navigate(path)
+    onClose()
+  }
+
+  const handleStartFocus = () => {
+    dispatch(setFocusTask({
+      cardId: attachChain?.cardId || null,
+      boardId: attachChain?.boardId || null,
+      title: title.trim() || attachChain?.cardTitle || attachChain?.itemTitle || 'Scheduled Task'
+    }))
+    navigate('/focus')
+    onClose()
+  }
+
   const buildPayload = () => {
     const startAt = dayjs(`${dateStr}T${startTime}`).valueOf()
-    const endAt = dayjs(`${dateStr}T${endTime}`).valueOf()
+    let endAt = dayjs(`${dateStr}T${endTime}`).valueOf()
+    // Nếu giờ kết thúc nhỏ hơn hoặc bằng giờ bắt đầu, tự động tính là sang ngày tiếp theo (qua đêm)
+    if (endAt <= startAt) {
+      endAt = dayjs(`${dateStr}T${endTime}`).add(1, 'day').valueOf()
+    }
 
     if (!title.trim()) {
       toast.error(t('schedule.titleRequired'))
@@ -348,16 +379,32 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           inputProps={{ step: 900 }}
         />
         <Typography sx={{ color: 'text.secondary' }}>→</Typography>
-        <TextField
-          fullWidth
-          size='small'
-          type='time'
-          label={t('schedule.endTimeLabel')}
-          value={endTime}
-          onChange={(e) => setEndTime(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          inputProps={{ step: 900 }}
-        />
+        <Box sx={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+          <TextField
+            fullWidth
+            size='small'
+            type='time'
+            label={t('schedule.endTimeLabel')}
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            inputProps={{ step: 900 }}
+          />
+          {endTime <= startTime && (
+            <Tooltip title={t('schedule.nextDayHint')}>
+              <Chip
+                size='small'
+                label='+1d'
+                color='primary'
+                variant='outlined'
+                sx={{
+                  position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                  height: 20, fontSize: '0.62rem', fontWeight: 700, pointerEvents: 'none'
+                }}
+              />
+            </Tooltip>
+          )}
+        </Box>
       </Box>
 
       {/* Chọn màu */}
@@ -531,6 +578,18 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
             {attachChain.checklistTitle && <Chip size='small' label={`☑ ${attachChain.checklistTitle}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
             {attachChain.itemTitle && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
             {attachChain.itemTitle && <Chip size='small' label={`📌 ${attachChain.itemTitle}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
+            {attachChain.boardId && (
+              <Tooltip title={attachChain.cardId ? t('schedule.openCard') : t('schedule.openBoard')}>
+                <IconButton
+                  size='small'
+                  onClick={handleOpenAttachedCard}
+                  sx={{ color: '#0052cc', p: 0.5 }}
+                  aria-label={attachChain.cardId ? t('schedule.openCard') : t('schedule.openBoard')}
+                >
+                  <OpenInNewRoundedIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            )}
             <Box sx={{ flex: 1 }} />
             <Button
               size='small'
@@ -547,16 +606,28 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
         </Box>
       )}
 
-      {/* Save */}
-      <Button
-        fullWidth
-        variant='contained'
-        onClick={handleSave}
-        disabled={isSaving}
-        sx={{ textTransform: 'none', fontWeight: 700 }}
-      >
-        {isSaving ? <CircularProgress size={20} color='inherit' /> : (isEditMode ? t('common.save') : t('schedule.createButton'))}
-      </Button>
+      {/* Actions: Save + Focus */}
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <Button
+          fullWidth
+          variant='contained'
+          onClick={handleSave}
+          disabled={isSaving}
+          sx={{ textTransform: 'none', fontWeight: 700 }}
+        >
+          {isSaving ? <CircularProgress size={20} color='inherit' /> : (isEditMode ? t('common.save') : t('schedule.createButton'))}
+        </Button>
+        <Tooltip title={t('schedule.startFocusHint')}>
+          <Button
+            variant='outlined'
+            onClick={handleStartFocus}
+            startIcon={<TimerRoundedIcon sx={{ fontSize: 18 }} />}
+            sx={{ textTransform: 'none', fontWeight: 600, whiteSpace: 'nowrap', px: 1.5 }}
+          >
+            {t('schedule.startFocus')}
+          </Button>
+        </Tooltip>
+      </Box>
     </ResponsivePopover>
   )
 }

@@ -23,7 +23,7 @@ export default function DayAgenda({ day, entries, onPrev, onNext, onAddClick, on
 
   const dayEntries = entries
     .filter((e) => dayjs(e.startAt).format('YYYY-MM-DD') === day.format('YYYY-MM-DD'))
-    .sort((a, b) => a.startAt - b.startAt)
+    .sort((a, b) => dayjs(a.startAt).valueOf() - dayjs(b.startAt).valueOf())
 
   return (
     <Box>
@@ -99,6 +99,9 @@ export default function DayAgenda({ day, entries, onPrev, onNext, onAddClick, on
                 <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {entry.description}
                 </Typography>
+              )}
+              {entry.itemTitle && (
+                <Chip size='small' label={`📌 ${entry.itemTitle}`} sx={{ mt: 0.5, mr: 0.5, height: 20, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.1)' }} />
               )}
               {entry.cardTitle && (
                 <Chip size='small' label={`🎯 ${entry.cardTitle}`} sx={{ mt: 0.5, height: 20, fontSize: '0.7rem' }} />
