@@ -54,41 +54,69 @@ import Pagination from '@mui/material/Pagination'
 
 import Checkbox from '@mui/material/Checkbox'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI, updateCardDetailsAPI } from '~/apis'
 
 // Cache danh sách boards ở tầng module để tránh fetch lại mỗi lần component TaskCascade mount
 let cachedBoards = null
 
 /** Cascade chọn nhiệm vụ: Bảng → Card → Checklist → Item (tái dùng pattern của Schedule popover) */
-function TaskCascade({ onChainChange }) {
+function TaskCascade({ onChainChange, initialTask, onClearTask }) {
   const { t } = useTranslation()
   const [boards, setBoards] = useState(() => cachedBoards || [])
-  const [boardId, setBoardId] = useState('')
-  const [cardId, setCardId] = useState('')
-  const [checklistId, setChecklistId] = useState('')
-  const [itemId, setItemId] = useState('')
+  const [boardId, setBoardId] = useState(() => initialTask?.boardId || '')
+  const [cardId, setCardId] = useState(() => initialTask?.cardId || '')
+  const [checklistId, setChecklistId] = useState(() => initialTask?.checklistId || '')
+  const [itemId, setItemId] = useState(() => initialTask?.checklistItemId || '')
   const [cardOptions, setCardOptions] = useState([])
   const [loadingBoard, setLoadingBoard] = useState(false)
   // false = đã chọn xong nhiệm vụ (thu gọn chỉ hiện nhiệm vụ); true = đang mở lại các ô chọn
   const [editingAttach, setEditingAttach] = useState(false)
   const [savingComplete, setSavingComplete] = useState(false)
 
+  // Đồng bộ khi initialTask từ bên ngoài thay đổi (ví dụ khi user bấm "Tập trung" từ thẻ khác hoặc lịch)
+  useEffect(() => {
+    if (initialTask?.cardId) {
+      if (initialTask.boardId) setBoardId(initialTask.boardId)
+      setCardId(initialTask.cardId)
+      setChecklistId(initialTask.checklistId || '')
+      setItemId(initialTask.checklistItemId || '')
+      setEditingAttach(false)
+    } else if (initialTask === null) {
+      setBoardId('')
+      setCardId('')
+      setChecklistId('')
+      setItemId('')
+      setEditingAttach(false)
+    }
+  }, [initialTask?.cardId, initialTask?.boardId, initialTask?.checklistId, initialTask?.checklistItemId])
+
   const selectedCardLocal = cardOptions.find((c) => c._id === cardId)
   const selectedChecklistLocal = selectedCardLocal?.checklists?.find((cl) => (cl._id || cl.title) === checklistId)
   const selectedItemLocal = selectedChecklistLocal?.items?.find((it) => (it._id || it.title) === itemId)
-  // Thu gọn cascade khi đã chọn xong item (trừ khi user bấm "Đổi nhiệm vụ")
-  const cascadeCollapsed = Boolean(itemId) && !editingAttach
+    || (selectedCardLocal?.checklists || []).flatMap(cl => cl.items || []).find((it) => (it._id || it.title) === itemId)
+
+  // Thu gọn cascade khi đã có cardId (trừ khi user bấm "Đổi nhiệm vụ")
+  const cascadeCollapsed = Boolean(cardId) && !editingAttach
+
+  const boardTitleDisplay = boards.find((b) => b._id === boardId)?.title || initialTask?.boardTitle || ''
+  const cardTitleDisplay = selectedCardLocal?.title || initialTask?.cardTitle || initialTask?.title || ''
+  const checklistTitleDisplay = selectedChecklistLocal?.title || initialTask?.checklistTitle || ''
+  const itemTitleDisplay = selectedItemLocal?.title || initialTask?.itemTitle || ''
 
   /**
    * Đánh dấu hoàn thành/xóa hoàn thành của item checklist được chọn.
    * Cập nhật cả card (PUT /v1/cards) => board của card đồng bộ theo (socket BE_BOARD_UPDATED)
    */
   const handleToggleItemDone = async (checked) => {
-    if (!selectedCardLocal || !selectedChecklistLocal || !selectedItemLocal) return
+    if (!selectedCardLocal || !selectedItemLocal) return
     setSavingComplete(true)
     try {
+      const parentCl = selectedChecklistLocal || selectedCardLocal.checklists?.find(cl => cl.items?.some(it => (it._id || it.title) === (selectedItemLocal._id || selectedItemLocal.title)))
+      if (!parentCl) return
+
       const newChecklists = selectedCardLocal.checklists.map((cl) =>
-        (cl._id || cl.title) === (selectedChecklistLocal._id || selectedChecklistLocal.title)
+        (cl._id || cl.title) === (parentCl._id || parentCl.title)
           ? {
             ...cl,
             items: cl.items.map((it) =>
@@ -133,11 +161,32 @@ function TaskCascade({ onChainChange }) {
     fetchBoardDetailsAPI(boardId)
       .then((boardDetails) => {
         if (cancelled) return
-        setCardOptions((boardDetails.columns || []).flatMap((column) => (column.cards || [])))
-        onChainChange({ boardId, boardTitle: boardDetails.title, cardId: null, cardTitle: null, checklistId: null, checklistTitle: null, checklistItemId: null, itemTitle: null })
-        setCardId('')
-        setChecklistId('')
-        setItemId('')
+        const cards = (boardDetails.columns || []).flatMap((column) => (column.cards || []))
+        setCardOptions(cards)
+
+        const targetCardId = cardId || initialTask?.cardId
+        const matchedCard = cards.find((c) => c._id === targetCardId)
+
+        if (matchedCard) {
+          if (cardId !== matchedCard._id) {
+            setCardId(matchedCard._id)
+          }
+          const targetClId = checklistId || initialTask?.checklistId
+          const matchedCl = matchedCard.checklists?.find((cl) => (cl._id || cl.title) === targetClId)
+          if (matchedCl && checklistId !== (matchedCl._id || matchedCl.title)) {
+            setChecklistId(matchedCl._id || matchedCl.title)
+          }
+          const targetItemId = itemId || initialTask?.checklistItemId
+          const matchedItem = (matchedCl?.items || (matchedCard.checklists || []).flatMap(cl => cl.items || [])).find((it) => (it._id || it.title) === targetItemId)
+          if (matchedItem && itemId !== (matchedItem._id || matchedItem.title)) {
+            setItemId(matchedItem._id || matchedItem.title)
+          }
+        } else if (!editingAttach && !targetCardId) {
+          onChainChange({ boardId, boardTitle: boardDetails.title, cardId: null, cardTitle: null, checklistId: null, checklistTitle: null, checklistItemId: null, itemTitle: null })
+          setCardId('')
+          setChecklistId('')
+          setItemId('')
+        }
       })
       .catch(() => { /* lỗi đã toast ở interceptor */ })
       .finally(() => { if (!cancelled) setLoadingBoard(false) })
@@ -153,8 +202,10 @@ function TaskCascade({ onChainChange }) {
     setChecklistId('')
     setItemId('')
     const card = cardOptions.find((c) => c._id === value)
+    const board = boards.find((b) => b._id === boardId)
     onChainChange({
       boardId,
+      boardTitle: board?.title || boardTitleDisplay || null,
       cardId: value || null,
       cardTitle: card?.title || null,
       checklistId: null,
@@ -162,16 +213,19 @@ function TaskCascade({ onChainChange }) {
       checklistItemId: null,
       itemTitle: null
     })
+    if (value) setEditingAttach(false)
   }
 
   const handleChecklist = (value) => {
     setChecklistId(value)
     setItemId('')
     const checklist = selectedCard?.checklists?.find((cl) => (cl._id || cl.title) === value)
+    const board = boards.find((b) => b._id === boardId)
     onChainChange({
       boardId,
+      boardTitle: board?.title || boardTitleDisplay || null,
       cardId,
-      cardTitle: selectedCard?.title || null,
+      cardTitle: selectedCard?.title || cardTitleDisplay || null,
       checklistId: value || null,
       checklistTitle: checklist?.title || null,
       checklistItemId: null,
@@ -181,18 +235,30 @@ function TaskCascade({ onChainChange }) {
 
   const handleItem = (value) => {
     setItemId(value)
-    const item = selectedChecklist?.items?.find((it) => (it._id || it.title) === value)
+    const targetCl = selectedChecklist || selectedCard?.checklists?.find((cl) => cl.items?.some((it) => (it._id || it.title) === value))
+    const item = targetCl?.items?.find((it) => (it._id || it.title) === value)
+    const board = boards.find((b) => b._id === boardId)
     onChainChange({
       boardId,
+      boardTitle: board?.title || boardTitleDisplay || null,
       cardId,
-      cardTitle: selectedCard?.title || null,
-      checklistId: checklistId || null,
-      checklistTitle: selectedChecklist?.title || null,
+      cardTitle: selectedCard?.title || cardTitleDisplay || null,
+      checklistId: targetCl?._id || targetCl?.title || checklistId || null,
+      checklistTitle: targetCl?.title || null,
       checklistItemId: value || null,
       itemTitle: item?.title || null
     })
-    // Chọn xong nhiệm vụ -> thu gọn các ô chọn, chỉ hiện nhiệm vụ đã chọn
     if (value) setEditingAttach(false)
+  }
+
+  const handleClear = () => {
+    setBoardId('')
+    setCardId('')
+    setChecklistId('')
+    setItemId('')
+    setEditingAttach(false)
+    if (onClearTask) onClearTask()
+    onChainChange({ boardId: null, boardTitle: null, cardId: null, cardTitle: null, checklistId: null, checklistTitle: null, checklistItemId: null, itemTitle: null })
   }
 
   return (
@@ -315,15 +381,16 @@ function TaskCascade({ onChainChange }) {
         <Box sx={{
           display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap',
           bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,82,204,0.05)',
-          borderRadius: 1.5, p: 1, mb: 1
+          border: '1px solid', borderColor: 'divider',
+          borderRadius: 1.5, p: 1.25, mb: 1.25
         }}>
-          <Chip size='small' label={`🗂 ${boards.find((b) => b._id === boardId)?.title || ''}`} sx={{ height: 22, fontSize: '0.7rem' }} />
-          {selectedCardLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
-          {selectedCardLocal && <Chip size='small' label={`🎯 ${selectedCardLocal.title}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
-          {selectedChecklistLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
-          {selectedChecklistLocal && <Chip size='small' label={`☑ ${selectedChecklistLocal.title}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
-          {selectedItemLocal && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
-          {selectedItemLocal && <Chip size='small' label={`📌 ${selectedItemLocal.title}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
+          {boardTitleDisplay && <Chip size='small' label={`🗂 ${boardTitleDisplay}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+          {cardTitleDisplay && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {cardTitleDisplay && <Chip size='small' label={`🎯 ${cardTitleDisplay}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+          {checklistTitleDisplay && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {checklistTitleDisplay && <Chip size='small' label={`☑ ${checklistTitleDisplay}`} sx={{ height: 22, fontSize: '0.7rem' }} />}
+          {itemTitleDisplay && <Typography sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>›</Typography>}
+          {itemTitleDisplay && <Chip size='small' label={`📌 ${itemTitleDisplay}`} sx={{ height: 22, fontSize: '0.7rem', bgcolor: 'rgba(0,82,204,0.12)' }} />}
           <Box sx={{ flex: 1 }} />
           <Button
             size='small'
@@ -334,7 +401,62 @@ function TaskCascade({ onChainChange }) {
           >
             {t('schedule.changeTask')}
           </Button>
+          <IconButton
+            size='small'
+            onClick={handleClear}
+            title={t('schedule.clearTask') || 'Gỡ nhiệm vụ'}
+            sx={{ p: 0.25, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+          >
+            <CloseRoundedIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         </Box>
+      )}
+
+      {/* Tùy chọn gắn subtask từ checklist của thẻ khi đã thu gọn */}
+      {cascadeCollapsed && cardId && (selectedCardLocal?.checklists?.length > 0 || cardOptions.length > 0) && (
+        (() => {
+          const allItems = (selectedCardLocal?.checklists || []).flatMap(cl => (cl.items || []).map(it => ({ ...it, checklistTitle: cl.title })))
+          if (allItems.length === 0) return null
+          return (
+            <Box sx={{ mb: 1.25 }}>
+              <Select
+                fullWidth
+                size='small'
+                displayEmpty
+                value={itemId}
+                onChange={(e) => handleItem(e.target.value)}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+                renderValue={(val) => {
+                  if (!val) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectSubtaskOptional')}</Typography>
+                  const itm = allItems.find((it) => (it._id || it.title) === val)
+                  return itm?.title || val
+                }}
+                sx={{
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,82,204,0.02)',
+                  borderRadius: 1.5
+                }}
+              >
+                <MenuItem value=''>
+                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{t('schedule.noItem')}</Typography>
+                </MenuItem>
+                {allItems.map((it) => (
+                  <MenuItem key={it._id || it.title} value={it._id || it.title}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+                      <Chip size='small' label={it.checklistTitle} sx={{ height: 18, fontSize: '0.65rem' }} />
+                      <Typography sx={{
+                        fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240,
+                        textDecoration: it.isDone ? 'line-through' : 'none',
+                        color: it.isDone ? 'text.disabled' : 'text.primary'
+                      }}>
+                        {it.title}
+                      </Typography>
+                    </Box>
+                  </MenuItem>
+                ))}
+              </Select>
+            </Box>
+          )
+        })()
       )}
 
       {/* Dấu tích hoàn thành - đồng bộ lên card của board */}
@@ -342,7 +464,8 @@ function TaskCascade({ onChainChange }) {
         <Box sx={{
           display: 'flex', alignItems: 'center', gap: 1,
           bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(0,135,90,0.08)' : 'rgba(0,135,90,0.06)',
-          borderRadius: 1.5, px: 1, py: 0.5, mb: 1
+          border: '1px solid', borderColor: 'rgba(0,135,90,0.2)',
+          borderRadius: 1.5, px: 1.25, py: 0.75, mb: 1
         }}>
           <Checkbox
             checked={Boolean(selectedItemLocal.isDone)}
@@ -829,12 +952,22 @@ export default function Focus() {
                 </Typography>
               </Box>
               <TaskCascade
+                initialTask={focusTask}
                 onChainChange={(chain) => {
                   dispatch(setFocusTask({
                     cardId: chain.cardId || null,
                     boardId: chain.boardId || null,
-                    title: chain.itemTitle || chain.cardTitle || null
+                    title: chain.itemTitle || chain.cardTitle || null,
+                    cardTitle: chain.cardTitle || null,
+                    boardTitle: chain.boardTitle || null,
+                    checklistId: chain.checklistId || null,
+                    checklistTitle: chain.checklistTitle || null,
+                    checklistItemId: chain.checklistItemId || null,
+                    itemTitle: chain.itemTitle || null
                   }))
+                }}
+                onClearTask={() => {
+                  dispatch(setFocusTask(null))
                 }}
               />
               <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>

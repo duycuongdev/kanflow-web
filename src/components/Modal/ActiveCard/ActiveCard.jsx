@@ -186,7 +186,9 @@ function ActiveCard() {
     dispatch(setFocusTask({
       cardId: activeCard?._id || null,
       boardId: activeBoard?._id || null,
-      title: activeCard?.title || ''
+      title: activeCard?.title || '',
+      cardTitle: activeCard?.title || '',
+      boardTitle: activeBoard?.title || ''
     }))
     handleCloseModal()
     navigate('/focus')

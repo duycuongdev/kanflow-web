@@ -170,8 +170,32 @@ const timerSlice = createSlice({
 
     // Nhiệm vụ đang focus (từ card modal hoặc trang Focus)
     setFocusTask: (state, action) => {
-      const { cardId = null, boardId = null, title = null } = action.payload || {}
-      state.task = { cardId, boardId, title }
+      if (!action.payload) {
+        state.task = null
+        return
+      }
+      const {
+        cardId = null,
+        boardId = null,
+        title = null,
+        cardTitle = null,
+        boardTitle = null,
+        checklistId = null,
+        checklistTitle = null,
+        checklistItemId = null,
+        itemTitle = null
+      } = action.payload || {}
+      state.task = {
+        cardId,
+        boardId,
+        title: title || itemTitle || cardTitle || '',
+        cardTitle: cardTitle || title || '',
+        boardTitle: boardTitle || null,
+        checklistId: checklistId || null,
+        checklistTitle: checklistTitle || null,
+        checklistItemId: checklistItemId || null,
+        itemTitle: itemTitle || null
+      }
     },
 
     // Cấu hình chuỗi lặp

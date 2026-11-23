@@ -731,6 +731,8 @@
     "noChecklist": "No checklist",
     "selectItem": "Select checklist item...",
     "changeTask": "Change task",
+    "clearTask": "Detach task",
+    "selectSubtaskOptional": "+ Select subtask to track (optional)",
     "noItem": "No item",
     "noCard": "No card",
     "noBoards": "You have no boards yet",

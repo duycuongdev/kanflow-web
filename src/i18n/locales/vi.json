@@ -731,6 +731,8 @@
     "noChecklist": "Không gắn checklist",
     "selectItem": "Chọn việc trong checklist...",
     "changeTask": "Đổi nhiệm vụ",
+    "clearTask": "Gỡ nhiệm vụ",
+    "selectSubtaskOptional": "+ Chọn việc con để theo dõi (tùy chọn)",
     "noItem": "Không gắn việc",
     "noCard": "Không gắn card",
     "noBoards": "Bạn chưa có bảng nào",

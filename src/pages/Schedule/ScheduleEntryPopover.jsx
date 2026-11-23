@@ -249,7 +249,13 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
     dispatch(setFocusTask({
       cardId: attachChain?.cardId || null,
       boardId: attachChain?.boardId || null,
-      title: title.trim() || attachChain?.cardTitle || attachChain?.itemTitle || 'Scheduled Task'
+      title: title.trim() || attachChain?.cardTitle || attachChain?.itemTitle || 'Scheduled Task',
+      cardTitle: attachChain?.cardTitle || title.trim() || '',
+      boardTitle: attachChain?.boardTitle || null,
+      checklistId: attachChain?.checklistId || null,
+      checklistTitle: attachChain?.checklistTitle || null,
+      checklistItemId: attachChain?.checklistItemId || null,
+      itemTitle: attachChain?.itemTitle || null
     }))
     navigate('/focus')
     onClose()
