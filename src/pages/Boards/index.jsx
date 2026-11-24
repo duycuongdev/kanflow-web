@@ -3,12 +3,15 @@ import AppBar from '~/components/AppBar/AppBar'
 import PageLoadingSpinner from '~/components/Loading/PageLoadingSpinner'
 import Container from '@mui/material/Container'
 import Box from '@mui/material/Box'
+import Paper from '@mui/material/Paper'
+import Divider from '@mui/material/Divider'
 import Typography from '@mui/material/Typography'
 import Button from '@mui/material/Button'
 import Stack from '@mui/material/Stack'
 import SpaceDashboardIcon from '@mui/icons-material/SpaceDashboard'
 import CalendarMonthRoundedIcon from '@mui/icons-material/CalendarMonthRounded'
 import FolderOffOutlinedIcon from '@mui/icons-material/FolderOffOutlined'
+import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 import UndoIcon from '@mui/icons-material/Undo'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
 import AddIcon from '@mui/icons-material/Add'
@@ -31,26 +34,39 @@ import { slugify } from '~/utils/formatter'
 import { useTranslation } from 'react-i18next'
 import FocusTimerSidebarCard from '~/components/FocusTimer/FocusTimerSidebarCard'
 
-// Styles của các Sidebar item menu - nền trong suốt, chỉ highlight khi hover/active
+// Styles của các Sidebar item menu - thiết kế dạng pill phẳng hiện đại, chuyển động êm
 const SidebarItem = styled(Box)(({ theme }) => ({
   display: 'flex',
   alignItems: 'center',
-  gap: '10px',
+  gap: '12px',
   cursor: 'pointer',
-  color: theme.palette.mode === 'dark' ? '#cbd5e1' : '#172b4d',
-  padding: '12px 16px',
-  borderRadius: '8px',
+  color: theme.palette.mode === 'dark' ? '#94a3b8' : '#475569',
+  padding: '10px 14px',
+  borderRadius: '10px',
   fontWeight: 500,
-  border: '1px solid',
-  borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.10)' : 'rgba(0, 0, 0, 0.08)',
-  transition: 'all 0.15s ease',
+  fontSize: '0.885rem',
+  transition: 'all 0.18s cubic-bezier(0.4, 0, 0.2, 1)',
+  textDecoration: 'none',
+  userSelect: 'none',
+  '& .MuiSvgIcon-root': {
+    fontSize: '1.25rem',
+    transition: 'color 0.18s ease'
+  },
   '&:hover': {
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0, 82, 204, 0.05)',
+    color: theme.palette.mode === 'dark' ? '#f1f5f9' : '#0f172a',
+    '& .MuiSvgIcon-root': {
+      color: '#0052cc'
+    }
   },
   '&.active': {
     color: '#0052cc',
-    fontWeight: 600,
-    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 82, 204, 0.15)' : '#e9f2ff'
+    fontWeight: 700,
+    backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0, 82, 204, 0.18)' : 'rgba(0, 82, 204, 0.08)',
+    boxShadow: theme.palette.mode === 'dark' ? 'inset 0 0 0 1px rgba(0, 82, 204, 0.3)' : 'inset 0 0 0 1px rgba(0, 82, 204, 0.14)',
+    '& .MuiSvgIcon-root': {
+      color: '#0052cc'
+    }
   }
 }))
 
@@ -227,13 +243,45 @@ function Boards() {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
           {/* Sidebar - ẩn trên mobile: bottom nav đã có tab Danh sách bảng,
               "Bảng đã đóng" nằm ở icon trên AppBar (mobile) */}
-          <Box data-tour="boards-sidebar" sx={{ width: { xs: '100%', md: '260px' }, flexShrink: 0, mr: { xs: 0, md: 4 }, display: { xs: 'none', md: 'block' } }}>
-            <Stack direction="column" spacing={1}>
+          <Paper
+            elevation={0}
+            data-tour="boards-sidebar"
+            sx={{
+              width: { xs: '100%', md: '260px' },
+              flexShrink: 0,
+              mr: { xs: 0, md: 4 },
+              display: { xs: 'none', md: 'block' },
+              p: 2,
+              borderRadius: 3.5,
+              border: '1px solid',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? '#101828' : '#ffffff',
+              boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 4px 20px rgba(0,0,0,0.25)' : '0 4px 24px rgba(0, 82, 204, 0.05)',
+              alignSelf: 'flex-start'
+            }}
+          >
+            <Stack direction="column" spacing={0.75}>
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  pt: 0.5,
+                  pb: 0.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  fontSize: '0.72rem',
+                  display: 'block'
+                }}
+              >
+                {t('boards.sidebarMenu') || 'Menu'}
+              </Typography>
+
               <SidebarItem
                 component={Link}
                 to="/boards"
                 className={!isClosedView ? 'active' : ''}
-                sx={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <SpaceDashboardIcon fontSize="small" />
                 {t('boards.sidebarBoards')}
@@ -243,7 +291,6 @@ function Boards() {
                 component={Link}
                 to="/boards?closed=true"
                 className={isClosedView ? 'active' : ''}
-                sx={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <FolderOffOutlinedIcon fontSize="small" />
                 {t('boards.sidebarClosedBoards')}
@@ -254,13 +301,38 @@ function Boards() {
                 component={Link}
                 to="/schedule"
                 className={location.pathname.startsWith('/schedule') ? 'active' : ''}
-                sx={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <CalendarMonthRoundedIcon fontSize="small" />
                 {t('appBar.schedule')}
               </SidebarItem>
 
-              <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+              {/* Focus Timer - tập trung Pomodoro */}
+              <SidebarItem
+                component={Link}
+                to="/focus"
+                className={location.pathname.startsWith('/focus') ? 'active' : ''}
+              >
+                <TimerRoundedIcon fontSize="small" />
+                {t('focusTimer.title')}
+              </SidebarItem>
+
+              <Divider sx={{ my: 1.5 }} />
+
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  pb: 0.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  color: 'text.secondary',
+                  fontSize: '0.72rem',
+                  display: 'block'
+                }}
+              >
+                {t('boards.actions') || 'Hành động'}
+              </Typography>
 
               <Button
                 variant="contained"
@@ -270,11 +342,15 @@ function Boards() {
                   justifyContent: 'flex-start',
                   px: 2,
                   py: 1.1,
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   textTransform: 'none',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: '0.875rem',
-                  boxShadow: '0 2px 8px rgba(12, 102, 228, 0.25)'
+                  bgcolor: '#0052cc',
+                  boxShadow: '0 4px 14px rgba(0, 82, 204, 0.28)',
+                  '&:hover': {
+                    bgcolor: '#0747a6'
+                  }
                 }}
               >
                 {t('boards.createBoard')}
@@ -287,12 +363,13 @@ function Boards() {
                 sx={{
                   justifyContent: 'flex-start',
                   px: 2,
-                  py: 1.1,
-                  borderRadius: '8px',
+                  py: 1,
+                  borderRadius: '10px',
                   textTransform: 'none',
                   fontWeight: 600,
-                  fontSize: '0.875rem',
-                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0, 82, 204, 0.35)',
+                  fontSize: '0.85rem',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.18)' : 'rgba(0, 82, 204, 0.25)',
                   color: (theme) => theme.palette.mode === 'dark' ? '#93c5fd' : '#0052cc',
                   '&:hover': {
                     borderColor: '#0052cc',
@@ -302,12 +379,8 @@ function Boards() {
               >
                 {t('boards.importBoardBtn')}
               </Button>
-
-              {/* Focus Timer mini - đếm ngược dùng chung state với widget nổi */}
-              <Box sx={{ my: 1.5, borderTop: '1px solid', borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-              <FocusTimerSidebarCard />
             </Stack>
-          </Box>
+          </Paper>
 
           {/* Main Content */}
           <Box sx={{ flex: 1, minWidth: 0 }}>

@@ -61,6 +61,7 @@ import Checkbox from '@mui/material/Checkbox'
 import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded'
 import { fetchBoardsAPI, fetchBoardDetailsAPI, getFocusStatsAPI, getFocusLeaderboardAPI, updateCardDetailsAPI } from '~/apis'
+import { mapOrder } from '~/utils/sorts'
 
 // Cache danh sách boards ở tầng module để tránh fetch lại mỗi lần component TaskCascade mount
 let cachedBoards = null
@@ -362,7 +363,12 @@ function TaskCascade({ onChainChange, initialTask, onClearTask, onActiveCardChan
     fetchBoardDetailsAPI(boardId)
       .then((boardDetails) => {
         if (cancelled) return
-        const cards = (boardDetails.columns || []).flatMap((column) => (column.cards || []))
+        // Sắp xếp column theo board.columnOrderIds và card theo column.cardOrderIds chuẩn theo Board
+        const orderedColumns = mapOrder(boardDetails.columns || [], boardDetails.columnOrderIds || [], '_id')
+        const cards = orderedColumns.flatMap((column) => {
+          const orderedCards = mapOrder(column.cards || [], column.cardOrderIds || [], '_id')
+          return orderedCards.map((c) => ({ ...c, columnTitle: column.title }))
+        })
         setCardOptions(cards)
 
         const targetCardId = cardId || initialTask?.cardId
@@ -516,9 +522,23 @@ function TaskCascade({ onChainChange, initialTask, onClearTask, onActiveCardChan
           </MenuItem>
           {cardOptions.map((card) => (
             <MenuItem key={card._id} value={card._id}>
-              <Typography sx={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 280 }}>
-                {card.title}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+                {card.columnTitle && (
+                  <Chip
+                    size='small'
+                    label={card.columnTitle}
+                    sx={{
+                      height: 18,
+                      fontSize: '0.65rem',
+                      fontWeight: 600,
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+                    }}
+                  />
+                )}
+                <Typography sx={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }}>
+                  {card.title}
+                </Typography>
+              </Box>
             </MenuItem>
           ))}
         </Select>
@@ -1138,8 +1158,14 @@ export default function Focus() {
                 <Button
                   variant='contained'
                   size='large'
-                  startIcon={<PlayArrowRoundedIcon />}
-                  onClick={() => dispatch(startFocusTimer({ now: Date.now() }))}
+                  startIcon={remainingMs < timerState.durationMs && remainingMs > 0 ? <PlayArrowRoundedIcon /> : <TimerRoundedIcon />}
+                  onClick={() => {
+                    if (remainingMs < timerState.durationMs && remainingMs > 0) {
+                      dispatch(startFocusTimer({ now: Date.now() }))
+                    } else {
+                      handleStartPlan()
+                    }
+                  }}
                   sx={{ textTransform: 'none', fontWeight: 700, bgcolor: modeConfig.color, px: 4, py: 1.1, borderRadius: 2.5 }}
                 >
                   {remainingMs < timerState.durationMs && remainingMs > 0 ? t('focusTimer.resume') : t('focusTimer.start')}
@@ -1297,7 +1323,7 @@ export default function Focus() {
                 </Box>
               </Box>
 
-              <Typography variant='body2' sx={{ color: 'text.secondary', mb: 1.5 }}>
+              <Typography variant='body2' sx={{ color: 'text.secondary' }}>
                 {t('focusPage.summary', {
                   focus: Math.max(1, Number(focusMinutes) || 1),
                   repeats: planSummary.reps,
@@ -1306,28 +1332,6 @@ export default function Focus() {
                   total: formatDurationShort(planSummary.total)
                 })}
               </Typography>
-
-              {plan.active ? (
-                <Button
-                  fullWidth
-                  variant='outlined'
-                  color='error'
-                  onClick={() => dispatch(stopFocusSession())}
-                  sx={{ textTransform: 'none', fontWeight: 700 }}
-                >
-                  {t('focusPage.stopPlan')}
-                </Button>
-              ) : (
-                <Button
-                  fullWidth
-                  variant='contained'
-                  startIcon={<TimerRoundedIcon />}
-                  onClick={handleStartPlan}
-                  sx={{ textTransform: 'none', fontWeight: 700, py: 1.1, borderRadius: 2.5, boxShadow: '0 6px 18px rgba(0, 82, 204, 0.3)' }}
-                >
-                  {t('focusPage.startPlan')}
-                </Button>
-              )}
             </Box>
           </Paper>
 

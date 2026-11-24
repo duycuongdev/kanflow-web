@@ -24,6 +24,7 @@ import TimerRoundedIcon from '@mui/icons-material/TimerRounded'
 
 import ResponsivePopover from '~/components/Common/ResponsivePopover'
 import { fetchBoardsAPI, fetchBoardDetailsAPI } from '~/apis'
+import { mapOrder } from '~/utils/sorts'
 import { setFocusTask } from '~/redux/focusTimer/focusTimerSlice'
 import { SCHEDULE_COLOR_PALETTE } from './constants'
 
@@ -149,8 +150,12 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
     fetchBoardDetailsAPI(selectedBoardId)
       .then((boardDetails) => {
         if (cancelled) return
-        // Flatten toàn bộ card trong mọi column
-        const cards = (boardDetails.columns || []).flatMap((column) => (column.cards || []))
+        // Sắp xếp column theo board.columnOrderIds và card theo column.cardOrderIds chuẩn theo Board
+        const orderedColumns = mapOrder(boardDetails.columns || [], boardDetails.columnOrderIds || [], '_id')
+        const cards = orderedColumns.flatMap((column) => {
+          const orderedCards = mapOrder(column.cards || [], column.cardOrderIds || [], '_id')
+          return orderedCards.map((c) => ({ ...c, columnTitle: column.title }))
+        })
         setCardOptions(cards)
         // Cập nhật boardTitle cho chuỗi gắn khi edit
         setAttachChain((prev) => (prev && prev.boardId === selectedBoardId ? { ...prev, boardTitle: boardDetails.title } : prev))
@@ -512,9 +517,23 @@ export default function ScheduleEntryPopover({ state, onClose, onSave, onDelete 
           </MenuItem>
           {cardOptions.map((card) => (
             <MenuItem key={card._id} value={card._id}>
-              <Typography sx={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 280 }}>
-                {card.title}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+                {card.columnTitle && (
+                  <Chip
+                    size='small'
+                    label={card.columnTitle}
+                    sx={{
+                      height: 18,
+                      fontSize: '0.65rem',
+                      fontWeight: 600,
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+                    }}
+                  />
+                )}
+                <Typography sx={{ fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 240 }}>
+                  {card.title}
+                </Typography>
+              </Box>
             </MenuItem>
           ))}
         </Select>

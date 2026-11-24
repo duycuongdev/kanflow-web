@@ -132,6 +132,8 @@
     "logoutSuccess": "Đăng xuất thành công!"
   },
   "boards": {
+    "sidebarMenu": "Menu",
+    "actions": "Hành động",
     "loadingBoards": "Đang tải bảng...",
     "sidebarBoards": "Bảng",
     "sidebarClosedBoards": "Bảng đã đóng",

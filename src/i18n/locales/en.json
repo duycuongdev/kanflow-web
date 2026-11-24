@@ -132,6 +132,8 @@
     "logoutSuccess": "Logged out successfully!"
   },
   "boards": {
+    "sidebarMenu": "Menu",
+    "actions": "Actions",
     "loadingBoards": "Loading Boards...",
     "sidebarBoards": "Boards",
     "sidebarClosedBoards": "Closed boards",
