@@ -182,6 +182,13 @@ function Notifications({ openUpward = false }) {
 
     dispatch(fetchInvitationsAPI())
 
+    // Định kỳ làm mới thông báo (bao gồm quét thẻ quá hạn / sắp đến hạn) mỗi 60 giây
+    const pollInterval = setInterval(() => {
+      if (userId) {
+        dispatch(fetchInvitationsAPI())
+      }
+    }, 60000)
+
     const onReceiveInvitation = (invitation) => {
       if (invitation.inviteeId === userId) {
         dispatch(addNotification(invitation))
@@ -208,6 +215,7 @@ function Notifications({ openUpward = false }) {
     socketIoInstance.on('connect', onConnect)
 
     return () => {
+      clearInterval(pollInterval)
       socketIoInstance.off('BE_USER_INVITED_TO_BOARD', onReceiveInvitation)
       socketIoInstance.off('BE_CARD_DUE_DATE_CHANGED', onReceiveCardDueDateChanged)
       socketIoInstance.off('connect', onConnect)

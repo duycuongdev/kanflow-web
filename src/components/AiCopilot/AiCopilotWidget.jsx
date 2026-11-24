@@ -31,6 +31,7 @@ import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRound
 
 import KanflowIcon from '~/components/Icons/KanflowIcon'
 import { selectCurrentActiveBoard, fetchBoardDetailsAPI } from '~/redux/activeBoard/activeBoardSlice'
+import { fetchInvitationsAPI } from '~/redux/notifications/notificationsSlice'
 import { selectCurrentUser } from '~/redux/user/userSlice'
 import { chatWithAiCopilotAPI, closeBoardAPI } from '~/apis'
 import { getPageLoading, subscribePageLoading } from '~/utils/pageLoadingState'
@@ -309,6 +310,7 @@ export default function AiCopilotWidget() {
         if (currentBoard?._id) {
           dispatch(fetchBoardDetailsAPI(currentBoard._id))
         }
+        dispatch(fetchInvitationsAPI())
       }
     } catch (err) {
       // Đánh dấu tin nhắn gửi thất bại -> hiện nút "Gửi lại" ngay dưới tin nhắn

@@ -899,11 +899,22 @@ export default function Focus() {
       }
     })
 
-    const optimisticCard = { ...currentCard, checklists: updatedChecklists }
+    const totalItems = updatedChecklists.reduce((sum, cl) => sum + (cl.items?.length || 0), 0)
+    const completedItems = updatedChecklists.reduce((sum, cl) => sum + (cl.items?.filter(i => i.isDone).length || 0), 0)
+    let isDueDateComplete = currentCard.isDueDateComplete
+    if (currentCard.dueDate && totalItems > 0) {
+      isDueDateComplete = (completedItems === totalItems)
+    }
+
+    const optimisticCard = { ...currentCard, checklists: updatedChecklists, isDueDateComplete }
     setActiveCardData(optimisticCard)
 
     try {
-      const updatedCard = await updateCardDetailsAPI(currentCard._id, { checklists: updatedChecklists })
+      const updatePayload = { checklists: updatedChecklists }
+      if (isDueDateComplete !== currentCard.isDueDateComplete) {
+        updatePayload.isDueDateComplete = isDueDateComplete
+      }
+      const updatedCard = await updateCardDetailsAPI(currentCard._id, updatePayload)
       if (updatedCard) {
         setActiveCardData(updatedCard)
         dispatch(updateCardInBoard(updatedCard))
