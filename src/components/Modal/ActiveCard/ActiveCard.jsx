@@ -738,7 +738,6 @@ function ActiveCard() {
                 checklists={activeCard?.checklists || []}
                 onUpdateCardChecklists={handleUpdateCardChecklists}
                 onUploadAttachment={handleUploadChecklistAttachment}
-                boardUsers={activeBoard?.FE_allUsers || []}
               />
 
               <Box sx={{ mb: 3 }}>

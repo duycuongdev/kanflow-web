@@ -17,14 +17,9 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew'
 import LinkIcon from '@mui/icons-material/Link'
 import AttachFileIcon from '@mui/icons-material/AttachFile'
 import CloseIcon from '@mui/icons-material/Close'
-import dayjs from 'dayjs'
-import Avatar from '@mui/material/Avatar'
-import Popover from '@mui/material/Popover'
-import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined'
-import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined'
 import { useTranslation } from 'react-i18next'
 
-function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploadAttachment, boardUsers = [] }) {
+function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploadAttachment }) {
   const { t } = useTranslation()
   // State cho thêm item mới
   const [activeChecklistIdForNewItem, setActiveChecklistIdForNewItem] = useState(null)
@@ -41,10 +36,6 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
   const [showEditItemAttachBox, setShowEditItemAttachBox] = useState(false)
   const [editingItemCurrentUrl, setEditingItemCurrentUrl] = useState('')
   const [isUploadingEditItemFile, setIsUploadingEditItemFile] = useState(false)
-
-  // Popover chi tiết (hạn chót + thành viên) cho checklist hoặc item
-  // { scope: 'checklist'|'item', checklistId, id, draftDate, anchorEl }
-  const [detailPopover, setDetailPopover] = useState(null)
 
   if (!checklists || checklists.length === 0) return null
 
@@ -230,126 +221,6 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
     setIsUploadingEditItemFile(false)
   }
 
-  // ===== Hạn chót + thành viên cho CHECKLIST và ITEM =====
-  const getChecklistById = (id) => checklists.find(cl => cl._id === id)
-  const getItemById = (checklistId, itemId) => getChecklistById(checklistId)?.items?.find(it => it._id === itemId)
-  const findUserById = (uid) => boardUsers.find(u => u._id?.toString() === uid?.toString())
-
-  const setChecklistDetails = (checklistId, patch) => {
-    onUpdateCardChecklists(checklists.map(cl => cl._id === checklistId ? { ...cl, ...patch } : cl))
-  }
-  const setItemDetails = (checklistId, itemId, patch) => {
-    onUpdateCardChecklists(checklists.map(cl => cl._id !== checklistId ? cl : {
-      ...cl,
-      items: (cl.items || []).map(it => it._id === itemId ? { ...it, ...patch } : it)
-    }))
-  }
-
-  const openDetailPopover = (kind, scope, checklistId, id, dueDate, anchorEl) => {
-    setDetailPopover({
-      kind,
-      scope,
-      checklistId,
-      id,
-      draftDate: dueDate ? dayjs(dueDate).format('YYYY-MM-DD') : '',
-      anchorEl
-    })
-  }
-  const closeDetailPopover = () => setDetailPopover(null)
-
-  const handleSaveDetailDate = () => {
-    if (!detailPopover) return
-    const due = detailPopover.draftDate ? dayjs(detailPopover.draftDate).valueOf() : null
-    if (detailPopover.scope === 'checklist') setChecklistDetails(detailPopover.id, { dueDate: due })
-    else setItemDetails(detailPopover.checklistId, detailPopover.id, { dueDate: due })
-    closeDetailPopover()
-  }
-  const handleClearDetailDate = () => {
-    if (!detailPopover) return
-    if (detailPopover.scope === 'checklist') setChecklistDetails(detailPopover.id, { dueDate: null })
-    else setItemDetails(detailPopover.checklistId, detailPopover.id, { dueDate: null })
-    setDetailPopover(dp => dp ? { ...dp, draftDate: '' } : dp)
-  }
-  const handleToggleDetailMember = (userId) => {
-    if (!detailPopover) return
-    const source = detailPopover.scope === 'checklist'
-      ? getChecklistById(detailPopover.id)
-      : getItemById(detailPopover.checklistId, detailPopover.id)
-    if (!source) return
-    const memberIds = (source.memberIds || []).map(String)
-    const next = memberIds.includes(userId.toString())
-      ? memberIds.filter(m => m !== userId.toString())
-      : [...memberIds, userId.toString()]
-    if (detailPopover.scope === 'checklist') setChecklistDetails(detailPopover.id, { memberIds: next })
-    else setItemDetails(detailPopover.checklistId, detailPopover.id, { memberIds: next })
-  }
-  const getCurrentDetailMembers = () => {
-    if (!detailPopover) return []
-    const source = detailPopover.scope === 'checklist'
-      ? getChecklistById(detailPopover.id)
-      : getItemById(detailPopover.checklistId, detailPopover.id)
-    return (source?.memberIds || []).map(String)
-  }
-
-  // Chip hiển thị + mở popover chi tiết. Chỉ hiển thị khi đã có hạn chót (dueDate).
-  const renderDueChip = (scope, checklistId, id, dueDate, isDoneRef) => {
-    if (!dueDate) return null
-    const d = dayjs(dueDate)
-    const isOverdue = !isDoneRef && d.startOf('day').isBefore(dayjs().startOf('day'))
-    return (
-      <Tooltip title={t('checklist.editDueDate')}>
-        <Chip
-          size="small"
-          icon={<ScheduleOutlinedIcon sx={{ fontSize: '13px !important' }} />}
-          label={d.format(t('common.dateChipFormat'))}
-          onClick={(e) => { e.stopPropagation(); openDetailPopover('date', scope, checklistId, id, dueDate, e.currentTarget) }}
-          sx={{
-            height: 22,
-            flexShrink: 0,
-            fontSize: '0.72rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-            ...(isOverdue
-              ? { bgcolor: 'error.main', color: 'white', '& .MuiChip-icon': { color: 'white' } }
-              : { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.18)' : '#e0edff', color: 'primary.main', '& .MuiChip-icon': { color: 'primary.main' } })
-          }}
-        />
-      </Tooltip>
-    )
-  }
-
-  // Chip hiển thị thành viên. Chỉ hiển thị khi có ít nhất 1 thành viên được gán.
-  const renderMemberChip = (scope, checklistId, id, memberIds = []) => {
-    if (!memberIds || memberIds.length === 0) return null
-    const users = memberIds.map(uid => findUserById(uid)).filter(Boolean)
-    if (users.length === 0) return null
-    const visible = users.slice(0, 3)
-    return (
-      <Tooltip title={t('checklist.editMembers')}>
-        <Chip
-          size="small"
-          label={(
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {visible.map(u => (
-                <Avatar key={u._id} src={u.avatar} sx={{ width: 16, height: 16, fontSize: 9, ml: users.length > 1 ? '-4px' : 0, border: '1px solid #fff' }} />
-              ))}
-              {users.length > 3 && <span style={{ fontSize: '0.68rem', fontWeight: 700, marginLeft: 2 }}>+{users.length - 3}</span>}
-            </Box>
-          )}
-          onClick={(e) => { e.stopPropagation(); openDetailPopover('members', scope, checklistId, id, null, e.currentTarget) }}
-          sx={{
-            height: 22,
-            flexShrink: 0,
-            cursor: 'pointer',
-            bgcolor: 'transparent',
-            border: '1px solid',
-            borderColor: 'divider'
-          }}
-        />
-      </Tooltip>
-    )
-  }
-
   const handleAddEditItemLink = () => {
     const trimmed = editingItemCurrentUrl.trim()
     if (!trimmed) return
@@ -444,8 +315,7 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 1,
-                mb: 1,
-                '&:hover .checklist-header-actions': { opacity: 1 }
+                mb: 1
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: '1 1 auto' }}>
@@ -453,62 +323,22 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                 <Typography sx={{ fontWeight: '600', fontSize: '18px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {checklist.title}
                 </Typography>
-                {/* Hạn chót + thành viên ở CẤP CHECKLIST - chỉ hiện khi đã có dữ liệu */}
-                {renderDueChip('checklist', checklist._id, checklist._id, checklist.dueDate, isComplete)}
-                {renderMemberChip('checklist', checklist._id, checklist._id, checklist.memberIds)}
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                {/* Nút đặt hạn chót và thêm thành viên hiển thị khi hover nếu chưa có */}
-                <Box
-                  className="checklist-header-actions"
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    opacity: 0,
-                    transition: 'opacity 0.2s'
-                  }}
-                >
-                  {!checklist.dueDate && (
-                    <Tooltip title={t('checklist.setDueDate')}>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); openDetailPopover('date', 'checklist', checklist._id, checklist._id, null, e.currentTarget) }}
-                        sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                      >
-                        <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {(!checklist.memberIds || checklist.memberIds.length === 0) && (
-                    <Tooltip title={t('checklist.addMember')}>
-                      <IconButton
-                        size="small"
-                        onClick={(e) => { e.stopPropagation(); openDetailPopover('members', 'checklist', checklist._id, checklist._id, null, e.currentTarget) }}
-                        sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                      >
-                        <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                </Box>
-
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="inherit"
-                  onClick={() => handleDeleteChecklist(checklist._id)}
-                  sx={{
-                    textTransform: 'none',
-                    fontSize: '0.8rem',
-                    borderColor: 'divider',
-                    '&:hover': { bgcolor: 'action.hover', color: 'error.main', borderColor: 'error.light' }
-                  }}
-                >
-                  {t('common.delete')}
-                </Button>
-              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                onClick={() => handleDeleteChecklist(checklist._id)}
+                sx={{
+                  textTransform: 'none',
+                  fontSize: '0.8rem',
+                  borderColor: 'divider',
+                  '&:hover': { bgcolor: 'action.hover', color: 'error.main', borderColor: 'error.light' }
+                }}
+              >
+                {t('common.delete')}
+              </Button>
             </Box>
 
             {/* Thanh tiến độ Progress Bar */}
@@ -670,7 +500,7 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                           </Box>
                         )}
 
-                        {/* Hàng nút Save, Cancel, Hạn chót, Thành viên và Nút Đính kèm thêm */}
+                        {/* Hàng nút Save, Cancel, và Nút Đính kèm thêm */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Button
@@ -694,41 +524,21 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                             </Button>
                           </Box>
 
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                            <Tooltip title={item.dueDate ? t('checklist.editDueDate') : t('checklist.setDueDate')}>
-                              <IconButton
-                                size="small"
-                                onClick={(e) => openDetailPopover('date', 'item', checklist._id, item._id, item.dueDate, e.currentTarget)}
-                                sx={{ color: item.dueDate ? 'primary.main' : 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                              >
-                                <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title={item.memberIds?.length ? t('checklist.editMembers') : t('checklist.addMember')}>
-                              <IconButton
-                                size="small"
-                                onClick={(e) => openDetailPopover('members', 'item', checklist._id, item._id, null, e.currentTarget)}
-                                sx={{ color: (item.memberIds || []).length > 0 ? 'primary.main' : 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                              >
-                                <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                            <Button
-                              size="small"
-                              variant={showEditItemAttachBox || editingItemAttachments.length > 0 ? 'outlined' : 'text'}
-                              color={editingItemAttachments.length > 0 ? 'success' : 'inherit'}
-                              startIcon={<AttachFileIcon sx={{ fontSize: '18px !important' }} />}
-                              onClick={() => setShowEditItemAttachBox(!showEditItemAttachBox)}
-                              sx={{
-                                textTransform: 'none',
-                                fontSize: '0.8rem',
-                                fontWeight: 500,
-                                color: (theme) => editingItemAttachments.length > 0 ? 'success.main' : theme.palette.text.secondary
-                              }}
-                            >
-                              {editingItemAttachments.length > 0 ? t('card.attachCount', { count: editingItemAttachments.length }) : t('card.attachLinkOrFile')}
-                            </Button>
-                          </Box>
+                          <Button
+                            size="small"
+                            variant={showEditItemAttachBox || editingItemAttachments.length > 0 ? 'outlined' : 'text'}
+                            color={editingItemAttachments.length > 0 ? 'success' : 'inherit'}
+                            startIcon={<AttachFileIcon sx={{ fontSize: '18px !important' }} />}
+                            onClick={() => setShowEditItemAttachBox(!showEditItemAttachBox)}
+                            sx={{
+                              textTransform: 'none',
+                              fontSize: '0.8rem',
+                              fontWeight: 500,
+                              color: (theme) => editingItemAttachments.length > 0 ? 'success.main' : theme.palette.text.secondary
+                            }}
+                          >
+                            {editingItemAttachments.length > 0 ? t('card.attachCount', { count: editingItemAttachments.length }) : t('card.attachLinkOrFile')}
+                          </Button>
                         </Box>
                       </Box>
                     )
@@ -825,55 +635,11 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                               ))}
                             </Box>
                           )}
-
-                          {/* Dòng 3: Hạn chót + thành viên ở CẤP ITEM (chỉ hiển thị khi đã được thiết lập) */}
-                          {(Boolean(item.dueDate) || Boolean(item.memberIds?.length)) && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', pt: 0.25 }}>
-                              {renderDueChip('item', checklist._id, item._id, item.dueDate, item.isDone)}
-                              {renderMemberChip('item', checklist._id, item._id, item.memberIds)}
-                            </Box>
-                          )}
                         </Box>
                       </Box>
 
-                      {/* Các nút Đặt hạn chót, Thêm thành viên, Sửa và Xóa khi hover */}
+                      {/* Các nút Sửa và Xóa khi hover */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: '2px', flexShrink: 0 }}>
-                        {!item.dueDate && (
-                          <Tooltip title={t('checklist.setDueDate')}>
-                            <IconButton
-                              className="action-item-btn"
-                              size="small"
-                              onClick={(e) => { e.stopPropagation(); openDetailPopover('date', 'item', checklist._id, item._id, item.dueDate, e.currentTarget) }}
-                              sx={{
-                                opacity: 0,
-                                transition: 'opacity 0.2s',
-                                color: 'text.secondary',
-                                '&:hover': { color: 'primary.main' }
-                              }}
-                            >
-                              <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
-                        {(!item.memberIds || item.memberIds.length === 0) && (
-                          <Tooltip title={t('checklist.addMember')}>
-                            <IconButton
-                              className="action-item-btn"
-                              size="small"
-                              onClick={(e) => { e.stopPropagation(); openDetailPopover('members', 'item', checklist._id, item._id, null, e.currentTarget) }}
-                              sx={{
-                                opacity: 0,
-                                transition: 'opacity 0.2s',
-                                color: 'text.secondary',
-                                '&:hover': { color: 'primary.main' }
-                              }}
-                            >
-                              <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-
                         <Tooltip title={t('card.editItem')}>
                           <IconButton
                             className="action-item-btn"
@@ -1090,73 +856,6 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
           </Box>
         )
       })}
-
-      {/* Popover chi tiết: hạn chót + thành viên (cho checklist hoặc item) */}
-      <Popover
-        open={Boolean(detailPopover)}
-        anchorEl={detailPopover?.anchorEl || null}
-        onClose={closeDetailPopover}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-      >
-        <Box sx={{ p: 1.5, width: 250, display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {/* Popover HẠN CHÓT - mở từ chip ngày */}
-          {detailPopover?.kind === 'date' && (
-            <>
-              <Typography variant="caption" fontWeight={700} sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {t('checklist.dueDate')}
-              </Typography>
-              <TextField
-                label={t('checklist.dueDate')}
-                type="date"
-                size="small"
-                fullWidth
-                value={detailPopover?.draftDate || ''}
-                onChange={(e) => setDetailPopover(dp => dp ? { ...dp, draftDate: e.target.value } : dp)}
-                InputLabelProps={{ shrink: true }}
-              />
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" color="inherit" onClick={handleClearDetailDate} sx={{ textTransform: 'none' }}>
-                  {t('checklist.clearDate')}
-                </Button>
-                <Button size="small" variant="contained" onClick={handleSaveDetailDate} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                  {t('common.save')}
-                </Button>
-              </Box>
-            </>
-          )}
-
-          {/* Popover THÀNH VIÊN - mở từ chip thành viên */}
-          {detailPopover?.kind === 'members' && (
-            <>
-              <Typography variant="caption" fontWeight={700} sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5 }}>
-                {t('checklist.members')}
-              </Typography>
-              <Box sx={{ maxHeight: 220, overflowY: 'auto' }}>
-                {(boardUsers || []).map(u => (
-                  <Box
-                    key={u._id}
-                    onClick={() => handleToggleDetailMember(u._id)}
-                    sx={{
-                      display: 'flex', alignItems: 'center', gap: 1, py: 0.4, px: 0.5,
-                      borderRadius: 1, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }
-                    }}
-                  >
-                    <Checkbox size="small" sx={{ p: 0 }} checked={getCurrentDetailMembers().includes(u._id?.toString())} />
-                    <Avatar src={u.avatar} sx={{ width: 24, height: 24, fontSize: 11 }} />
-                    <Typography variant="body2" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {u.displayName || u.username || u.email}
-                    </Typography>
-                  </Box>
-                ))}
-                {(boardUsers || []).length === 0 && (
-                  <Typography variant="caption" color="text.secondary">{t('checklist.noBoardUsers')}</Typography>
-                )}
-              </Box>
-            </>
-          )}
-        </Box>
-      </Popover>
     </Stack>
   )
 }
