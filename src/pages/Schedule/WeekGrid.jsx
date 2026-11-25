@@ -428,10 +428,22 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   </Box>
                 ))}
 
-                {/* Highlight khung giờ đang hover (snap 30 phút, vd 02:30 - 03:30) */}
+                {/* Highlight khung giờ đang hover (snap 30 phút, vd 02:30 - 03:30)
+                    Chỉ hiển thị khi khung giờ còn TRỐNG, không đè lên các lịch đã có */}
                 {isSlotHovered && (() => {
                   const slotStart = day.startOf('day').add(hoveredSlot.hour * 60 + hoveredSlot.minute, 'minute')
                   const slotEnd = slotStart.add(1, 'hour')
+                  const slotStartMs = slotStart.valueOf()
+                  const slotEndMs = slotEnd.valueOf()
+
+                  // Nếu khung giờ này đã có lịch (trùng với bất kỳ entry nào trong ngày), không hiện preview tạo mới
+                  const hasOverlap = dayEntries.some((entry) => {
+                    const eStart = dayjs(entry.startAt).valueOf()
+                    const eEnd = dayjs(entry.endAt).valueOf()
+                    return eStart < slotEndMs && eEnd > slotStartMs
+                  })
+                  if (hasOverlap) return null
+
                   const top = (hoveredSlot.hour + hoveredSlot.minute / 60) * HOUR_HEIGHT
                   return (
                     <Box sx={{
@@ -542,6 +554,11 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                   return (
                     <Box
                       key={entry._id}
+                      onMouseEnter={() => setHoveredSlot(null)}
+                      onMouseMove={(e) => {
+                        e.stopPropagation()
+                        if (hoveredSlot) setHoveredSlot(null)
+                      }}
                       onMouseDown={(e) => handleEntryMouseDown(e, entry)}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -556,17 +573,23 @@ export default function WeekGrid({ weekStart, entries, isLoading, onSlotClick, o
                         width: `calc(${widthPct}% - 4px)`,
                         zIndex: isCurrentResizing ? 10 : (isCurrentMoving ? 1 : 2),
                         opacity: isCurrentMoving ? 0.35 : 1,
-                        bgcolor: `${color}1f`,
+                        background: (theme) => theme.palette.mode === 'dark'
+                          ? `linear-gradient(${color}2a, ${color}2a), #131c2d`
+                          : `linear-gradient(${color}1c, ${color}1c), #ffffff`,
+                        border: '1px solid',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? `${color}40` : `${color}35`,
                         borderLeft: `3px solid ${color}`,
                         borderRadius: 1,
                         px: 0.75, py: 0.25,
                         overflow: 'hidden',
                         cursor: isCurrentResizing ? 'ns-resize' : 'pointer',
-                        boxShadow: isCurrentResizing ? '0 4px 16px rgba(0, 82, 204, 0.28)' : 'none',
+                        boxShadow: isCurrentResizing
+                          ? '0 4px 16px rgba(0, 82, 204, 0.28)'
+                          : '0 1px 2px rgba(0,0,0,0.05)',
                         transition: isCurrentResizing ? 'none' : 'transform 0.1s ease, box-shadow 0.1s ease',
                         '&:hover': {
                           transform: isCurrentResizing ? 'none' : 'scale(1.01)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                          boxShadow: '0 4px 12px rgba(0,0,0,0.14)',
                           zIndex: 5
                         }
                       }}
