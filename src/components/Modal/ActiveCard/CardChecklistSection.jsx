@@ -291,17 +291,17 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
     return (source?.memberIds || []).map(String)
   }
 
-  // Chip hiển thị + mở popover chi tiết. Ghost style khi trống để dễ khám phá tính năng.
+  // Chip hiển thị + mở popover chi tiết. Chỉ hiển thị khi đã có hạn chót (dueDate).
   const renderDueChip = (scope, checklistId, id, dueDate, isDoneRef) => {
-    const isEmpty = !dueDate
-    const d = dueDate ? dayjs(dueDate) : null
-    const isOverdue = !isEmpty && !isDoneRef && d.startOf('day').isBefore(dayjs().startOf('day'))
+    if (!dueDate) return null
+    const d = dayjs(dueDate)
+    const isOverdue = !isDoneRef && d.startOf('day').isBefore(dayjs().startOf('day'))
     return (
       <Tooltip title={t('checklist.editDueDate')}>
         <Chip
           size="small"
           icon={<ScheduleOutlinedIcon sx={{ fontSize: '13px !important' }} />}
-          label={isEmpty ? t('checklist.setDueDate') : d.format(t('common.dateChipFormat'))}
+          label={d.format(t('common.dateChipFormat'))}
           onClick={(e) => { e.stopPropagation(); openDetailPopover('date', scope, checklistId, id, dueDate, e.currentTarget) }}
           sx={{
             height: 22,
@@ -309,45 +309,41 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
             fontSize: '0.72rem',
             fontWeight: 600,
             cursor: 'pointer',
-            ...(isEmpty
-              ? { bgcolor: 'transparent', border: '1px dashed', borderColor: 'divider', color: 'text.secondary', '& .MuiChip-icon': { color: 'text.secondary' } }
-              : isOverdue
-                ? { bgcolor: 'error.main', color: 'white', '& .MuiChip-icon': { color: 'white' } }
-                : { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.18)' : '#e0edff', color: 'primary.main', '& .MuiChip-icon': { color: 'primary.main' } })
+            ...(isOverdue
+              ? { bgcolor: 'error.main', color: 'white', '& .MuiChip-icon': { color: 'white' } }
+              : { bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59,130,246,0.18)' : '#e0edff', color: 'primary.main', '& .MuiChip-icon': { color: 'primary.main' } })
           }}
         />
       </Tooltip>
     )
   }
 
+  // Chip hiển thị thành viên. Chỉ hiển thị khi có ít nhất 1 thành viên được gán.
   const renderMemberChip = (scope, checklistId, id, memberIds = []) => {
+    if (!memberIds || memberIds.length === 0) return null
     const users = memberIds.map(uid => findUserById(uid)).filter(Boolean)
+    if (users.length === 0) return null
     const visible = users.slice(0, 3)
     return (
       <Tooltip title={t('checklist.editMembers')}>
         <Chip
           size="small"
-          icon={users.length === 0
-            ? <PersonAddAltOutlinedIcon sx={{ fontSize: '13px !important' }} />
-            : undefined}
-          label={users.length === 0
-            ? t('checklist.addMember')
-            : (
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                {visible.map(u => (
-                  <Avatar key={u._id} src={u.avatar} sx={{ width: 16, height: 16, fontSize: 9, ml: users.length > 1 ? '-4px' : 0, border: '1px solid #fff' }} />
-                ))}
-                {users.length > 3 && <span style={{ fontSize: '0.68rem', fontWeight: 700, marginLeft: 2 }}>+{users.length - 3}</span>}
-              </Box>
-            )}
+          label={(
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {visible.map(u => (
+                <Avatar key={u._id} src={u.avatar} sx={{ width: 16, height: 16, fontSize: 9, ml: users.length > 1 ? '-4px' : 0, border: '1px solid #fff' }} />
+              ))}
+              {users.length > 3 && <span style={{ fontSize: '0.68rem', fontWeight: 700, marginLeft: 2 }}>+{users.length - 3}</span>}
+            </Box>
+          )}
           onClick={(e) => { e.stopPropagation(); openDetailPopover('members', scope, checklistId, id, null, e.currentTarget) }}
           sx={{
             height: 22,
             flexShrink: 0,
             cursor: 'pointer',
-            ...(users.length === 0
-              ? { bgcolor: 'transparent', border: '1px dashed', borderColor: 'divider', color: 'text.secondary', '& .MuiChip-icon': { color: 'text.secondary' } }
-              : { bgcolor: 'transparent', border: '1px solid', borderColor: 'divider' })
+            bgcolor: 'transparent',
+            border: '1px solid',
+            borderColor: 'divider'
           }}
         />
       </Tooltip>
@@ -442,30 +438,77 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
         return (
           <Box key={checklist._id}>
             {/* Header Checklist */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                mb: 1,
+                '&:hover .checklist-header-actions': { opacity: 1 }
+              }}
+            >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0, flex: '1 1 auto' }}>
                 <TaskAltOutlinedIcon sx={{ color: '#16a34a', flexShrink: 0 }} />
                 <Typography sx={{ fontWeight: '600', fontSize: '18px', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {checklist.title}
                 </Typography>
-                {/* Hạn chót + thành viên ở CẤP CHECKLIST - luôn cùng một hàng với tiêu đề */}
+                {/* Hạn chót + thành viên ở CẤP CHECKLIST - chỉ hiện khi đã có dữ liệu */}
                 {renderDueChip('checklist', checklist._id, checklist._id, checklist.dueDate, isComplete)}
                 {renderMemberChip('checklist', checklist._id, checklist._id, checklist.memberIds)}
               </Box>
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                onClick={() => handleDeleteChecklist(checklist._id)}
-                sx={{
-                  textTransform: 'none',
-                  fontSize: '0.8rem',
-                  borderColor: 'divider',
-                  '&:hover': { bgcolor: 'action.hover', color: 'error.main', borderColor: 'error.light' }
-                }}
-              >
-                {t('common.delete')}
-              </Button>
+
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                {/* Nút đặt hạn chót và thêm thành viên hiển thị khi hover nếu chưa có */}
+                <Box
+                  className="checklist-header-actions"
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    opacity: 0,
+                    transition: 'opacity 0.2s'
+                  }}
+                >
+                  {!checklist.dueDate && (
+                    <Tooltip title={t('checklist.setDueDate')}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); openDetailPopover('date', 'checklist', checklist._id, checklist._id, null, e.currentTarget) }}
+                        sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                      >
+                        <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {(!checklist.memberIds || checklist.memberIds.length === 0) && (
+                    <Tooltip title={t('checklist.addMember')}>
+                      <IconButton
+                        size="small"
+                        onClick={(e) => { e.stopPropagation(); openDetailPopover('members', 'checklist', checklist._id, checklist._id, null, e.currentTarget) }}
+                        sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                      >
+                        <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                </Box>
+
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() => handleDeleteChecklist(checklist._id)}
+                  sx={{
+                    textTransform: 'none',
+                    fontSize: '0.8rem',
+                    borderColor: 'divider',
+                    '&:hover': { bgcolor: 'action.hover', color: 'error.main', borderColor: 'error.light' }
+                  }}
+                >
+                  {t('common.delete')}
+                </Button>
+              </Box>
             </Box>
 
             {/* Thanh tiến độ Progress Bar */}
@@ -627,7 +670,7 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                           </Box>
                         )}
 
-                        {/* Hàng nút Save, Cancel, và Nút Đính kèm thêm */}
+                        {/* Hàng nút Save, Cancel, Hạn chót, Thành viên và Nút Đính kèm thêm */}
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Button
@@ -651,21 +694,41 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                             </Button>
                           </Box>
 
-                          <Button
-                            size="small"
-                            variant={showEditItemAttachBox || editingItemAttachments.length > 0 ? 'outlined' : 'text'}
-                            color={editingItemAttachments.length > 0 ? 'success' : 'inherit'}
-                            startIcon={<AttachFileIcon sx={{ fontSize: '18px !important' }} />}
-                            onClick={() => setShowEditItemAttachBox(!showEditItemAttachBox)}
-                            sx={{
-                              textTransform: 'none',
-                              fontSize: '0.8rem',
-                              fontWeight: 500,
-                              color: (theme) => editingItemAttachments.length > 0 ? 'success.main' : theme.palette.text.secondary
-                            }}
-                          >
-                            {editingItemAttachments.length > 0 ? t('card.attachCount', { count: editingItemAttachments.length }) : t('card.attachLinkOrFile')}
-                          </Button>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Tooltip title={item.dueDate ? t('checklist.editDueDate') : t('checklist.setDueDate')}>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => openDetailPopover('date', 'item', checklist._id, item._id, item.dueDate, e.currentTarget)}
+                                sx={{ color: item.dueDate ? 'primary.main' : 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                              >
+                                <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={item.memberIds?.length ? t('checklist.editMembers') : t('checklist.addMember')}>
+                              <IconButton
+                                size="small"
+                                onClick={(e) => openDetailPopover('members', 'item', checklist._id, item._id, null, e.currentTarget)}
+                                sx={{ color: (item.memberIds || []).length > 0 ? 'primary.main' : 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                              >
+                                <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                            <Button
+                              size="small"
+                              variant={showEditItemAttachBox || editingItemAttachments.length > 0 ? 'outlined' : 'text'}
+                              color={editingItemAttachments.length > 0 ? 'success' : 'inherit'}
+                              startIcon={<AttachFileIcon sx={{ fontSize: '18px !important' }} />}
+                              onClick={() => setShowEditItemAttachBox(!showEditItemAttachBox)}
+                              sx={{
+                                textTransform: 'none',
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                                color: (theme) => editingItemAttachments.length > 0 ? 'success.main' : theme.palette.text.secondary
+                              }}
+                            >
+                              {editingItemAttachments.length > 0 ? t('card.attachCount', { count: editingItemAttachments.length }) : t('card.attachLinkOrFile')}
+                            </Button>
+                          </Box>
                         </Box>
                       </Box>
                     )
@@ -763,22 +826,54 @@ function CardChecklistSection({ checklists = [], onUpdateCardChecklists, onUploa
                             </Box>
                           )}
 
-                          {/* Dòng 3: Hạn chót + thành viên ở CẤP ITEM (mỗi chip mở popover riêng) */}
-                          <Box
-                            sx={{
-                              display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', pt: 0.25,
-                              '& .detail-chip': { opacity: (item.dueDate || (item.memberIds || []).length) ? 1 : 0.55 },
-                              '&:hover .detail-chip': { opacity: 1 }
-                            }}
-                          >
-                            {renderDueChip('item', checklist._id, item._id, item.dueDate, item.isDone)}
-                            {renderMemberChip('item', checklist._id, item._id, item.memberIds)}
-                          </Box>
+                          {/* Dòng 3: Hạn chót + thành viên ở CẤP ITEM (chỉ hiển thị khi đã được thiết lập) */}
+                          {(Boolean(item.dueDate) || Boolean(item.memberIds?.length)) && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', pt: 0.25 }}>
+                              {renderDueChip('item', checklist._id, item._id, item.dueDate, item.isDone)}
+                              {renderMemberChip('item', checklist._id, item._id, item.memberIds)}
+                            </Box>
+                          )}
                         </Box>
                       </Box>
 
-                      {/* Các nút Sửa và Xóa khi hover */}
+                      {/* Các nút Đặt hạn chót, Thêm thành viên, Sửa và Xóa khi hover */}
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: '2px', flexShrink: 0 }}>
+                        {!item.dueDate && (
+                          <Tooltip title={t('checklist.setDueDate')}>
+                            <IconButton
+                              className="action-item-btn"
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); openDetailPopover('date', 'item', checklist._id, item._id, item.dueDate, e.currentTarget) }}
+                              sx={{
+                                opacity: 0,
+                                transition: 'opacity 0.2s',
+                                color: 'text.secondary',
+                                '&:hover': { color: 'primary.main' }
+                              }}
+                            >
+                              <ScheduleOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
+                        {(!item.memberIds || item.memberIds.length === 0) && (
+                          <Tooltip title={t('checklist.addMember')}>
+                            <IconButton
+                              className="action-item-btn"
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); openDetailPopover('members', 'item', checklist._id, item._id, null, e.currentTarget) }}
+                              sx={{
+                                opacity: 0,
+                                transition: 'opacity 0.2s',
+                                color: 'text.secondary',
+                                '&:hover': { color: 'primary.main' }
+                              }}
+                            >
+                              <PersonAddAltOutlinedIcon fontSize="small" sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+
                         <Tooltip title={t('card.editItem')}>
                           <IconButton
                             className="action-item-btn"
