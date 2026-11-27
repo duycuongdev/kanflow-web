@@ -1566,6 +1566,11 @@ export default function Focus() {
   const handleStartPlan = () => {
     dispatch(startFocusPlan({ focusMinutes: Math.max(1, Number(focusMinutes) || 1), repeats: Math.max(1, Number(repeats) || 1), breakMode }))
   }
+  const handleStartWithPlan = handleStartPlan
+
+  const handleStopSession = () => {
+    dispatch(stopFocusSession())
+  }
 
   const renderStatRow = (label, data) => (
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 0.75 }}>
