@@ -66,6 +66,7 @@ import PlaylistAddCheckRoundedIcon from '@mui/icons-material/PlaylistAddCheckRou
 import AddRoundedIcon from '@mui/icons-material/AddRounded'
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
 import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded'
+import RadioButtonCheckedRoundedIcon from '@mui/icons-material/RadioButtonCheckedRounded'
 import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded'
@@ -952,7 +953,7 @@ function FocusQueueSection({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
               <Chip
                 size='small'
-                icon={<TaskAltRoundedIcon sx={{ fontSize: '14px !important', color: '#fff !important' }} />}
+                icon={<PlayArrowRoundedIcon sx={{ fontSize: '15px !important', color: '#fff !important' }} />}
                 label={t('focusPage.activeCardLabel')}
                 sx={{
                   height: 24,
@@ -1049,7 +1050,7 @@ function FocusQueueSection({
                     {item.isCompleted ? (
                       <CheckCircleRoundedIcon sx={{ fontSize: 20, color: '#00875a' }} />
                     ) : isActive ? (
-                      <TaskAltRoundedIcon sx={{ fontSize: 20, color: '#0052cc' }} />
+                      <RadioButtonCheckedRoundedIcon sx={{ fontSize: 20, color: '#0052cc' }} />
                     ) : (
                       <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 20, color: 'text.disabled' }} />
                     )}
@@ -1549,9 +1550,8 @@ export default function Focus() {
       : t('focusPage.roundOf', { round: plan.round, repeats: plan.repeats }))
     : t(`focusTimer.mode.${modeConfig.label}`)
   const progress = timerState.durationMs > 0 ? 1 - remainingMs / timerState.durationMs : 0
-  const ringSize = 230
-  const ringStroke = 12
-  const ringRadius = (ringSize - ringStroke) / 2
+  const ringStroke = 10
+  const ringRadius = (200 - ringStroke) / 2
   const ringCircumference = 2 * Math.PI * ringRadius
 
   // Tổng thời gian chuỗi: focus × repeats + break × (repeats - 1)
@@ -1632,7 +1632,7 @@ export default function Focus() {
             )}
 
             {/* Vòng tròn đếm ngược */}
-            <Box sx={{ position: 'relative', width: 240, height: 240, my: 1 }}>
+            <Box sx={{ position: 'relative', width: 220, height: 220, my: 1.5 }}>
               <svg viewBox='0 0 200 200' style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
                 <circle
                   cx='100' cy='100' r={ringRadius}
@@ -1821,13 +1821,18 @@ export default function Focus() {
               </Box>
 
               <Typography variant='body2' sx={{ color: 'text.secondary' }}>
-                {t('focusPage.summary', {
-                  focus: Math.max(1, Number(focusMinutes) || 1),
-                  repeats: planSummary.reps,
-                  breakMode: breakMode === 'long' ? t('focusPage.breakModeLongText') : t('focusPage.breakModeShortText'),
-                  breakMinutes: breakMode === 'long' ? 15 : 5,
-                  total: formatDurationShort(planSummary.total)
-                })}
+                {planSummary.reps > 1
+                  ? t('focusPage.summary', {
+                    focus: Math.max(1, Number(focusMinutes) || 1),
+                    repeats: planSummary.reps,
+                    breakMode: breakMode === 'long' ? t('focusPage.breakModeLongText') : t('focusPage.breakModeShortText'),
+                    breakMinutes: breakMode === 'long' ? 15 : 5,
+                    total: formatDurationShort(planSummary.total)
+                  })
+                  : t('focusPage.summarySingle', {
+                    focus: Math.max(1, Number(focusMinutes) || 1),
+                    total: formatDurationShort(planSummary.total)
+                  })}
               </Typography>
             </Box>
 

@@ -774,6 +774,7 @@
     "breakModeShortText": "short",
     "breakModeLongText": "long",
     "summary": "Focus {{focus}} min × {{repeats}} rounds with a {{breakMode}} {{breakMinutes}}-min break between — total ~{{total}}",
+    "summarySingle": "Focus {{focus}} min × 1 round — total ~{{total}}",
     "startPlan": "Start focus chain",
     "stopPlan": "Stop chain",
     "roundOf": "Round {{round}}/{{repeats}}",
