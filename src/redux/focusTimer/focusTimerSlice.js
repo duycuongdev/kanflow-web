@@ -53,6 +53,8 @@ const initialState = {
   hydrated: false,
   // Nhiệm vụ đang focus (log phiên gắn vào card/board này)
   task: { cardId: null, boardId: null, title: null },
+  // Hàng đợi thẻ tập trung trong phiên: [{ id, cardId, boardId, cardTitle, boardTitle, isCompleted, completedAt }]
+  taskQueue: [],
   // Chuỗi lặp: tập trung focusMinutes' × repeats lượt, nghỉ breakMode giữa các lượt
   plan: { active: false, focusMinutes: 25, repeats: 4, breakMode: 'short', round: 1, phase: 'idle' }
 }
@@ -83,8 +85,29 @@ const timerSlice = createSlice({
           state.plan = { ...initialState.plan }
         }
       }
-      // Task không persist theo user (gắn theo phiên làm việc) - reset về null
-      state.task = { cardId: null, boardId: null, title: null }
+      // Khôi phục hàng đợi thẻ tập trung và thẻ đang active nếu có
+      if (Array.isArray(saved.taskQueue) && saved.taskQueue.length > 0) {
+        state.taskQueue = saved.taskQueue
+        if (saved.task?.cardId) {
+          state.task = saved.task
+        } else {
+          const firstUncompleted = state.taskQueue.find((c) => !c.isCompleted)
+          if (firstUncompleted) {
+            state.task = {
+              cardId: firstUncompleted.cardId,
+              boardId: firstUncompleted.boardId,
+              title: firstUncompleted.cardTitle,
+              cardTitle: firstUncompleted.cardTitle,
+              boardTitle: firstUncompleted.boardTitle
+            }
+          } else {
+            state.task = { cardId: null, boardId: null, title: null }
+          }
+        }
+      } else {
+        state.taskQueue = []
+        state.task = { cardId: null, boardId: null, title: null }
+      }
 
       // Sau hydrate: nếu đang idle ở mode Focus, vòng đếm phản ánh đúng cấu hình chuỗi đã lưu
       // (tránh lệch giữa vòng đếm và form "Chế độ lặp" trên trang Focus)
@@ -196,6 +219,123 @@ const timerSlice = createSlice({
         checklistItemId: checklistItemId || null,
         itemTitle: itemTitle || null
       }
+      // Tự động đồng bộ vào hàng đợi nếu thẻ chưa có trong hàng đợi
+      if (cardId) {
+        if (!Array.isArray(state.taskQueue)) state.taskQueue = []
+        if (!state.taskQueue.some((c) => c.cardId === cardId)) {
+          state.taskQueue.push({
+            id: crypto.randomUUID(),
+            cardId,
+            boardId,
+            cardTitle: cardTitle || title || '',
+            boardTitle: boardTitle || '',
+            isCompleted: false,
+            completedAt: null
+          })
+        }
+      }
+    },
+
+    // Thêm thẻ vào hàng đợi tập trung
+    addCardToQueue: (state, action) => {
+      const { cardId, boardId, cardTitle, boardTitle } = action.payload || {}
+      if (!cardId) return
+      if (!Array.isArray(state.taskQueue)) state.taskQueue = []
+      const exists = state.taskQueue.some((c) => c.cardId === cardId)
+      if (exists) {
+        toast.info(i18n.t('focusPage.cardAlreadyInQueue') || 'Thẻ này đã có trong hàng đợi')
+        return
+      }
+      const newItem = {
+        id: crypto.randomUUID(),
+        cardId,
+        boardId,
+        cardTitle: cardTitle || '',
+        boardTitle: boardTitle || '',
+        isCompleted: false,
+        completedAt: null
+      }
+      state.taskQueue.push(newItem)
+      // Nếu chưa có thẻ active, gán thẻ này làm active
+      if (!state.task?.cardId) {
+        state.task = {
+          cardId,
+          boardId,
+          title: cardTitle,
+          cardTitle,
+          boardTitle
+        }
+      }
+    },
+
+    // Xóa thẻ khỏi hàng đợi tập trung
+    removeCardFromQueue: (state, action) => {
+      const cardId = action.payload
+      if (!Array.isArray(state.taskQueue)) return
+      state.taskQueue = state.taskQueue.filter((c) => c.cardId !== cardId)
+      // Nếu xóa đúng thẻ đang active, chuyển sang thẻ tiếp theo chưa hoàn thành
+      if (state.task?.cardId === cardId) {
+        const next = state.taskQueue.find((c) => !c.isCompleted)
+        if (next) {
+          state.task = {
+            cardId: next.cardId,
+            boardId: next.boardId,
+            title: next.cardTitle,
+            cardTitle: next.cardTitle,
+            boardTitle: next.boardTitle
+          }
+        } else {
+          state.task = null
+        }
+      }
+    },
+
+    // Đánh dấu hoàn thành thẻ hiện tại và tự động chuyển thẻ tiếp theo
+    completeCurrentCardAndNext: (state) => {
+      const currentCardId = state.task?.cardId
+      if (currentCardId && Array.isArray(state.taskQueue)) {
+        const item = state.taskQueue.find((c) => c.cardId === currentCardId)
+        if (item) {
+          item.isCompleted = true
+          item.completedAt = Date.now()
+        }
+        // Tìm thẻ tiếp theo chưa hoàn thành trong hàng đợi
+        const next = state.taskQueue.find((c) => !c.isCompleted)
+        if (next) {
+          state.task = {
+            cardId: next.cardId,
+            boardId: next.boardId,
+            title: next.cardTitle,
+            cardTitle: next.cardTitle,
+            boardTitle: next.boardTitle
+          }
+        } else {
+          // Đã hoàn thành toàn bộ thẻ trong hàng đợi
+          state.task = null
+        }
+      }
+    },
+
+    // Chọn một thẻ bất kỳ trong hàng đợi làm thẻ active
+    selectCardFromQueue: (state, action) => {
+      const cardId = action.payload
+      if (!Array.isArray(state.taskQueue)) return
+      const target = state.taskQueue.find((c) => c.cardId === cardId)
+      if (target) {
+        state.task = {
+          cardId: target.cardId,
+          boardId: target.boardId,
+          title: target.cardTitle,
+          cardTitle: target.cardTitle,
+          boardTitle: target.boardTitle
+        }
+      }
+    },
+
+    // Xóa toàn bộ hàng đợi
+    clearTaskQueue: (state) => {
+      state.taskQueue = []
+      state.task = null
     },
 
     // Cấu hình chuỗi lặp
@@ -349,11 +489,17 @@ export const {
   applyCompleted,
   incrementPomodoro,
   setFocusTask,
-  setFocusPlan
+  setFocusPlan,
+  addCardToQueue,
+  removeCardFromQueue,
+  completeCurrentCardAndNext,
+  selectCardFromQueue,
+  clearTaskQueue
 } = timerSlice.actions
 
 export const selectFocusTimerState = (state) => state.focusTimer
 export const selectFocusTask = (state) => state.focusTimer.task
+export const selectFocusQueue = (state) => state.focusTimer.taskQueue || []
 export const selectFocusPlan = (state) => state.focusTimer.plan
 
 export const focusTimerReducer = timerSlice.reducer

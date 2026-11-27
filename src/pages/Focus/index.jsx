@@ -53,8 +53,23 @@ import {
   switchTimerMode,
   setCustomMinutes,
   setFocusTask,
-  startFocusPlan
+  startFocusPlan,
+  selectFocusQueue,
+  addCardToQueue,
+  removeCardFromQueue,
+  completeCurrentCardAndNext,
+  selectCardFromQueue,
+  clearTaskQueue
 } from '~/redux/focusTimer/focusTimerSlice'
+import { toast } from 'react-toastify'
+import PlaylistAddCheckRoundedIcon from '@mui/icons-material/PlaylistAddCheckRounded'
+import AddRoundedIcon from '@mui/icons-material/AddRounded'
+import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded'
+import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded'
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded'
+import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded'
+import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded'
+import TaskAltRoundedIcon from '@mui/icons-material/TaskAltRounded'
 import Pagination from '@mui/material/Pagination'
 
 import Checkbox from '@mui/material/Checkbox'
@@ -657,6 +672,456 @@ function TaskCascade({ onChainChange, initialTask, onClearTask, onActiveCardChan
   )
 }
 
+
+/**
+ * Khu vực Quản lý Hàng đợi Thẻ Tập Trung (Focus Queue)
+ * Cho phép chọn nhiều thẻ từ các bảng, theo dõi tiến độ, đánh dấu xong và tự động chuyển thẻ tiếp theo
+ */
+function FocusQueueSection({
+  taskQueue = [],
+  activeTask,
+  activeCardData,
+  onToggleChecklistItem,
+  onCompleteActiveCard,
+  onSelectCard,
+  onRemoveCard,
+  onClearQueue,
+  onAddCard
+}) {
+  const { t } = useTranslation()
+  const [boards, setBoards] = useState(() => cachedBoards || [])
+  const [selectedBoardId, setSelectedBoardId] = useState('')
+  const [selectedCardId, setSelectedCardId] = useState('')
+  const [cardOptions, setCardOptions] = useState([])
+  const [loadingCards, setLoadingCards] = useState(false)
+  const [showAddDrawer, setShowAddDrawer] = useState(() => taskQueue.length === 0)
+
+  useEffect(() => {
+    if (cachedBoards && cachedBoards.length > 0) {
+      setBoards(cachedBoards)
+      return
+    }
+    fetchBoardsAPI('?page=1&itemsPerPage=100')
+      .then((data) => {
+        const list = data.boards || []
+        cachedBoards = list
+        setBoards(list)
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!selectedBoardId) {
+      setCardOptions([])
+      setSelectedCardId('')
+      return
+    }
+    let cancelled = false
+    setLoadingCards(true)
+    fetchBoardDetailsAPI(selectedBoardId)
+      .then((boardDetails) => {
+        if (cancelled) return
+        const orderedColumns = mapOrder(boardDetails.columns || [], boardDetails.columnOrderIds || [], '_id')
+        const cards = orderedColumns.flatMap((column) => {
+          const orderedCards = mapOrder(column.cards || [], column.cardOrderIds || [], '_id')
+          return orderedCards.map((c) => ({ ...c, columnTitle: column.title }))
+        })
+        setCardOptions(cards)
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoadingCards(false) })
+    return () => { cancelled = true }
+  }, [selectedBoardId])
+
+  const handleAddCurrentSelected = () => {
+    if (!selectedCardId || !selectedBoardId) return
+    const card = cardOptions.find((c) => c._id === selectedCardId)
+    const board = boards.find((b) => b._id === selectedBoardId)
+    if (!card) return
+    onAddCard({
+      cardId: card._id,
+      boardId: selectedBoardId,
+      cardTitle: card.title,
+      boardTitle: board?.title || ''
+    })
+    setSelectedCardId('')
+    if (taskQueue.length > 0) {
+      setShowAddDrawer(false)
+    }
+  }
+
+  const completedCount = taskQueue.filter((t) => t.isCompleted).length
+  const totalCount = taskQueue.length
+  const allCompleted = totalCount > 0 && completedCount === totalCount
+
+  return (
+    <Box sx={{ width: '100%' }}>
+      {/* Header Hàng đợi tập trung */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PlaylistAddCheckRoundedIcon sx={{ color: '#0052cc', fontSize: 22 }} />
+          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
+            {t('focusPage.focusQueue')}
+          </Typography>
+          {totalCount > 0 && (
+            <Chip
+              size='small'
+              label={`${completedCount}/${totalCount}`}
+              sx={{
+                height: 20,
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                bgcolor: allCompleted ? 'rgba(0,135,90,0.15)' : 'rgba(0,82,204,0.12)',
+                color: allCompleted ? '#00875a' : '#0052cc'
+              }}
+            />
+          )}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Button
+            size='small'
+            variant={showAddDrawer ? 'outlined' : 'contained'}
+            startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setShowAddDrawer((prev) => !prev)}
+            sx={{
+              textTransform: 'none',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              borderRadius: 1.5,
+              py: 0.3,
+              px: 1
+            }}
+          >
+            {t('focusPage.addCardToQueue')}
+          </Button>
+          {totalCount > 0 && (
+            <Tooltip title={t('schedule.clearTask') || 'Xóa tất cả'}>
+              <IconButton size='small' onClick={onClearQueue} sx={{ color: 'text.secondary', p: 0.5 }}>
+                <CloseRoundedIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
+
+      {/* Form thêm thẻ vào hàng đợi */}
+      <Collapse in={showAddDrawer || totalCount === 0}>
+        <Paper
+          variant='outlined'
+          sx={{
+            p: 1.5,
+            mb: 1.5,
+            borderRadius: 2,
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,82,204,0.02)',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,82,204,0.15)'
+          }}
+        >
+          <Typography variant='caption' sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 1 }}>
+            {t('focusPage.selectCardPrompt')}
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Select
+              fullWidth
+              size='small'
+              displayEmpty
+              value={selectedBoardId}
+              onChange={(e) => setSelectedBoardId(e.target.value)}
+              MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+              renderValue={(value) => {
+                if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectBoard')}</Typography>
+                const b = boards.find((item) => item._id === value)
+                return b?.title || value
+              }}
+            >
+              {boards.map((b) => (
+                <MenuItem key={b._id} value={b._id}>{b.title}</MenuItem>
+              ))}
+              {boards.length === 0 && (
+                <MenuItem disabled value=''>
+                  <Typography sx={{ fontSize: '0.85rem' }}>{t('schedule.noBoards')}</Typography>
+                </MenuItem>
+              )}
+            </Select>
+
+            {selectedBoardId && (
+              <Select
+                fullWidth
+                size='small'
+                displayEmpty
+                value={selectedCardId}
+                onChange={(e) => setSelectedCardId(e.target.value)}
+                MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+                renderValue={(value) => {
+                  if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectCard')}</Typography>
+                  const c = cardOptions.find((item) => item._id === value)
+                  return c?.title || value
+                }}
+              >
+                <MenuItem value=''>
+                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>{t('schedule.noCard')}</Typography>
+                </MenuItem>
+                {cardOptions.map((c) => {
+                  const alreadyInQueue = taskQueue.some((item) => item.cardId === c._id)
+                  return (
+                    <MenuItem key={c._id} value={c._id} disabled={alreadyInQueue}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflow: 'hidden' }}>
+                        {c.columnTitle && (
+                          <Chip
+                            size='small'
+                            label={c.columnTitle}
+                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600 }}
+                          />
+                        )}
+                        <Typography sx={{ fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>
+                          {c.title}
+                        </Typography>
+                        {alreadyInQueue && (
+                          <Chip size='small' label='✓ Đã thêm' sx={{ height: 18, fontSize: '0.6rem', ml: 'auto' }} />
+                        )}
+                      </Box>
+                    </MenuItem>
+                  )
+                })}
+              </Select>
+            )}
+
+            {loadingCards && <LinearProgress sx={{ my: 0.5 }} />}
+
+            {selectedBoardId && selectedCardId && (
+              <Button
+                variant='contained'
+                size='small'
+                startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+                onClick={handleAddCurrentSelected}
+                sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', mt: 0.5 }}
+              >
+                {t('focusPage.addSelectedCard')}
+              </Button>
+            )}
+          </Box>
+        </Paper>
+      </Collapse>
+
+      {/* Khi tất cả thẻ trong hàng đợi đã hoàn thành */}
+      {allCompleted && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 2,
+            mb: 2,
+            borderRadius: 2.5,
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,135,90,0.12)' : 'rgba(0,135,90,0.08)',
+            border: '1px solid',
+            borderColor: 'rgba(54,179,126,0.4)',
+            textAlign: 'center'
+          }}
+        >
+          <Typography sx={{ fontWeight: 700, color: '#00875a', fontSize: '0.95rem', mb: 0.5 }}>
+            {t('focusPage.allQueueCompleted')}
+          </Typography>
+          <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+            {t('focusPage.allQueueCompletedSub')}
+          </Typography>
+          <Button
+            size='small'
+            variant='contained'
+            startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setShowAddDrawer(true)}
+            sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#00875a', '&:hover': { bgcolor: '#006644' } }}
+          >
+            {t('focusPage.addCardToQueue')}
+          </Button>
+        </Paper>
+      )}
+
+      {/* Thẻ đang Active (Đang tập trung làm) */}
+      {activeCardData && (
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1.75,
+            mb: 2,
+            borderRadius: 2.5,
+            border: '1.5px solid',
+            borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.4)' : '#0052cc',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.08)' : 'rgba(0,82,204,0.03)',
+            boxShadow: '0 4px 16px rgba(0,82,204,0.08)'
+          }}
+        >
+          {/* Header thẻ đang làm */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
+              <Chip
+                size='small'
+                icon={<TaskAltRoundedIcon sx={{ fontSize: '14px !important', color: '#fff !important' }} />}
+                label={t('focusPage.activeCardLabel')}
+                sx={{
+                  height: 22,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  bgcolor: '#0052cc',
+                  color: '#fff'
+                }}
+              />
+              {activeTask?.boardTitle && (
+                <Chip
+                  size='small'
+                  label={`🗂 ${activeTask.boardTitle}`}
+                  sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                />
+              )}
+            </Box>
+            <Button
+              size='small'
+              variant='contained'
+              color='success'
+              startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 16 }} />}
+              onClick={onCompleteActiveCard}
+              sx={{
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                borderRadius: 2,
+                px: 1.25,
+                py: 0.4,
+                bgcolor: '#00875a',
+                '&:hover': { bgcolor: '#006644' }
+              }}
+            >
+              {t('focusPage.markDoneAndNext')}
+            </Button>
+          </Box>
+
+          <Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 1.25, color: 'text.primary' }}>
+            🎯 {activeCardData.title}
+          </Typography>
+
+          {/* Checklist tương tác của thẻ */}
+          <CardChecklistPanel
+            checklists={activeCardData.checklists || []}
+            onToggleItemDone={onToggleChecklistItem}
+            collapsible
+            defaultExpanded
+            maxHeight={260}
+          />
+        </Paper>
+      )}
+
+      {/* Danh sách các thẻ trong hàng đợi */}
+      {totalCount > 1 && (
+        <Box sx={{ mb: 1.5 }}>
+          <Typography variant='caption' sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
+            📋 {t('focusPage.upNext')} ({totalCount})
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+            {taskQueue.map((item, idx) => {
+              const isActive = activeTask?.cardId === item.cardId
+              return (
+                <Paper
+                  key={item.cardId || idx}
+                  elevation={0}
+                  onClick={() => !item.isCompleted && onSelectCard(item.cardId)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 1,
+                    px: 1.25,
+                    borderRadius: 2,
+                    cursor: item.isCompleted ? 'default' : 'pointer',
+                    border: '1px solid',
+                    borderColor: isActive
+                      ? '#0052cc'
+                      : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                    bgcolor: isActive
+                      ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.12)' : 'rgba(0,82,204,0.05)'
+                      : (item.isCompleted
+                        ? (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)'
+                        : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff'),
+                    transition: 'all 0.15s ease',
+                    '&:hover': {
+                      borderColor: isActive ? '#0052cc' : 'primary.main',
+                      bgcolor: isActive ? undefined : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,82,204,0.02)'
+                    }
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+                    {item.isCompleted ? (
+                      <CheckCircleRoundedIcon sx={{ fontSize: 18, color: '#00875a' }} />
+                    ) : isActive ? (
+                      <TaskAltRoundedIcon sx={{ fontSize: 18, color: '#0052cc' }} />
+                    ) : (
+                      <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                    )}
+
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Typography
+                          sx={{
+                            fontSize: '0.85rem',
+                            fontWeight: isActive ? 700 : 500,
+                            textDecoration: item.isCompleted ? 'line-through' : 'none',
+                            color: item.isCompleted ? 'text.disabled' : (isActive ? 'primary.main' : 'text.primary'),
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {idx + 1}. {item.cardTitle}
+                        </Typography>
+                        {isActive && (
+                          <Chip size='small' label={t('focusPage.inProgress')} sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: 'rgba(0,82,204,0.15)', color: '#0052cc' }} />
+                        )}
+                        {item.isCompleted && (
+                          <Chip size='small' label={t('focusPage.completed')} sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: 'rgba(0,135,90,0.15)', color: '#00875a' }} />
+                        )}
+                      </Box>
+                      {item.boardTitle && (
+                        <Typography variant='caption' sx={{ color: 'text.secondary', fontSize: '0.72rem' }}>
+                          🗂 {item.boardTitle}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                    {!isActive && !item.isCompleted && (
+                      <Tooltip title={t('focusPage.switchCard')}>
+                        <IconButton
+                          size='small'
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            onSelectCard(item.cardId)
+                          }}
+                          sx={{ p: 0.5, color: 'text.secondary' }}
+                        >
+                          <SwapHorizRoundedIcon sx={{ fontSize: 17 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    <Tooltip title={t('focusPage.removeFromQueue')}>
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onRemoveCard(item.cardId)
+                        }}
+                        sx={{ p: 0.5, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                      >
+                        <DeleteOutlineRoundedIcon sx={{ fontSize: 17 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Paper>
+              )
+            })}
+          </Box>
+        </Box>
+      )}
+    </Box>
+  )
+}
+
 const RANK_MEDALS = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 /**
@@ -667,6 +1132,8 @@ function FocusFullscreen({
   timerState,
   plan,
   focusTask,
+  taskQueue = [],
+  onCompleteActiveCard,
   remainingMs,
   modeConfig,
   progress,
@@ -778,12 +1245,12 @@ function FocusFullscreen({
           </Box>
         </motion.div>
 
-        {/* Nhiệm vụ đang focus */}
+        {/* Nhiệm vụ đang focus kèm thứ tự trong hàng đợi */}
         <AnimatePresence>
           {focusTask?.title && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
               <Chip
-                label={`🎯 ${t('focusTimer.focusingOn')}: ${focusTask.title}`}
+                label={`🎯 ${taskQueue.length > 1 ? `[${(taskQueue.findIndex(t => t.cardId === focusTask.cardId) + 1) || 1}/${taskQueue.length}] ` : ''}${t('focusTimer.focusingOn')}: ${focusTask.title}`}
                 sx={{
                   maxWidth: '90vw', color: '#fff',
                   bgcolor: 'rgba(255,255,255,0.12)',
@@ -812,6 +1279,31 @@ function FocusFullscreen({
               defaultExpanded
               maxHeight={160}
             />
+            {focusTask?.cardId && onCompleteActiveCard && (
+              <Button
+                variant='contained'
+                size='small'
+                startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 18 }} />}
+                onClick={onCompleteActiveCard}
+                sx={{
+                  mt: 1,
+                  alignSelf: 'center',
+                  bgcolor: 'rgba(0,135,90,0.92)',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  textTransform: 'none',
+                  borderRadius: 2,
+                  px: 2,
+                  py: 0.4,
+                  backdropFilter: 'blur(8px)',
+                  boxShadow: '0 4px 14px rgba(0,135,90,0.4)',
+                  '&:hover': { bgcolor: '#00875a' }
+                }}
+              >
+                {t('focusPage.markDoneAndNext')}
+              </Button>
+            )}
           </Box>
         )}
 
@@ -874,6 +1366,7 @@ export default function Focus() {
   const timerState = useSelector(selectFocusTimerState)
   const plan = useSelector(selectFocusPlan)
   const focusTask = useSelector(selectFocusTask)
+  const taskQueue = useSelector(selectFocusQueue)
   const currentUser = useSelector(selectCurrentUser)
 
   // Quản lý dữ liệu Thẻ đang được chọn (để hiển thị và tương tác Checklist cả trong và ngoài Fullscreen)
@@ -944,6 +1437,34 @@ export default function Focus() {
       setActiveCardData(currentCard)
     }
   }, [activeCardData, dispatch])
+
+  // Hoàn thành thẻ hiện tại và tự động chuyển tiếp thẻ sau trong hàng đợi mà không dừng timer
+  const handleCompleteActiveCard = useCallback(async () => {
+    const currentCard = activeCardData
+    if (!currentCard?._id) {
+      dispatch(completeCurrentCardAndNext())
+      return
+    }
+    const allCompletedChecklists = (currentCard.checklists || []).map((cl) => ({
+      ...cl,
+      items: (cl.items || []).map((it) => ({ ...it, isDone: true }))
+    }))
+    try {
+      const updatedCard = await updateCardDetailsAPI(currentCard._id, {
+        checklists: allCompletedChecklists,
+        isDueDateComplete: true
+      })
+      if (updatedCard) {
+        dispatch(updateCardInBoard(updatedCard))
+        dispatch(updateCurrentActiveCard(updatedCard))
+      }
+      toast.success(t('focusPage.cardCompletedToast', { title: currentCard.title }))
+    } catch {
+      // lỗi API
+    } finally {
+      dispatch(completeCurrentCardAndNext())
+    }
+  }, [activeCardData, dispatch, t])
 
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
@@ -1226,32 +1747,17 @@ export default function Focus() {
                   {t('focusPage.taskSection')}
                 </Typography>
               </Box>
-              <TaskCascade
-                initialTask={focusTask}
-                activeCardChecklists={activeCardData?.checklists || []}
-                onActiveCardChange={(card) => setActiveCardData(card)}
+              <FocusQueueSection
+                taskQueue={taskQueue}
+                activeTask={focusTask}
+                activeCardData={activeCardData}
                 onToggleChecklistItem={handleToggleChecklistItem}
-                onChainChange={(chain) => {
-                  dispatch(setFocusTask({
-                    cardId: chain.cardId || null,
-                    boardId: chain.boardId || null,
-                    title: chain.itemTitle || chain.cardTitle || null,
-                    cardTitle: chain.cardTitle || null,
-                    boardTitle: chain.boardTitle || null,
-                    checklistId: chain.checklistId || null,
-                    checklistTitle: chain.checklistTitle || null,
-                    checklistItemId: chain.checklistItemId || null,
-                    itemTitle: chain.itemTitle || null
-                  }))
-                }}
-                onClearTask={() => {
-                  setActiveCardData(null)
-                  dispatch(setFocusTask(null))
-                }}
+                onCompleteActiveCard={handleCompleteActiveCard}
+                onSelectCard={(cId) => dispatch(selectCardFromQueue(cId))}
+                onRemoveCard={(cId) => dispatch(removeCardFromQueue(cId))}
+                onClearQueue={() => dispatch(clearTaskQueue())}
+                onAddCard={(cardInfo) => dispatch(addCardToQueue(cardInfo))}
               />
-              <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mt: 1 }}>
-                {t('focusPage.taskHint')}
-              </Typography>
             </Box>
 
             <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
@@ -1468,6 +1974,8 @@ export default function Focus() {
             timerState={timerState}
             plan={plan}
             focusTask={focusTask}
+            taskQueue={taskQueue}
+            onCompleteActiveCard={handleCompleteActiveCard}
             remainingMs={remainingMs}
             modeConfig={modeConfig}
             progress={progress}

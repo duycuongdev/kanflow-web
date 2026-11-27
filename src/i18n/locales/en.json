@@ -784,6 +784,26 @@
     "planStopped": "Focus chain stopped",
     "todayFocus": "Focused today",
     "fullscreenHint": "Press Stop to exit fullscreen mode",
-    "titleMobile": "Focus"
+    "titleMobile": "Focus",
+    "focusQueue": "Focus Queue",
+    "queueProgress": "{{completed}}/{{total}} completed",
+    "addCardToQueue": "+ Add card to session",
+    "selectCardPrompt": "Select a card from board to add to focus session",
+    "addSelectedCard": "Add to Queue",
+    "activeCardLabel": "In progress",
+    "markDoneAndNext": "✓ Complete & Next task",
+    "switchCard": "Switch task",
+    "upNext": "Up next in session",
+    "noNextCards": "No more upcoming cards in queue",
+    "allQueueCompleted": "🎉 Awesome! You completed all cards in this focus session.",
+    "allQueueCompletedSub": "The timer is still running. You can add more cards or take an early break.",
+    "removeFromQueue": "Remove from queue",
+    "cardCompletedToast": "🎉 Completed \"{{title}}\"! Moving to next task.",
+    "cardAlreadyInQueue": "This card is already in the focus queue",
+    "inProgress": "In progress",
+    "waiting": "Waiting",
+    "completed": "Done",
+    "remainingCardsInQueue": "{{count}} cards remaining in queue",
+    "nextCardInFullscreen": "Next: {{title}}"
   }
 }

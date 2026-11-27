@@ -784,6 +784,26 @@
     "planStopped": "Đã kết thúc chuỗi tập trung",
     "todayFocus": "Hôm nay đã tập trung",
     "fullscreenHint": "Bấm Dừng để thoát khỏi chế độ toàn màn hình",
-    "titleMobile": "Tập trung"
+    "titleMobile": "Tập trung",
+    "focusQueue": "Hàng đợi tập trung",
+    "queueProgress": "{{completed}}/{{total}} hoàn thành",
+    "addCardToQueue": "+ Thêm thẻ vào phiên",
+    "selectCardPrompt": "Chọn thẻ từ bảng để thêm vào phiên tập trung",
+    "addSelectedCard": "Thêm thẻ vào hàng đợi",
+    "activeCardLabel": "Đang làm",
+    "markDoneAndNext": "✓ Xong thẻ này & Chuyển tiếp",
+    "switchCard": "Đổi thẻ",
+    "upNext": "Thẻ tiếp theo trong phiên",
+    "noNextCards": "Không còn thẻ nào chờ phía sau",
+    "allQueueCompleted": "🎉 Xuất sắc! Đã hoàn thành tất cả thẻ trong phiên tập trung.",
+    "allQueueCompletedSub": "Đồng hồ vẫn đang chạy, bạn có thể thêm thẻ mới hoặc nghỉ ngơi sớm.",
+    "removeFromQueue": "Xóa khỏi hàng đợi",
+    "cardCompletedToast": "🎉 Đã hoàn thành \"{{title}}\"! Tự động chuyển thẻ tiếp theo.",
+    "cardAlreadyInQueue": "Thẻ này đã có trong hàng đợi tập trung",
+    "inProgress": "Đang làm",
+    "waiting": "Chờ làm",
+    "completed": "Đã xong",
+    "remainingCardsInQueue": "Còn {{count}} thẻ trong hàng đợi",
+    "nextCardInFullscreen": "Tiếp theo: {{title}}"
   }
 }
