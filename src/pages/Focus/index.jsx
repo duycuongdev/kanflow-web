@@ -757,19 +757,19 @@ function FocusQueueSection({
   return (
     <Box sx={{ width: '100%' }}>
       {/* Header Hàng đợi tập trung */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PlaylistAddCheckRoundedIcon sx={{ color: '#0052cc', fontSize: 22 }} />
-          <Typography sx={{ fontWeight: 700, fontSize: '0.95rem' }}>
+          <PlaylistAddCheckRoundedIcon sx={{ color: '#0052cc', fontSize: 24 }} />
+          <Typography sx={{ fontWeight: 700, fontSize: '1.05rem' }}>
             {t('focusPage.focusQueue')}
           </Typography>
           {totalCount > 0 && (
             <Chip
               size='small'
-              label={`${completedCount}/${totalCount}`}
+              label={`${completedCount}/${totalCount} ${t('focusPage.completed').toLowerCase()}`}
               sx={{
-                height: 20,
-                fontSize: '0.7rem',
+                height: 22,
+                fontSize: '0.72rem',
                 fontWeight: 700,
                 bgcolor: allCompleted ? 'rgba(0,135,90,0.15)' : 'rgba(0,82,204,0.12)',
                 color: allCompleted ? '#00875a' : '#0052cc'
@@ -777,7 +777,7 @@ function FocusQueueSection({
             />
           )}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button
             size='small'
             variant={showAddDrawer ? 'outlined' : 'contained'}
@@ -785,19 +785,19 @@ function FocusQueueSection({
             onClick={() => setShowAddDrawer((prev) => !prev)}
             sx={{
               textTransform: 'none',
-              fontSize: '0.75rem',
+              fontSize: '0.8rem',
               fontWeight: 600,
-              borderRadius: 1.5,
-              py: 0.3,
-              px: 1
+              borderRadius: 2,
+              py: 0.5,
+              px: 1.5
             }}
           >
-            {t('focusPage.addCardToQueue')}
+            {showAddDrawer && totalCount > 0 ? (t('common.close') || 'Đóng') : t('focusPage.addCardToQueue')}
           </Button>
           {totalCount > 0 && (
             <Tooltip title={t('schedule.clearTask') || 'Xóa tất cả'}>
-              <IconButton size='small' onClick={onClearQueue} sx={{ color: 'text.secondary', p: 0.5 }}>
-                <CloseRoundedIcon sx={{ fontSize: 16 }} />
+              <IconButton size='small' onClick={onClearQueue} sx={{ color: 'text.secondary', p: 0.6, '&:hover': { color: 'error.main' } }}>
+                <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
               </IconButton>
             </Tooltip>
           )}
@@ -809,9 +809,9 @@ function FocusQueueSection({
         <Paper
           variant='outlined'
           sx={{
-            p: 1.5,
-            mb: 1.5,
-            borderRadius: 2,
+            p: 2,
+            mb: 2,
+            borderRadius: 2.5,
             bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,82,204,0.02)',
             borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,82,204,0.15)'
           }}
@@ -819,14 +819,14 @@ function FocusQueueSection({
           <Typography variant='caption' sx={{ color: 'text.secondary', fontWeight: 600, display: 'block', mb: 1 }}>
             {t('focusPage.selectCardPrompt')}
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.5, alignItems: { xs: 'stretch', sm: 'center' } }}>
             <Select
-              fullWidth
               size='small'
               displayEmpty
               value={selectedBoardId}
               onChange={(e) => setSelectedBoardId(e.target.value)}
               MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+              sx={{ minWidth: { xs: '100%', sm: 220 } }}
               renderValue={(value) => {
                 if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectBoard')}</Typography>
                 const b = boards.find((item) => item._id === value)
@@ -845,12 +845,12 @@ function FocusQueueSection({
 
             {selectedBoardId && (
               <Select
-                fullWidth
                 size='small'
                 displayEmpty
                 value={selectedCardId}
                 onChange={(e) => setSelectedCardId(e.target.value)}
                 MenuProps={{ PaperProps: { sx: { maxHeight: 260 } } }}
+                sx={{ flex: 1, minWidth: { xs: '100%', sm: 220 } }}
                 renderValue={(value) => {
                   if (!value) return <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>{t('schedule.selectCard')}</Typography>
                   const c = cardOptions.find((item) => item._id === value)
@@ -872,7 +872,7 @@ function FocusQueueSection({
                             sx={{ height: 18, fontSize: '0.65rem', fontWeight: 600 }}
                           />
                         )}
-                        <Typography sx={{ fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>
+                        <Typography sx={{ fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 260 }}>
                           {c.title}
                         </Typography>
                         {alreadyInQueue && (
@@ -885,41 +885,40 @@ function FocusQueueSection({
               </Select>
             )}
 
-            {loadingCards && <LinearProgress sx={{ my: 0.5 }} />}
-
             {selectedBoardId && selectedCardId && (
               <Button
                 variant='contained'
                 size='small'
                 startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
                 onClick={handleAddCurrentSelected}
-                sx={{ alignSelf: 'flex-start', textTransform: 'none', fontWeight: 600, fontSize: '0.8rem', mt: 0.5 }}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', height: 38, px: 2, flexShrink: 0 }}
               >
                 {t('focusPage.addSelectedCard')}
               </Button>
             )}
           </Box>
+          {loadingCards && <LinearProgress sx={{ mt: 1 }} />}
         </Paper>
       </Collapse>
 
       {/* Khi tất cả thẻ trong hàng đợi đã hoàn thành */}
-      {allCompleted && (
+      {allCompleted && !showAddDrawer && (
         <Paper
           elevation={0}
           sx={{
-            p: 2,
+            p: 2.5,
             mb: 2,
-            borderRadius: 2.5,
+            borderRadius: 3,
             bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,135,90,0.12)' : 'rgba(0,135,90,0.08)',
             border: '1px solid',
             borderColor: 'rgba(54,179,126,0.4)',
             textAlign: 'center'
           }}
         >
-          <Typography sx={{ fontWeight: 700, color: '#00875a', fontSize: '0.95rem', mb: 0.5 }}>
+          <Typography sx={{ fontWeight: 700, color: '#00875a', fontSize: '1rem', mb: 0.5 }}>
             {t('focusPage.allQueueCompleted')}
           </Typography>
-          <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+          <Typography variant='body2' sx={{ color: 'text.secondary', display: 'block', mb: 2 }}>
             {t('focusPage.allQueueCompletedSub')}
           </Typography>
           <Button
@@ -927,7 +926,7 @@ function FocusQueueSection({
             variant='contained'
             startIcon={<AddRoundedIcon sx={{ fontSize: 16 }} />}
             onClick={() => setShowAddDrawer(true)}
-            sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#00875a', '&:hover': { bgcolor: '#006644' } }}
+            sx={{ textTransform: 'none', fontWeight: 700, bgcolor: '#00875a', '&:hover': { bgcolor: '#006644' }, borderRadius: 2, px: 2 }}
           >
             {t('focusPage.addCardToQueue')}
           </Button>
@@ -939,9 +938,9 @@ function FocusQueueSection({
         <Paper
           elevation={0}
           sx={{
-            p: 1.75,
-            mb: 2,
-            borderRadius: 2.5,
+            p: 2,
+            mb: 2.5,
+            borderRadius: 3,
             border: '1.5px solid',
             borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.4)' : '#0052cc',
             bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.08)' : 'rgba(0,82,204,0.03)',
@@ -949,15 +948,15 @@ function FocusQueueSection({
           }}
         >
           {/* Header thẻ đang làm */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, gap: 1, flexWrap: 'wrap' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
               <Chip
                 size='small'
                 icon={<TaskAltRoundedIcon sx={{ fontSize: '14px !important', color: '#fff !important' }} />}
                 label={t('focusPage.activeCardLabel')}
                 sx={{
-                  height: 22,
-                  fontSize: '0.7rem',
+                  height: 24,
+                  fontSize: '0.75rem',
                   fontWeight: 700,
                   bgcolor: '#0052cc',
                   color: '#fff'
@@ -967,24 +966,25 @@ function FocusQueueSection({
                 <Chip
                   size='small'
                   label={`🗂 ${activeTask.boardTitle}`}
-                  sx={{ height: 22, fontSize: '0.7rem', fontWeight: 600 }}
+                  sx={{ height: 24, fontSize: '0.75rem', fontWeight: 600 }}
                 />
               )}
             </Box>
             <Button
-              size='small'
+              size='medium'
               variant='contained'
               color='success'
-              startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 16 }} />}
+              startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 18 }} />}
               onClick={onCompleteActiveCard}
               sx={{
                 textTransform: 'none',
                 fontWeight: 700,
-                fontSize: '0.78rem',
+                fontSize: '0.85rem',
                 borderRadius: 2,
-                px: 1.25,
-                py: 0.4,
+                px: 2,
+                py: 0.6,
                 bgcolor: '#00875a',
+                boxShadow: '0 4px 12px rgba(0,135,90,0.3)',
                 '&:hover': { bgcolor: '#006644' }
               }}
             >
@@ -992,7 +992,7 @@ function FocusQueueSection({
             </Button>
           </Box>
 
-          <Typography sx={{ fontWeight: 700, fontSize: '1rem', mb: 1.25, color: 'text.primary' }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.15rem', mb: 1.5, color: 'text.primary' }}>
             🎯 {activeCardData.title}
           </Typography>
 
@@ -1002,18 +1002,18 @@ function FocusQueueSection({
             onToggleItemDone={onToggleChecklistItem}
             collapsible
             defaultExpanded
-            maxHeight={260}
+            maxHeight={320}
           />
         </Paper>
       )}
 
       {/* Danh sách các thẻ trong hàng đợi */}
-      {totalCount > 1 && (
-        <Box sx={{ mb: 1.5 }}>
+      {totalCount > 0 && (
+        <Box sx={{ mb: 1 }}>
           <Typography variant='caption' sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', mb: 1 }}>
             📋 {t('focusPage.upNext')} ({totalCount})
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {taskQueue.map((item, idx) => {
               const isActive = activeTask?.cardId === item.cardId
               return (
@@ -1025,14 +1025,14 @@ function FocusQueueSection({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    p: 1,
-                    px: 1.25,
+                    p: 1.2,
+                    px: 1.5,
                     borderRadius: 2,
                     cursor: item.isCompleted ? 'default' : 'pointer',
                     border: '1px solid',
                     borderColor: isActive
                       ? '#0052cc'
-                      : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                      : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
                     bgcolor: isActive
                       ? (theme) => theme.palette.mode === 'dark' ? 'rgba(0,82,204,0.12)' : 'rgba(0,82,204,0.05)'
                       : (item.isCompleted
@@ -1045,20 +1045,20 @@ function FocusQueueSection({
                     }
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flex: 1 }}>
                     {item.isCompleted ? (
-                      <CheckCircleRoundedIcon sx={{ fontSize: 18, color: '#00875a' }} />
+                      <CheckCircleRoundedIcon sx={{ fontSize: 20, color: '#00875a' }} />
                     ) : isActive ? (
-                      <TaskAltRoundedIcon sx={{ fontSize: 18, color: '#0052cc' }} />
+                      <TaskAltRoundedIcon sx={{ fontSize: 20, color: '#0052cc' }} />
                     ) : (
-                      <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 18, color: 'text.disabled' }} />
+                      <RadioButtonUncheckedRoundedIcon sx={{ fontSize: 20, color: 'text.disabled' }} />
                     )}
 
                     <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                         <Typography
                           sx={{
-                            fontSize: '0.85rem',
+                            fontSize: '0.9rem',
                             fontWeight: isActive ? 700 : 500,
                             textDecoration: item.isCompleted ? 'line-through' : 'none',
                             color: item.isCompleted ? 'text.disabled' : (isActive ? 'primary.main' : 'text.primary'),
@@ -1070,33 +1070,35 @@ function FocusQueueSection({
                           {idx + 1}. {item.cardTitle}
                         </Typography>
                         {isActive && (
-                          <Chip size='small' label={t('focusPage.inProgress')} sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: 'rgba(0,82,204,0.15)', color: '#0052cc' }} />
+                          <Chip size='small' label={t('focusPage.inProgress')} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: 'rgba(0,82,204,0.15)', color: '#0052cc' }} />
                         )}
                         {item.isCompleted && (
-                          <Chip size='small' label={t('focusPage.completed')} sx={{ height: 18, fontSize: '0.62rem', fontWeight: 700, bgcolor: 'rgba(0,135,90,0.15)', color: '#00875a' }} />
+                          <Chip size='small' label={t('focusPage.completed')} sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, bgcolor: 'rgba(0,135,90,0.15)', color: '#00875a' }} />
                         )}
                       </Box>
                       {item.boardTitle && (
-                        <Typography variant='caption' sx={{ color: 'text.secondary', fontSize: '0.72rem' }}>
+                        <Typography variant='caption' sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
                           🗂 {item.boardTitle}
                         </Typography>
                       )}
                     </Box>
                   </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, ml: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: 1 }}>
                     {!isActive && !item.isCompleted && (
                       <Tooltip title={t('focusPage.switchCard')}>
-                        <IconButton
+                        <Button
                           size='small'
+                          variant='outlined'
+                          startIcon={<SwapHorizRoundedIcon sx={{ fontSize: 16 }} />}
                           onClick={(e) => {
                             e.stopPropagation()
                             onSelectCard(item.cardId)
                           }}
-                          sx={{ p: 0.5, color: 'text.secondary' }}
+                          sx={{ textTransform: 'none', fontSize: '0.75rem', fontWeight: 600, py: 0.2, px: 1, borderRadius: 1.5 }}
                         >
-                          <SwapHorizRoundedIcon sx={{ fontSize: 17 }} />
-                        </IconButton>
+                          {t('focusPage.switchCard')}
+                        </Button>
                       </Tooltip>
                     )}
                     <Tooltip title={t('focusPage.removeFromQueue')}>
@@ -1106,9 +1108,9 @@ function FocusQueueSection({
                           e.stopPropagation()
                           onRemoveCard(item.cardId)
                         }}
-                        sx={{ p: 0.5, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
+                        sx={{ p: 0.6, color: 'text.secondary', '&:hover': { color: 'error.main' } }}
                       >
-                        <DeleteOutlineRoundedIcon sx={{ fontSize: 17 }} />
+                        <DeleteOutlineRoundedIcon sx={{ fontSize: 18 }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -1584,10 +1586,10 @@ export default function Focus() {
       <AppBar />
 
       <Container maxWidth='xl' sx={{ pt: 2 }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'stretch' }}>
-          {/* TRÁI: vòng tròn tập trung */}
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2.5, alignItems: 'flex-start' }}>
+          {/* CỘT TRÁI (380px - 400px): Đồng hồ Pomodoro, Nút Start, Cấu hình chuỗi lặp & Thống kê cá nhân */}
           <Paper elevation={0} sx={{
-            flexShrink: 0, width: { xs: '100%', md: 420 },
+            flexShrink: 0, width: { xs: '100%', md: 400 },
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             p: { xs: 2.5, md: 3 }, borderRadius: 4,
             border: '1px solid', borderColor: 'divider',
@@ -1618,112 +1620,115 @@ export default function Focus() {
               </Box>
             )}
 
-            {/* Quầng sáng sau vòng tròn */}
-            <Box sx={{ position: 'relative', mb: 1.5 }}>
+            {/* Vòng tròn đếm ngược */}
+            <Box sx={{ position: 'relative', width: 240, height: 240, my: 1 }}>
+              <svg viewBox='0 0 200 200' style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                <circle
+                  cx='100' cy='100' r={ringRadius}
+                  fill='none'
+                  stroke={theme.palette.mode === 'dark' ? '#1e293b' : '#ebecf0'}
+                  strokeWidth={ringStroke}
+                />
+                <circle
+                  cx='100' cy='100' r={ringRadius}
+                  fill='none' stroke={modeConfig.color}
+                  strokeWidth={ringStroke}
+                  strokeLinecap='round'
+                  strokeDasharray={ringCircumference}
+                  strokeDashoffset={ringCircumference * (1 - progress)}
+                  style={{ transition: 'stroke-dashoffset 0.5s linear' }}
+                />
+              </svg>
               <Box sx={{
-                position: 'absolute', inset: -30, borderRadius: '50%',
-                background: `radial-gradient(circle, ${modeConfig.color}26 0%, transparent 70%)`,
-                filter: 'blur(6px)'
-              }} />
-              <Box sx={{ position: 'relative' }}>
-                <svg width={ringSize} height={ringSize} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
-                  <circle
-                    cx={ringSize / 2} cy={ringSize / 2} r={ringRadius}
-                    fill='none'
-                    stroke={theme.palette.mode === 'dark' ? '#1e293b' : '#e9ecef'}
-                    strokeWidth={ringStroke}
-                  />
-                  <circle
-                    cx={ringSize / 2} cy={ringSize / 2} r={ringRadius}
-                    fill='none'
-                    stroke={modeConfig.color}
-                    strokeWidth={ringStroke}
-                    strokeLinecap='round'
-                    strokeDasharray={ringCircumference}
-                    strokeDashoffset={ringCircumference * (1 - progress)}
-                    style={{ transition: 'stroke-dashoffset 0.5s linear' }}
-                  />
-                </svg>
-                <Box sx={{
-                  position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center'
-                }}>
-                  <Typography sx={{ fontSize: 44, fontWeight: 800, letterSpacing: 1, color: (themeBg) => themeBg.palette.mode === 'dark' ? '#e2e8f0' : '#101828', lineHeight: 1.1 }}>
-                    {formatCountdown(remainingMs)}
+                position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 0.5
+              }}>
+                <Typography sx={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: 1, color: 'text.primary', lineHeight: 1 }}>
+                  {formatCountdown(remainingMs)}
+                </Typography>
+                <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.9rem' }}>
+                  {phaseLabel}
+                </Typography>
+                {timerState.mode === 'focus' && timerState.pomodoroCount > 0 && (
+                  <Typography sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                    🍅 {timerState.pomodoroCount}
                   </Typography>
-                  <Typography sx={{ color: 'text.secondary', fontWeight: 700 }}>
-                    {plan.active
-                      ? t('focusPage.roundOf', { round: plan.round, repeats: plan.repeats })
-                      : t(`focusTimer.mode.${modeConfig.label}`)}
-                  </Typography>
-                  {timerState.mode === 'focus' && timerState.pomodoroCount > 0 && (
-                    <Typography variant='caption' sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5 }}>
-                      🍅 {timerState.pomodoroCount}
-                    </Typography>
-                  )}
-                </Box>
+                )}
               </Box>
             </Box>
 
-            {/* Nhiệm vụ đang focus */}
-            {focusTask?.title && (
-              <Chip
-                label={`🎯 ${t('focusTimer.focusingOn')}: ${focusTask.title}`}
-                sx={{ mb: 1.5, maxWidth: '100%', bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#1e293b' : '#f1f3f5', fontWeight: 600 }}
-              />
-            )}
+            {/* Nhiệm vụ đang focus kèm chip */}
+            <AnimatePresence>
+              {focusTask?.title && (
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+                  <Chip
+                    label={`🎯 ${t('focusTimer.focusingOn')}: ${focusTask.title}`}
+                    sx={{
+                      maxWidth: 340, mb: 1,
+                      fontWeight: 600,
+                      bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? 'rgba(0, 82, 204, 0.2)' : 'rgba(0, 82, 204, 0.08)',
+                      color: '#0052cc',
+                      border: '1px solid rgba(0, 82, 204, 0.25)'
+                    }}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* Điều khiển */}
+            {/* Nút điều khiển */}
             <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center', mt: 0.5 }}>
               {!timerState.isRunning && (
                 <Button
                   variant='contained'
                   size='large'
-                  startIcon={remainingMs < timerState.durationMs && remainingMs > 0 ? <PlayArrowRoundedIcon /> : <TimerRoundedIcon />}
-                  onClick={() => {
-                    if (remainingMs < timerState.durationMs && remainingMs > 0) {
-                      dispatch(startFocusTimer({ now: Date.now() }))
-                    } else {
-                      handleStartPlan()
-                    }
+                  startIcon={<PlayArrowRoundedIcon />}
+                  onClick={handleStartWithPlan}
+                  sx={{
+                    textTransform: 'none', fontWeight: 700, px: 4, py: 1.2,
+                    borderRadius: 3, bgcolor: modeConfig.color,
+                    boxShadow: '0 4px 14px rgba(0, 82, 204, 0.35)'
                   }}
-                  sx={{ textTransform: 'none', fontWeight: 700, bgcolor: modeConfig.color, px: 4, py: 1.1, borderRadius: 2.5 }}
                 >
-                  {remainingMs < timerState.durationMs && remainingMs > 0 ? t('focusTimer.resume') : t('focusTimer.start')}
+                  {t('focusTimer.start')}
                 </Button>
               )}
               {timerState.isRunning && (
-                <>
-                  <Button
-                    variant='contained'
-                    size='large'
-                    startIcon={<PauseRoundedIcon />}
-                    onClick={() => dispatch(pauseFocusTimer({ now: Date.now() }))}
-                    sx={{ textTransform: 'none', fontWeight: 700, bgcolor: modeConfig.color, px: 3, py: 1.1, borderRadius: 2.5 }}
-                  >
-                    {t('focusTimer.pause')}
-                  </Button>
-                  <Tooltip title={t('focusTimer.stopHint')}>
-                    <IconButton
-                      onClick={() => dispatch(stopFocusSession())}
-                      sx={{ color: '#fff', bgcolor: 'rgba(255,86,48,0.85)', '&:hover': { bgcolor: '#ff5630' }, width: 46, height: 46 }}
-                      aria-label={t('focusTimer.stopHint')}
-                    >
-                      <StopRoundedIcon />
-                    </IconButton>
-                  </Tooltip>
-                </>
+                <Button
+                  variant='outlined'
+                  size='large'
+                  startIcon={<PauseRoundedIcon />}
+                  onClick={() => dispatch(pauseFocusTimer({ now: Date.now() }))}
+                  sx={{ textTransform: 'none', fontWeight: 700, px: 3, py: 1.2, borderRadius: 3 }}
+                >
+                  {t('focusTimer.pause')}
+                </Button>
               )}
-              {!timerState.isRunning && remainingMs !== timerState.durationMs && (
+              {sessionActive && (
+                <Tooltip title={t('focusTimer.stopHint')}>
+                  <IconButton
+                    onClick={handleStopSession}
+                    aria-label={t('focusTimer.stopHint')}
+                    size='large'
+                    sx={{
+                      color: '#fff', bgcolor: '#ff5630',
+                      '&:hover': { bgcolor: '#de350b' },
+                      width: 48, height: 48
+                    }}
+                  >
+                    <StopRoundedIcon />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {!timerState.isRunning && !sessionActive && (
                 <Tooltip title={t('focusTimer.reset')}>
-                  <IconButton onClick={() => dispatch(resetFocusTimer())} aria-label={t('focusTimer.reset')} size='large'>
+                  <IconButton onClick={() => dispatch(resetFocusTimer())} aria-label={t('focusTimer.reset')}>
                     <RestartAltRoundedIcon />
                   </IconButton>
                 </Tooltip>
               )}
             </Box>
 
-            {/* Tổng focus hôm nay - lấp khoảng trống dưới card */}
+            {/* Tổng focus hôm nay */}
             {stats && (
               <Chip
                 label={`${t('focusPage.todayFocus')}: ${formatDurationShort(stats.day?.totalMs || 0)}`}
@@ -1736,34 +1741,12 @@ export default function Focus() {
               />
             )}
 
+            <Divider sx={{ my: 2.5, alignSelf: 'stretch' }} />
 
-            {/* Phần setup: nhiệm vụ + chế độ lặp - nằm cùng cột với vòng đếm */}
-            <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
-
+            {/* Cấu hình chuỗi lặp (Repeat plan) */}
             <Box sx={{ alignSelf: 'stretch', width: '100%' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <EventNoteRoundedIcon sx={{ color: '#0052cc', fontSize: 20 }} />
-                <Typography sx={{ fontWeight: 700 }}>
-                  {t('focusPage.taskSection')}
-                </Typography>
-              </Box>
-              <FocusQueueSection
-                taskQueue={taskQueue}
-                activeTask={focusTask}
-                activeCardData={activeCardData}
-                onToggleChecklistItem={handleToggleChecklistItem}
-                onCompleteActiveCard={handleCompleteActiveCard}
-                onSelectCard={(cId) => dispatch(selectCardFromQueue(cId))}
-                onRemoveCard={(cId) => dispatch(removeCardFromQueue(cId))}
-                onClearQueue={() => dispatch(clearTaskQueue())}
-                onAddCard={(cardInfo) => dispatch(addCardToQueue(cardInfo))}
-              />
-            </Box>
-
-            <Divider sx={{ my: 1.5, alignSelf: 'stretch' }} />
-
-            <Box sx={{ alignSelf: 'stretch', width: '100%' }}>
-              <Typography sx={{ fontWeight: 700, mb: 1.5 }}>
+              <Typography sx={{ fontWeight: 700, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <TimerRoundedIcon sx={{ fontSize: 18, color: '#0052cc' }} />
                 {t('focusPage.planSection')}
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'flex-end', mb: 1.5 }}>
@@ -1775,15 +1758,13 @@ export default function Focus() {
                   disabled={plan.active}
                   onChange={(e) => {
                     setFocusMinutes(e.target.value)
-                    // Đồng bộ ngay vào timer state để vòng đếm bên trái đổi theo
                     dispatch(setCustomMinutes(e.target.value))
-                    // Đang idle ở mode nghỉ mà sửa số phút tập trung -> quay về mode Focus
                     if (!timerState.isRunning && timerState.mode !== 'focus') {
                       dispatch(switchTimerMode('focus'))
                     }
                   }}
                   InputProps={{ inputProps: { min: 1, max: 180 } }}
-                  sx={{ width: 140, '& input': { textAlign: 'center' } }}
+                  sx={{ width: 130, '& input': { textAlign: 'center' } }}
                 />
                 <TextField
                   type='number'
@@ -1793,7 +1774,7 @@ export default function Focus() {
                   disabled={plan.active}
                   onChange={(e) => setRepeats(e.target.value)}
                   InputProps={{ inputProps: { min: 1, max: 12 } }}
-                  sx={{ width: 130, '& input': { textAlign: 'center' } }}
+                  sx={{ width: 120, '& input': { textAlign: 'center' } }}
                 />
                 <Box>
                   <Typography variant='caption' sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>
@@ -1807,7 +1788,6 @@ export default function Focus() {
                     disabled={plan.active}
                     sx={{
                       gap: 0.75,
-                      // Mỗi nút là pill riêng (gap làm hỏng bo góc grouped mặc định của MUI)
                       '& .MuiToggleButtonGroup-grouped': {
                         borderRadius: '10px !important',
                         border: '1px solid',
@@ -1839,17 +1819,11 @@ export default function Focus() {
                 })}
               </Typography>
             </Box>
-          </Paper>
 
-          {/* PHẢI: nhiệm vụ + chế độ lặp + thống kê */}
-          <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-            {/* Thống kê + bảng xếp hạng */}
-            <Paper elevation={0} sx={{
-              p: { xs: 2, md: 2.5 }, borderRadius: 4,
-              border: '1px solid', borderColor: 'divider',
-              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
-              boxShadow: '0 4px 18px rgba(0, 82, 204, 0.07)'
-            }}>
+            <Divider sx={{ my: 2.5, alignSelf: 'stretch' }} />
+
+            {/* Thống kê cá nhân (Your stats) trong cột trái */}
+            <Box sx={{ alignSelf: 'stretch', width: '100%' }}>
               <Typography sx={{ fontWeight: 700, mb: 1 }}>
                 {t('focusTimer.myStats')}
               </Typography>
@@ -1860,23 +1834,46 @@ export default function Focus() {
                 <Divider />
                 {renderStatRow(t('focusTimer.period.thisMonth'), stats?.month)}
               </Box>
+            </Box>
+          </Paper>
+
+          {/* CỘT PHẢI (flex: 1): Không gian làm việc Focus Queue + Bảng xếp hạng */}
+          <Box sx={{ flex: 1, width: '100%', display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+            {/* CARD 1: HÀNG ĐỢI TẬP TRUNG (FOCUS QUEUE) & ACTIVE CARD WORKSPACE */}
+            <Paper elevation={0} sx={{
+              p: { xs: 2.5, md: 3 }, borderRadius: 4,
+              border: '1px solid', borderColor: 'divider',
+              bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
+              boxShadow: '0 4px 20px rgba(0, 82, 204, 0.08)'
+            }}>
+              <FocusQueueSection
+                taskQueue={taskQueue}
+                activeTask={focusTask}
+                activeCardData={activeCardData}
+                onToggleChecklistItem={handleToggleChecklistItem}
+                onCompleteActiveCard={handleCompleteActiveCard}
+                onSelectCard={(cId) => dispatch(selectCardFromQueue(cId))}
+                onRemoveCard={(cId) => dispatch(removeCardFromQueue(cId))}
+                onClearQueue={() => dispatch(clearTaskQueue())}
+                onAddCard={(cardInfo) => dispatch(addCardToQueue(cardInfo))}
+              />
             </Paper>
 
-            {/* Bảng xếp hạng - card riêng */}
+            {/* CARD 2: BẢNG XẾP HẠNG (LEADERBOARD) */}
             <Paper elevation={0} sx={{
               p: { xs: 2, md: 2.5 }, borderRadius: 4,
               border: '1px solid', borderColor: 'divider',
               bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#101828' : '#fff',
               boxShadow: '0 4px 18px rgba(0, 82, 204, 0.07)'
             }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <EmojiEventsRoundedIcon sx={{ fontSize: 20, color: '#ffab00' }} />
-                  <Typography sx={{ fontWeight: 700 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                  <EmojiEventsRoundedIcon sx={{ fontSize: 22, color: '#ffab00' }} />
+                  <Typography sx={{ fontWeight: 700, fontSize: '1rem' }}>
                     {t('focusTimer.leaderboard')}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', gap: 0.75 }}>
                   {['week', 'month'].map((period) => (
                     <Chip
                       key={period}
@@ -1896,7 +1893,7 @@ export default function Focus() {
 
               <Paper variant='outlined' sx={{ overflow: 'hidden', bgcolor: (themeBg) => themeBg.palette.mode === 'dark' ? '#0b1220' : '#fafbfc' }}>
                 {(leaderboard?.top || []).length === 0 && (
-                  <Typography sx={{ px: 1.5, py: 2, color: 'text.secondary', textAlign: 'center', fontSize: '0.85rem' }}>
+                  <Typography sx={{ px: 1.5, py: 2.5, color: 'text.secondary', textAlign: 'center', fontSize: '0.85rem' }}>
                     {t('focusTimer.leaderboardEmpty')}
                   </Typography>
                 )}
