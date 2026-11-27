@@ -1542,6 +1542,12 @@ export default function Focus() {
   }, [loadInsights, timerState.pomodoroCount])
 
   const modeConfig = TIMER_MODES[timerState.mode]
+  const isBreak = timerState.mode !== 'focus'
+  const phaseLabel = plan.active
+    ? (isBreak
+      ? t(`focusTimer.mode.${modeConfig.label}`)
+      : t('focusPage.roundOf', { round: plan.round, repeats: plan.repeats }))
+    : t(`focusTimer.mode.${modeConfig.label}`)
   const progress = timerState.durationMs > 0 ? 1 - remainingMs / timerState.durationMs : 0
   const ringSize = 230
   const ringStroke = 12

@@ -89,7 +89,8 @@ class ErrorBoundary extends React.Component {
               </Button>
             </Box>
 
-            {this.state.error && (
+            {/* Chỉ hiển thị chi tiết kỹ thuật khi ở môi trường Development để lập trình viên kiểm tra, không hiện mã lỗi thô cho người dùng */}
+            {import.meta.env.DEV && this.state.error && (
               <Box
                 sx={{
                   width: '100%',
