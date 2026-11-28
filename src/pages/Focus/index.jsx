@@ -89,7 +89,8 @@ function CardChecklistPanel({
   isGlassmorphic = false,
   collapsible = false,
   defaultExpanded = true,
-  maxHeight = 220
+  maxHeight = 220,
+  renderFooter = null
 }) {
   const { t } = useTranslation()
   const [expanded, setExpanded] = useState(defaultExpanded)
@@ -274,6 +275,17 @@ function CardChecklistPanel({
           })}
         </Box>
       </Collapse>
+      {renderFooter && (
+        <Box sx={{
+          mt: 1,
+          pt: 1,
+          borderTop: isGlassmorphic ? '1px solid rgba(255,255,255,0.12)' : '1px solid divider',
+          display: 'flex',
+          justifyContent: 'center'
+        }}>
+          {renderFooter}
+        </Box>
+      )}
     </Box>
   )
 }
@@ -1173,7 +1185,10 @@ function FocusFullscreen({
           : 'radial-gradient(circle at 50% 25%, #1e3a8a 0%, #0b1220 60%)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        gap: hasChecklists ? 1.5 : 2, overflow: 'hidden'
+        gap: hasChecklists ? 1 : 2,
+        overflowY: 'auto',
+        p: 2,
+        py: { xs: 2.5, sm: 3.5 }
       }}>
         {/* Chip vòng lặp */}
         {plan.active && (
@@ -1207,7 +1222,7 @@ function FocusFullscreen({
         >
           <Box sx={{
             position: 'relative',
-            width: hasChecklists ? 'min(42vmin, 260px)' : 'min(74vmin, 460px)',
+            width: hasChecklists ? 'min(36vmin, 220px)' : 'min(72vmin, 440px)',
             aspectRatio: '1/1'
           }}>
             <svg viewBox='0 0 200 200' style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
@@ -1268,11 +1283,8 @@ function FocusFullscreen({
         {/* Danh sách việc cần làm (Checklists) của thẻ ngay trong chế độ toàn màn hình */}
         {hasChecklists && (
           <Box sx={{
-            width: 'min(92vw, 460px)',
-            zIndex: 2,
-            maxHeight: 'min(36vh, 230px)',
-            display: 'flex',
-            flexDirection: 'column'
+            width: 'min(92vw, 440px)',
+            zIndex: 2
           }}>
             <CardChecklistPanel
               checklists={cardChecklists}
@@ -1280,38 +1292,37 @@ function FocusFullscreen({
               isGlassmorphic
               collapsible
               defaultExpanded
-              maxHeight={160}
+              maxHeight={140}
+              renderFooter={focusTask?.cardId && onCompleteActiveCard ? (
+                <Button
+                  variant='contained'
+                  size='small'
+                  startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 18 }} />}
+                  onClick={onCompleteActiveCard}
+                  sx={{
+                    bgcolor: '#00875a',
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    textTransform: 'none',
+                    borderRadius: 2,
+                    px: 2.5,
+                    py: 0.5,
+                    boxShadow: '0 4px 14px rgba(0,135,90,0.4)',
+                    '&:hover': { bgcolor: '#006644' }
+                  }}
+                >
+                  {taskQueue.length > 1 && taskQueue.filter(t => !t.isCompleted).length > 1
+                    ? t('focusPage.markDoneAndNext')
+                    : (t('focusPage.completed') + ' thẻ')}
+                </Button>
+              ) : null}
             />
-            {focusTask?.cardId && onCompleteActiveCard && (
-              <Button
-                variant='contained'
-                size='small'
-                startIcon={<CheckCircleRoundedIcon sx={{ fontSize: 18 }} />}
-                onClick={onCompleteActiveCard}
-                sx={{
-                  mt: 1,
-                  alignSelf: 'center',
-                  bgcolor: 'rgba(0,135,90,0.92)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  textTransform: 'none',
-                  borderRadius: 2,
-                  px: 2,
-                  py: 0.4,
-                  backdropFilter: 'blur(8px)',
-                  boxShadow: '0 4px 14px rgba(0,135,90,0.4)',
-                  '&:hover': { bgcolor: '#00875a' }
-                }}
-              >
-                {t('focusPage.markDoneAndNext')}
-              </Button>
-            )}
           </Box>
         )}
 
         {/* Điều khiển: chỉ Pause/Resume + Stop - thoát toàn màn hình bằng Dừng */}
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 1 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mt: 1.5, zIndex: 3 }}>
           {timerState.isRunning ? (
             <Button
               variant='outlined'
