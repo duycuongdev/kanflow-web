@@ -1001,7 +1001,9 @@ function FocusQueueSection({
                 '&:hover': { bgcolor: '#006644' }
               }}
             >
-              {t('focusPage.markDoneAndNext')}
+              {taskQueue.length > 1 && taskQueue.filter(t => !t.isCompleted).length > 1
+                ? t('focusPage.markDoneAndNext')
+                : t('focusPage.completeCard')}
             </Button>
           </Box>
 
@@ -1314,7 +1316,7 @@ function FocusFullscreen({
                 >
                   {taskQueue.length > 1 && taskQueue.filter(t => !t.isCompleted).length > 1
                     ? t('focusPage.markDoneAndNext')
-                    : (t('focusPage.completed') + ' thẻ')}
+                    : t('focusPage.completeCard')}
                 </Button>
               ) : null}
             />
